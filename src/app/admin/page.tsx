@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogClose } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -151,6 +151,13 @@ function AdminContent() {
 
   const totalCapital = inventory.reduce((acc, item) => acc + (item.cost * item.stock), 0);
 
+  const handleUpdateProduct = (name: string) => {
+    toast({
+      title: "Actualización Exitosa",
+      description: `El producto ${name} ha sido actualizado correctamente.`,
+    });
+  };
+
   return (
     <div className="min-h-screen bg-black text-white selection:bg-primary">
       <StaffNavigation />
@@ -180,10 +187,10 @@ function AdminContent() {
                   <Plus className="mr-2 h-4 w-4" /> NUEVA ENTRADA
                 </Button>
               </DialogTrigger>
-              <DialogContent className="bg-card border-white/10 text-white rounded-[2rem] p-8 max-w-xl">
+              <DialogContent className="bg-card border-white/10 text-white rounded-[1.5rem] p-8 max-w-xl">
                 <DialogHeader>
-                  <DialogTitle className="text-2xl font-black italic text-primary uppercase">REGISTRO DE PRODUCTO</DialogTitle>
-                  <DialogDescription className="text-gray-500 font-bold text-[10px] uppercase">Añade un nuevo trago al arsenal de PartyFlow</DialogDescription>
+                  <DialogTitle className="text-2xl font-black italic text-primary uppercase">REGISTRO DE MERCANCÍA</DialogTitle>
+                  <DialogDescription className="text-gray-500 font-bold text-[10px] uppercase">Ingreso de stock con valoración COP</DialogDescription>
                 </DialogHeader>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
@@ -205,20 +212,12 @@ function AdminContent() {
                       <Label className="text-[9px] font-black uppercase text-gray-500">Nombre del Producto</Label>
                       <Input className="bg-white/5 border-white/10 h-11 placeholder:text-gray-600 text-sm" placeholder="Ej: Don Julio 70" />
                     </div>
-                    
-                    <div className="space-y-1.5">
-                      <Label className="text-[9px] font-black uppercase text-gray-500">Precio Venta (COP)</Label>
-                      <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-primary font-black text-sm">$</span>
-                        <Input type="number" className="bg-white/5 border-white/10 h-11 pl-7 text-sm font-black" placeholder="0" />
-                      </div>
-                    </div>
 
                     <div className="space-y-1.5">
-                      <Label className="text-[9px] font-black uppercase text-gray-500">Categoría</Label>
+                      <Label className="text-[9px] font-black uppercase text-gray-500">Categoría Contable</Label>
                       <Select>
                         <SelectTrigger className="bg-white/5 border-white/10 h-11 text-sm">
-                          <SelectValue placeholder="Seleccionar..." />
+                          <SelectValue placeholder="Seleccionar categoría..." />
                         </SelectTrigger>
                         <SelectContent className="bg-card border-white/10 text-white">
                           {CATEGORIAS_CONTABLES.map((cat) => (
@@ -229,6 +228,23 @@ function AdminContent() {
                         </SelectContent>
                       </Select>
                     </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <Label className="text-[9px] font-black uppercase text-gray-500">Costo Adquisición (COP)</Label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-black text-sm">$</span>
+                          <Input type="number" className="bg-white/5 border-white/10 h-11 pl-7 text-sm font-black" placeholder="0" />
+                        </div>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-[9px] font-black uppercase text-gray-500">Precio Venta (COP)</Label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-primary font-black text-sm">$</span>
+                          <Input type="number" className="bg-white/5 border-white/10 h-11 pl-7 text-sm font-black" placeholder="0" />
+                        </div>
+                      </div>
+                    </div>
 
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-1.5">
@@ -236,16 +252,18 @@ function AdminContent() {
                         <Input type="number" className="bg-white/5 border-white/10 h-11 text-sm" placeholder="0" />
                       </div>
                       <div className="space-y-1.5">
-                        <Label className="text-[9px] font-black uppercase text-gray-500">Mínimo</Label>
+                        <Label className="text-[9px] font-black uppercase text-gray-500">Stock Mínimo</Label>
                         <Input type="number" className="bg-white/5 border-white/10 h-11 text-sm" placeholder="5" />
                       </div>
                     </div>
                   </div>
                 </div>
 
-                <Button className="w-full h-12 bg-primary font-black italic text-lg mt-8 rounded-xl uppercase neon-glow-primary tracking-widest">
-                  PUBLICAR EN CATÁLOGO
-                </Button>
+                <DialogClose asChild>
+                  <Button className="w-full h-12 bg-primary font-black italic text-lg mt-8 rounded-xl uppercase neon-glow-primary tracking-widest">
+                    VINCULAR A BODEGA
+                  </Button>
+                </DialogClose>
               </DialogContent>
             </Dialog>
           )}
@@ -285,7 +303,9 @@ function AdminContent() {
                     <Input className="bg-white/5 border-white/10 h-11 text-sm" placeholder="Documento de identidad" />
                   </div>
                 </div>
-                <Button className="w-full h-12 bg-primary font-black italic text-lg mt-6 rounded-lg uppercase neon-glow-primary">REGISTRAR MIEMBRO</Button>
+                <DialogClose asChild>
+                  <Button className="w-full h-12 bg-primary font-black italic text-lg mt-6 rounded-lg uppercase neon-glow-primary">REGISTRAR MIEMBRO</Button>
+                </DialogClose>
               </DialogContent>
             </Dialog>
           )}
@@ -355,7 +375,7 @@ function AdminContent() {
                     { msg: 'Alta demanda en Zona Norte', type: 'info' },
                     { msg: '3 pedidos con retraso', type: 'error' },
                   ].map((alert, i) => (
-                    <div key={i} className="p-3 rounded-xl bg-white/5 border-l-4 border-accent flex justify-between items-center text-xs">
+                    <div key={i} className="p-4 rounded-xl bg-white/5 border-l-4 border-accent flex justify-between items-center text-xs">
                       <span className="font-bold">{alert.msg}</span>
                       <ChevronRight className="h-4 w-4 text-gray-600" />
                     </div>
@@ -420,26 +440,57 @@ function AdminContent() {
                           </DialogTrigger>
                           <DialogContent className="bg-card border-white/10 text-white rounded-[1.5rem] p-8 max-md">
                             <DialogHeader>
-                              <DialogTitle className="text-xl font-black italic text-secondary uppercase">EDITAR EXISTENCIAS: {item.name}</DialogTitle>
+                              <DialogTitle className="text-xl font-black italic text-secondary uppercase">EDITAR PRODUCTO: {item.name}</DialogTitle>
                             </DialogHeader>
-                            <div className="space-y-4 mt-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
                               <div className="space-y-1">
                                 <Label className="text-[9px] font-black uppercase text-gray-500">Nombre del Producto</Label>
                                 <Input className="bg-white/5 border-white/10 h-11 text-sm" defaultValue={item.name} />
                               </div>
                               <div className="space-y-1">
-                                <Label className="text-[9px] font-black uppercase text-gray-500">Precio (COP)</Label>
+                                <Label className="text-[9px] font-black uppercase text-gray-500">Categoría</Label>
+                                <Select defaultValue={item.category}>
+                                  <SelectTrigger className="bg-white/5 border-white/10 h-11 text-sm">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent className="bg-card border-white/10 text-white">
+                                    {CATEGORIAS_CONTABLES.map(cat => (
+                                      <SelectItem key={cat.id} value={cat.id}>{cat.label}</SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div className="space-y-1">
+                                <Label className="text-[9px] font-black uppercase text-gray-500">Precio Venta (COP)</Label>
                                 <div className="relative">
-                                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm font-bold">$</span>
+                                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary font-bold text-sm">$</span>
                                   <Input type="number" className="bg-white/5 border-white/10 h-11 pl-7 text-sm" defaultValue={item.price} />
+                                </div>
+                              </div>
+                              <div className="space-y-1">
+                                <Label className="text-[9px] font-black uppercase text-gray-500">Costo Unitario (COP)</Label>
+                                <div className="relative">
+                                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-sm">$</span>
+                                  <Input type="number" className="bg-white/5 border-white/10 h-11 pl-7 text-sm" defaultValue={item.cost} />
                                 </div>
                               </div>
                               <div className="space-y-1">
                                 <Label className="text-[9px] font-black uppercase text-gray-500">Stock Actual</Label>
                                 <Input type="number" className="bg-white/5 border-white/10 h-11 text-sm" defaultValue={item.stock} />
                               </div>
+                              <div className="space-y-1">
+                                <Label className="text-[9px] font-black uppercase text-gray-500">Stock Mínimo</Label>
+                                <Input type="number" className="bg-white/5 border-white/10 h-11 text-sm" defaultValue={item.minStock} />
+                              </div>
                             </div>
-                            <Button className="w-full h-12 bg-secondary text-black font-black italic text-lg mt-6 rounded-lg uppercase neon-glow-secondary">CONFIRMAR ACTUALIZACIÓN</Button>
+                            <DialogClose asChild>
+                              <Button 
+                                className="w-full h-12 bg-secondary text-black font-black italic text-lg mt-6 rounded-lg uppercase neon-glow-secondary"
+                                onClick={() => handleUpdateProduct(item.name)}
+                              >
+                                CONFIRMAR CAMBIOS
+                              </Button>
+                            </DialogClose>
                           </DialogContent>
                         </Dialog>
                         <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-gray-500 hover:text-destructive"><Trash2 className="h-4 w-4" /></Button>
@@ -483,7 +534,43 @@ function AdminContent() {
                     <div className="flex justify-between items-end">
                       <span className="text-primary font-black italic text-sm">{formatCurrency(product.price)}</span>
                       <div className="flex gap-1">
-                        <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg text-gray-600 hover:text-white"><Edit3 className="h-3 w-3" /></Button>
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg text-gray-600 hover:text-white"><Edit3 className="h-3 w-3" /></Button>
+                          </DialogTrigger>
+                          <DialogContent className="bg-card border-white/10 text-white rounded-[1.5rem] p-8 max-md">
+                            <DialogHeader>
+                              <DialogTitle className="text-xl font-black italic text-primary uppercase">EDITAR CATÁLOGO: {product.name}</DialogTitle>
+                            </DialogHeader>
+                            <div className="space-y-4 mt-6">
+                              <div className="aspect-video rounded-xl bg-white/5 border border-dashed border-white/10 flex flex-col items-center justify-center relative overflow-hidden group">
+                                <img src={`https://picsum.photos/seed/${product.id}/400/200`} className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-60 transition-opacity" />
+                                <Upload className="h-6 w-6 text-primary relative z-10" />
+                                <p className="text-[10px] font-black uppercase text-gray-300 relative z-10 mt-2">CAMBIAR IMAGEN</p>
+                                <Input type="file" className="absolute inset-0 opacity-0 cursor-pointer z-20" />
+                              </div>
+                              <div className="space-y-1">
+                                <Label className="text-[9px] font-black uppercase text-gray-500">Nombre Público</Label>
+                                <Input className="bg-white/5 border-white/10 h-11 text-sm" defaultValue={product.name} />
+                              </div>
+                              <div className="space-y-1">
+                                <Label className="text-[9px] font-black uppercase text-gray-500">Precio Venta (COP)</Label>
+                                <div className="relative">
+                                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-primary font-bold text-sm">$</span>
+                                  <Input type="number" className="bg-white/5 border-white/10 h-11 pl-7 text-sm" defaultValue={product.price} />
+                                </div>
+                              </div>
+                            </div>
+                            <DialogClose asChild>
+                              <Button 
+                                className="w-full h-12 bg-primary text-white font-black italic text-lg mt-6 rounded-lg uppercase neon-glow-primary"
+                                onClick={() => handleUpdateProduct(product.name)}
+                              >
+                                GUARDAR EN CATÁLOGO
+                              </Button>
+                            </DialogClose>
+                          </DialogContent>
+                        </Dialog>
                         <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg text-gray-600 hover:text-destructive"><Trash2 className="h-3 w-3" /></Button>
                       </div>
                     </div>
@@ -660,7 +747,9 @@ function AdminContent() {
                     <Input className="bg-white/5 border-white/10 h-11 text-sm" placeholder="Documento de identidad" />
                   </div>
                 </div>
-                <Button className="w-full h-12 bg-primary font-black italic text-lg mt-6 rounded-lg uppercase neon-glow-primary">REGISTRAR MIEMBRO</Button>
+                <DialogClose asChild>
+                  <Button className="w-full h-12 bg-primary font-black italic text-lg mt-6 rounded-lg uppercase neon-glow-primary">REGISTRAR MIEMBRO</Button>
+                </DialogClose>
               </DialogContent>
             </Dialog>
           </div>
