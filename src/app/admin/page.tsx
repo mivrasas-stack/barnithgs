@@ -281,8 +281,37 @@ function AdminContent() {
                                  {item.stock} UNID.
                                </Badge>
                             </TableCell>
-                            <TableCell className="p-6 text-right">
+                            <TableCell className="p-6 text-right space-x-2">
                                <Button size="sm" variant="ghost" className="hover:bg-primary/10 text-primary font-black rounded-xl">REABASTECER</Button>
+                               <Dialog>
+                                  <DialogTrigger asChild>
+                                     <Button size="sm" variant="outline" className="border-white/10 hover:bg-white/10 text-white font-black rounded-xl uppercase tracking-tighter">EDITAR</Button>
+                                  </DialogTrigger>
+                                  <DialogContent className="bg-card/95 border-white/10 text-white glass-morphism">
+                                     <DialogHeader>
+                                        <DialogTitle className="text-2xl font-black italic">EDITAR EXISTENCIAS: {item.name}</DialogTitle>
+                                     </DialogHeader>
+                                     <div className="space-y-6 pt-6">
+                                        <div className="space-y-2">
+                                           <Label className="uppercase text-[10px] font-black text-gray-500">Nombre del Producto</Label>
+                                           <Input defaultValue={item.name} className="bg-white/5 border-white/10 h-14 font-bold" />
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                           <div className="space-y-2">
+                                              <Label className="uppercase text-[10px] font-black text-gray-500">Precio (COP)</Label>
+                                              <Input type="number" defaultValue={item.price} className="bg-white/5 border-white/10 h-14 font-black text-secondary" />
+                                           </div>
+                                           <div className="space-y-2">
+                                              <Label className="uppercase text-[10px] font-black text-gray-500">Stock Actual</Label>
+                                              <Input type="number" defaultValue={item.stock} className="bg-white/5 border-white/10 h-14 font-black" />
+                                           </div>
+                                        </div>
+                                        <Button className="w-full h-16 bg-primary font-black italic text-lg rounded-2xl neon-glow-primary" onClick={() => toast({ title: "Cambios guardados." })}>
+                                           CONFIRMAR ACTUALIZACIÓN
+                                        </Button>
+                                     </div>
+                                  </DialogContent>
+                               </Dialog>
                             </TableCell>
                           </TableRow>
                         ))}
