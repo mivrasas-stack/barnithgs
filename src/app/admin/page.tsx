@@ -227,6 +227,46 @@ function AdminContent() {
               </DialogContent>
             </Dialog>
           )}
+
+          {activeTab === 'staff' && (
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button className="bg-primary hover:bg-primary/90 h-10 px-6 rounded-xl font-black italic text-sm tracking-tight neon-glow-primary">
+                  <UserPlus className="mr-2 h-4 w-4" /> VINCULAR STAFF
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="bg-card border-white/10 text-white rounded-[1.5rem] p-8 max-w-md">
+                <DialogHeader>
+                  <DialogTitle className="text-2xl font-black italic text-primary uppercase">ALTA DE PERSONAL</DialogTitle>
+                  <DialogDescription className="text-gray-500 font-bold text-[10px] uppercase">Registro de nuevo miembro en la flota PartyFlow</DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 mt-6">
+                  <div className="space-y-1.5">
+                    <Label className="text-[9px] font-black uppercase text-gray-500">Nombre Completo</Label>
+                    <Input className="bg-white/5 border-white/10 h-11 text-sm" placeholder="Ej: Ricardo Jaramillo" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-[9px] font-black uppercase text-gray-500">Rol Operativo</Label>
+                    <Select>
+                      <SelectTrigger className="bg-white/5 border-white/10 h-11 text-sm">
+                        <SelectValue placeholder="Seleccionar rol..." />
+                      </SelectTrigger>
+                      <SelectContent className="bg-card border-white/10 text-white">
+                        <SelectItem value="admin">Administrador</SelectItem>
+                        <SelectItem value="driver">Driver (Repartidor)</SelectItem>
+                        <SelectItem value="warehouse">Bodeguero / Almacén</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-[9px] font-black uppercase text-gray-500">Cédula de Ciudadanía</Label>
+                    <Input className="bg-white/5 border-white/10 h-11 text-sm" placeholder="Documento de identidad" />
+                  </div>
+                </div>
+                <Button className="w-full h-12 bg-primary font-black italic text-lg mt-6 rounded-lg uppercase neon-glow-primary">REGISTRAR MIEMBRO</Button>
+              </DialogContent>
+            </Dialog>
+          )}
         </div>
 
         {/* DASHBOARD VIEW */}
@@ -356,7 +396,7 @@ function AdminContent() {
                           <DialogTrigger asChild>
                             <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-gray-500 hover:text-white"><Edit3 className="h-4 w-4" /></Button>
                           </DialogTrigger>
-                          <DialogContent className="bg-card border-white/10 text-white rounded-[1.5rem] p-8 max-w-md">
+                          <DialogContent className="bg-card border-white/10 text-white rounded-[1.5rem] p-8 max-md">
                             <DialogHeader>
                               <DialogTitle className="text-xl font-black italic text-secondary uppercase">EDITAR EXISTENCIAS: {item.name}</DialogTitle>
                             </DialogHeader>
@@ -518,12 +558,47 @@ function AdminContent() {
                 </div>
               </div>
             ))}
-            <div className="bg-white/[0.01] border border-dashed border-white/10 rounded-[2rem] flex flex-col items-center justify-center p-8 space-y-4 hover:bg-white/[0.03] transition-all cursor-pointer group">
-               <div className="h-12 w-12 bg-primary/10 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <UserPlus className="h-6 w-6 text-primary" />
-               </div>
-               <p className="font-black italic text-sm tracking-tight text-gray-500">NUEVO MIEMBRO</p>
-            </div>
+            
+            <Dialog>
+              <DialogTrigger asChild>
+                <div className="bg-white/[0.01] border border-dashed border-white/10 rounded-[2rem] flex flex-col items-center justify-center p-8 space-y-4 hover:bg-white/[0.03] transition-all cursor-pointer group">
+                  <div className="h-12 w-12 bg-primary/10 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <UserPlus className="h-6 w-6 text-primary" />
+                  </div>
+                  <p className="font-black italic text-sm tracking-tight text-gray-500">NUEVO MIEMBRO</p>
+                </div>
+              </DialogTrigger>
+              <DialogContent className="bg-card border-white/10 text-white rounded-[1.5rem] p-8 max-w-md">
+                <DialogHeader>
+                  <DialogTitle className="text-2xl font-black italic text-primary uppercase">ALTA DE PERSONAL</DialogTitle>
+                  <DialogDescription className="text-gray-500 font-bold text-[10px] uppercase">Registro de nuevo miembro en la flota PartyFlow</DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 mt-6">
+                  <div className="space-y-1.5">
+                    <Label className="text-[9px] font-black uppercase text-gray-500">Nombre Completo</Label>
+                    <Input className="bg-white/5 border-white/10 h-11 text-sm" placeholder="Ej: Ricardo Jaramillo" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-[9px] font-black uppercase text-gray-500">Rol Operativo</Label>
+                    <Select>
+                      <SelectTrigger className="bg-white/5 border-white/10 h-11 text-sm">
+                        <SelectValue placeholder="Seleccionar rol..." />
+                      </SelectTrigger>
+                      <SelectContent className="bg-card border-white/10 text-white">
+                        <SelectItem value="admin">Administrador</SelectItem>
+                        <SelectItem value="driver">Driver (Repartidor)</SelectItem>
+                        <SelectItem value="warehouse">Bodeguero / Almacén</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-[9px] font-black uppercase text-gray-500">Cédula de Ciudadanía</Label>
+                    <Input className="bg-white/5 border-white/10 h-11 text-sm" placeholder="Documento de identidad" />
+                  </div>
+                </div>
+                <Button className="w-full h-12 bg-primary font-black italic text-lg mt-6 rounded-lg uppercase neon-glow-primary">REGISTRAR MIEMBRO</Button>
+              </DialogContent>
+            </Dialog>
           </div>
         )}
 
