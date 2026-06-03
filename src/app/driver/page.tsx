@@ -61,17 +61,17 @@ export default function DriverPage() {
   return (
     <div className="min-h-screen bg-black text-white">
       <StaffNavigation />
-      <main className="md:pl-20 transition-all duration-300 container mx-auto px-4 py-12 space-y-12 animate-in fade-in duration-700">
-        <div className="flex items-center justify-between p-8 bg-card/40 rounded-[2.5rem] border border-white/10 glass-morphism shadow-[0_0_30px_rgba(0,0,0,0.5)]">
-          <div className="flex items-center gap-6">
-             <div className={`h-16 w-16 rounded-2xl flex items-center justify-center transition-all duration-500 ${isOnline ? 'bg-secondary/20 text-secondary neon-glow-secondary' : 'bg-white/5 text-gray-500'}`}>
-                <Radio className={`h-8 w-8 ${isOnline ? 'animate-pulse' : ''}`} />
+      <main className="md:pl-16 transition-all duration-300 container mx-auto px-6 py-8 space-y-8 animate-in fade-in duration-700 max-w-[1200px]">
+        <div className="flex items-center justify-between p-6 bg-card/40 rounded-[1.5rem] border border-white/10 glass-morphism">
+          <div className="flex items-center gap-4">
+             <div className={`h-12 w-12 rounded-xl flex items-center justify-center transition-all duration-500 ${isOnline ? 'bg-secondary/20 text-secondary neon-glow-secondary' : 'bg-white/5 text-gray-500'}`}>
+                <Radio className={`h-6 w-6 ${isOnline ? 'animate-pulse' : ''}`} />
              </div>
              <div>
-               <h2 className="text-3xl font-black font-headline italic tracking-tighter">
-                 ESTADO: {isOnline ? <span className="text-secondary neon-text-secondary">EN LÍNEA</span> : 'DESCONECTADO'}
+               <h2 className="text-xl font-black font-headline italic tracking-tighter">
+                 ESTADO: {isOnline ? <span className="text-secondary neon-text-secondary">EN LÍNEA</span> : 'OFFLINE'}
                </h2>
-               <p className="text-gray-400 font-medium">{isOnline ? 'Buscando rumbas que necesitan trago...' : 'Pulsa el interruptor para empezar a facturar'}</p>
+               <p className="text-gray-400 font-medium text-xs">{isOnline ? 'Buscando rumbas...' : 'Pulsa para empezar'}</p>
              </div>
           </div>
           <Switch 
@@ -82,76 +82,76 @@ export default function DriverPage() {
         </div>
 
         {!activeOrder ? (
-          <div className="flex flex-col items-center justify-center py-32 gap-8 text-center">
+          <div className="flex flex-col items-center justify-center py-20 gap-6 text-center">
              <div className="relative">
                 <div className={`absolute inset-0 rounded-full animate-ping bg-secondary/20 ${isOnline ? 'block' : 'hidden'}`} />
-                <div className={`relative h-32 w-32 rounded-full bg-card/40 border-2 flex items-center justify-center transition-all ${isOnline ? 'border-secondary/40' : 'border-white/10'}`}>
-                   <Bell className={`h-12 w-12 ${isOnline ? 'text-secondary animate-bounce' : 'text-gray-600'}`} />
+                <div className={`relative h-20 w-20 rounded-full bg-card/40 border-2 flex items-center justify-center transition-all ${isOnline ? 'border-secondary/40' : 'border-white/10'}`}>
+                   <Bell className={`h-8 w-8 ${isOnline ? 'text-secondary animate-bounce' : 'text-gray-600'}`} />
                 </div>
              </div>
-             <div className="space-y-4">
-                <h3 className="text-4xl font-black italic tracking-tighter">SIN PEDIDOS ACTIVOS</h3>
-                <p className="text-xl text-gray-400 font-medium max-w-md mx-auto">Mantén el volumen alto. La noche apenas está comenzando.</p>
+             <div className="space-y-2">
+                <h3 className="text-2xl font-black italic tracking-tighter">SIN PEDIDOS ACTIVOS</h3>
+                <p className="text-sm text-gray-400 font-medium max-w-xs mx-auto">Mantén el volumen alto. La noche apenas comienza.</p>
              </div>
              {isOnline && (
-               <Button variant="outline" size="lg" className="border-secondary text-secondary hover:bg-secondary/10 font-black tracking-widest px-10 rounded-full h-14" onClick={simulateNewOrder}>
-                 SIMULAR PEDIDO ENTRANTE
+               <Button variant="outline" size="sm" className="border-secondary text-secondary hover:bg-secondary/10 font-black tracking-widest px-6 rounded-full h-10" onClick={simulateNewOrder}>
+                 SIMULAR PEDIDO
                </Button>
              )}
           </div>
         ) : (
-          <Card className="border-primary bg-card/60 neon-glow-primary animate-in zoom-in-95 duration-500 rounded-[3rem] overflow-hidden">
-             <CardHeader className="bg-primary/20 border-b border-primary/20 p-8">
+          <Card className="border-primary bg-card/60 neon-glow-primary animate-in zoom-in-95 duration-500 rounded-[2rem] overflow-hidden">
+             <CardHeader className="bg-primary/20 border-b border-primary/20 p-6">
                 <div className="flex justify-between items-center">
-                   <CardTitle className="text-3xl font-black italic text-primary neon-text-primary tracking-tighter flex items-center gap-3">
-                      <Zap className="h-8 w-8 fill-primary" /> ENTREGA EN CURSO
+                   <CardTitle className="text-xl font-black italic text-primary neon-text-primary tracking-tighter flex items-center gap-2">
+                      <Zap className="h-6 w-6 fill-primary" /> ENTREGA EN CURSO
                    </CardTitle>
-                   <Badge className="bg-primary font-black px-6 py-2 text-sm animate-pulse rounded-full">URGENTE</Badge>
+                   <Badge className="bg-primary font-black px-4 py-1 text-[10px] animate-pulse rounded-full">URGENTE</Badge>
                 </div>
              </CardHeader>
-             <CardContent className="p-10 space-y-10">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-                   <div className="space-y-10">
-                      <div className="space-y-8">
-                         <div className="flex items-start gap-5 group">
-                            <div className="h-12 w-12 rounded-2xl bg-secondary/10 flex items-center justify-center text-secondary shrink-0 group-hover:neon-glow-secondary transition-all">
-                               <MapPin className="h-6 w-6" />
+             <CardContent className="p-8 space-y-8">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                   <div className="space-y-6">
+                      <div className="space-y-4">
+                         <div className="flex items-start gap-4">
+                            <div className="h-10 w-10 rounded-xl bg-secondary/10 flex items-center justify-center text-secondary shrink-0">
+                               <MapPin className="h-5 w-5" />
                             </div>
                             <div>
-                               <p className="text-xs text-gray-400 uppercase font-black tracking-widest mb-1">Punto de Recogida</p>
-                               <p className="text-xl font-bold">{activeOrder.pickup}</p>
+                               <p className="text-[8px] text-gray-400 uppercase font-black tracking-widest mb-0.5">Recogida</p>
+                               <p className="text-base font-bold">{activeOrder.pickup}</p>
                             </div>
                          </div>
-                         <div className="flex items-start gap-5 group">
-                            <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shrink-0 group-hover:neon-glow-primary transition-all">
-                               <NavIcon className="h-6 w-6" />
+                         <div className="flex items-start gap-4">
+                            <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                               <NavIcon className="h-5 w-5" />
                             </div>
                             <div>
-                               <p className="text-xs text-gray-400 uppercase font-black tracking-widest mb-1">Destino de la Fiesta</p>
-                               <p className="text-xl font-bold">{activeOrder.delivery}</p>
+                               <p className="text-[8px] text-gray-400 uppercase font-black tracking-widest mb-0.5">Destino</p>
+                               <p className="text-base font-bold">{activeOrder.delivery}</p>
                             </div>
                          </div>
                       </div>
-                      <div className="p-8 rounded-[2rem] bg-white/5 border border-white/5 space-y-4">
-                         <p className="text-xs text-gray-400 uppercase font-black tracking-widest">Lo que llevas en la maleta</p>
-                         <p className="text-lg font-medium text-gray-200">{activeOrder.items}</p>
+                      <div className="p-4 rounded-xl bg-white/5 border border-white/5 space-y-2">
+                         <p className="text-[8px] text-gray-400 uppercase font-black tracking-widest">Contenido</p>
+                         <p className="text-sm font-medium text-gray-200">{activeOrder.items}</p>
                       </div>
-                      <div className="flex justify-between items-center p-6 bg-primary/5 rounded-2xl border border-primary/10">
-                         <span className="font-black italic text-primary uppercase tracking-widest">Valor a Cobrar:</span>
-                         <span className="text-3xl font-black text-white">{formatCurrency(activeOrder.total)}</span>
+                      <div className="flex justify-between items-center p-4 bg-primary/5 rounded-xl border border-primary/10">
+                         <span className="font-black italic text-primary uppercase tracking-widest text-xs">Valor:</span>
+                         <span className="text-xl font-black text-white">{formatCurrency(activeOrder.total)}</span>
                       </div>
                    </div>
-                   <div className="h-[400px] rounded-[2.5rem] overflow-hidden border-4 border-white/5 relative group">
-                      <img src="https://picsum.photos/seed/route-dark/800/600" className="w-full h-full object-cover grayscale brightness-50 contrast-125 transition-transform duration-700 group-hover:scale-110" />
+                   <div className="h-[250px] rounded-[1.5rem] overflow-hidden border-2 border-white/5 relative">
+                      <img src="https://picsum.photos/seed/route-dark/800/600" className="w-full h-full object-cover grayscale brightness-50 contrast-125" />
                    </div>
                 </div>
 
-                <div className="flex flex-col md:flex-row gap-6 pt-8 border-t border-white/5">
-                   <Button onClick={() => completeStep('Pedido Recogido')} variant="outline" className="flex-1 h-16 text-xl font-black border-secondary text-secondary hover:bg-secondary/10 rounded-2xl tracking-tighter italic">
-                      MARCAR COMO RECOGIDO
+                <div className="flex flex-col md:flex-row gap-4 pt-4 border-t border-white/5">
+                   <Button onClick={() => completeStep('Pedido Recogido')} variant="outline" className="flex-1 h-12 text-sm font-black border-secondary text-secondary hover:bg-secondary/10 rounded-xl tracking-tighter italic">
+                      RECOGIDO
                    </Button>
-                   <Button onClick={() => completeStep('Entrega Confirmada')} className="flex-1 h-16 text-xl font-black bg-primary neon-glow-primary rounded-2xl tracking-tighter italic">
-                      <CheckCircle2 className="mr-3 h-6 w-6" /> CONFIRMAR ENTREGA
+                   <Button onClick={() => completeStep('Entrega Confirmada')} className="flex-1 h-12 text-sm font-black bg-primary neon-glow-primary rounded-xl tracking-tighter italic">
+                      <CheckCircle2 className="mr-2 h-4 w-4" /> CONFIRMAR
                    </Button>
                 </div>
              </CardContent>

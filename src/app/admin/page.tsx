@@ -115,20 +115,19 @@ function AdminContent() {
     <div className="min-h-screen bg-black text-white selection:bg-primary">
       <StaffNavigation />
       
-      <main className="md:pl-20 transition-all duration-300 container mx-auto px-6 py-12 max-w-[1600px] space-y-16">
+      <main className="md:pl-16 transition-all duration-300 container mx-auto px-6 py-8 max-w-[1400px] space-y-10">
         
-        {/* SECTION HEADER - MINIMALIST & BOLD */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 pb-8 border-b border-white/5">
+        {/* SECTION HEADER - COMPACT */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 pb-4 border-b border-white/5">
           <div className="space-y-1">
-            <h1 className="text-6xl font-black italic tracking-tighter uppercase leading-none">
+            <h1 className="text-4xl font-black italic tracking-tighter uppercase leading-none">
               {activeTab === 'dashboard' && <><span className="text-primary neon-text-primary">COMMAND</span> CENTER</>}
               {activeTab === 'inventory' && <><span className="text-secondary neon-text-secondary">STOCK</span> CONTROL</>}
               {activeTab === 'deliveries' && <><span className="text-secondary neon-text-secondary">LIVE</span> LOGISTICS</>}
               {activeTab === 'staff' && <><span className="text-primary neon-text-primary">STAFF</span> ROSTER</>}
-              {activeTab === 'catalog' && <><span className="text-accent neon-text-accent">STORE</span> DESIGN</>}
               {activeTab === 'history' && <><span className="text-gray-400">AUDIT</span> LOG</>}
             </h1>
-            <p className="text-gray-500 font-bold uppercase text-[10px] tracking-[0.4em] pl-1">
+            <p className="text-gray-500 font-bold uppercase text-[9px] tracking-[0.3em] pl-1">
               PartyFlow OS v4.0 • Bogota, CO
             </p>
           </div>
@@ -136,23 +135,23 @@ function AdminContent() {
           {activeTab === 'inventory' && (
             <Dialog>
               <DialogTrigger asChild>
-                <Button className="bg-primary hover:bg-primary/90 h-16 px-10 rounded-2xl font-black italic text-lg tracking-tight neon-glow-primary">
-                  <Plus className="mr-2 h-6 w-6" /> NUEVA ENTRADA
+                <Button className="bg-primary hover:bg-primary/90 h-12 px-8 rounded-xl font-black italic text-base tracking-tight neon-glow-primary">
+                  <Plus className="mr-2 h-5 w-5" /> NUEVA ENTRADA
                 </Button>
               </DialogTrigger>
-              <DialogContent className="bg-card border-white/10 text-white rounded-[2rem] p-10 max-w-2xl">
+              <DialogContent className="bg-card border-white/10 text-white rounded-[1.5rem] p-8 max-w-xl">
                 <DialogHeader>
-                  <DialogTitle className="text-3xl font-black italic text-primary uppercase">REGISTRO DE MERCANCÍA</DialogTitle>
+                  <DialogTitle className="text-2xl font-black italic text-primary uppercase">REGISTRO DE MERCANCÍA</DialogTitle>
                 </DialogHeader>
-                <div className="grid grid-cols-2 gap-6 mt-6">
-                  <div className="col-span-2 space-y-2">
-                    <Label className="text-[10px] font-black uppercase text-gray-500">Nombre del Producto</Label>
-                    <Input className="bg-white/5 border-white/10 h-14 placeholder:text-gray-600" placeholder="Ej: Johnnie Walker Red Label" />
+                <div className="grid grid-cols-2 gap-4 mt-6">
+                  <div className="col-span-2 space-y-1.5">
+                    <Label className="text-[9px] font-black uppercase text-gray-500">Nombre del Producto</Label>
+                    <Input className="bg-white/5 border-white/10 h-11 placeholder:text-gray-600 text-sm" placeholder="Ej: Johnnie Walker Red Label" />
                   </div>
-                  <div className="col-span-2 space-y-2">
-                    <Label className="text-[10px] font-black uppercase text-gray-500">Categoría Contable</Label>
+                  <div className="col-span-2 space-y-1.5">
+                    <Label className="text-[9px] font-black uppercase text-gray-500">Categoría Contable</Label>
                     <Select>
-                      <SelectTrigger className="bg-white/5 border-white/10 h-14">
+                      <SelectTrigger className="bg-white/5 border-white/10 h-11 text-sm">
                         <SelectValue placeholder="Seleccionar categoría..." />
                       </SelectTrigger>
                       <SelectContent className="bg-card border-white/10 text-white">
@@ -164,24 +163,24 @@ function AdminContent() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="space-y-2">
-                    <Label className="text-[10px] font-black uppercase text-gray-500">Costo Adquisición (COP)</Label>
-                    <Input type="number" className="bg-white/5 border-white/10 h-14" placeholder="0" />
+                  <div className="space-y-1.5">
+                    <Label className="text-[9px] font-black uppercase text-gray-500">Costo (COP)</Label>
+                    <Input type="number" className="bg-white/5 border-white/10 h-11 text-sm" placeholder="0" />
                   </div>
-                  <div className="space-y-2">
-                    <Label className="text-[10px] font-black uppercase text-gray-500">Precio Venta (COP)</Label>
-                    <Input type="number" className="bg-white/5 border-white/10 h-14" placeholder="0" />
+                  <div className="space-y-1.5">
+                    <Label className="text-[9px] font-black uppercase text-gray-500">Precio Venta (COP)</Label>
+                    <Input type="number" className="bg-white/5 border-white/10 h-11 text-sm" placeholder="0" />
                   </div>
-                  <div className="space-y-2">
-                    <Label className="text-[10px] font-black uppercase text-gray-500">Stock Inicial</Label>
-                    <Input type="number" className="bg-white/5 border-white/10 h-14" placeholder="0" />
+                  <div className="space-y-1.5">
+                    <Label className="text-[9px] font-black uppercase text-gray-500">Stock Inicial</Label>
+                    <Input type="number" className="bg-white/5 border-white/10 h-11 text-sm" placeholder="0" />
                   </div>
-                  <div className="space-y-2">
-                    <Label className="text-[10px] font-black uppercase text-gray-500">Stock Mínimo</Label>
-                    <Input type="number" className="bg-white/5 border-white/10 h-14" placeholder="5" />
+                  <div className="space-y-1.5">
+                    <Label className="text-[9px] font-black uppercase text-gray-500">Stock Mínimo</Label>
+                    <Input type="number" className="bg-white/5 border-white/10 h-11 text-sm" placeholder="5" />
                   </div>
                 </div>
-                <Button className="w-full h-16 bg-primary font-black italic text-xl mt-8 rounded-xl uppercase neon-glow-primary">Vincular a Bodega</Button>
+                <Button className="w-full h-12 bg-primary font-black italic text-lg mt-6 rounded-lg uppercase neon-glow-primary">Vincular a Bodega</Button>
               </DialogContent>
             </Dialog>
           )}
@@ -189,45 +188,45 @@ function AdminContent() {
 
         {/* DASHBOARD VIEW */}
         {activeTab === 'dashboard' && (
-          <div className="space-y-16 animate-in fade-in duration-700">
-            {/* KPI STRIP */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="space-y-10 animate-in fade-in duration-700">
+            {/* KPI STRIP - COMPACT */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {[
                 { label: 'Ingresos Hoy', value: formatCurrency(12450000), trend: '+14%', icon: DollarSign, color: 'text-primary' },
                 { label: 'Capital Stock', value: formatCurrency(totalCapital), trend: 'Auditado', icon: Box, color: 'text-secondary' },
                 { label: 'Pedidos Turno', value: '142', trend: 'Pico: 00:00', icon: Zap, color: 'text-accent' },
                 { label: 'Tiempo Entrega', value: '18 min', trend: '-2 min', icon: Clock, color: 'text-green-400' },
               ].map((kpi, i) => (
-                <div key={i} className="bg-white/[0.02] border border-white/5 p-8 rounded-[2rem] space-y-4 hover:border-white/10 transition-all">
+                <div key={i} className="bg-white/[0.02] border border-white/5 p-5 rounded-[1.5rem] space-y-3 hover:border-white/10 transition-all">
                   <div className="flex justify-between items-start">
-                    <div className={`h-12 w-12 rounded-xl bg-white/5 flex items-center justify-center ${kpi.color}`}>
-                      <kpi.icon className="h-6 w-6" />
+                    <div className={`h-10 w-10 rounded-lg bg-white/5 flex items-center justify-center ${kpi.color}`}>
+                      <kpi.icon className="h-5 w-5" />
                     </div>
-                    <span className="text-[10px] font-black text-gray-600 uppercase tracking-widest">{kpi.trend}</span>
+                    <span className="text-[9px] font-black text-gray-600 uppercase tracking-widest">{kpi.trend}</span>
                   </div>
                   <div>
-                    <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">{kpi.label}</p>
-                    <h4 className="text-4xl font-black italic tracking-tighter">{kpi.value}</h4>
+                    <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest">{kpi.label}</p>
+                    <h4 className="text-2xl font-black italic tracking-tighter">{kpi.value}</h4>
                   </div>
                 </div>
               ))}
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* MAIN CHART */}
-              <div className="lg:col-span-2 bg-white/[0.02] border border-white/5 p-10 rounded-[3rem]">
-                <div className="flex justify-between items-center mb-10">
-                  <h3 className="text-2xl font-black italic uppercase tracking-tight">Flujo de Caja por Hora</h3>
-                  <Badge className="bg-primary/20 text-primary border-none font-black italic px-4">EN VIVO</Badge>
+              <div className="lg:col-span-2 bg-white/[0.02] border border-white/5 p-6 rounded-[2rem]">
+                <div className="flex justify-between items-center mb-6">
+                  <h3 className="text-lg font-black italic uppercase tracking-tight">Flujo de Caja</h3>
+                  <Badge className="bg-primary/20 text-primary border-none font-black italic px-3 text-[10px]">LIVE</Badge>
                 </div>
-                <div className="h-[400px]">
+                <div className="h-[300px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={MOCK_STATS}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
-                      <XAxis dataKey="name" stroke="#ffffff20" fontSize={12} fontWeight="bold" />
+                      <XAxis dataKey="name" stroke="#ffffff20" fontSize={10} fontWeight="bold" />
                       <YAxis hide />
-                      <ChartTooltip contentStyle={{ backgroundColor: '#000', border: '1px solid #ffffff10', borderRadius: '1rem' }} />
-                      <Bar dataKey="revenue" radius={[10, 10, 0, 0]}>
+                      <ChartTooltip contentStyle={{ backgroundColor: '#000', border: '1px solid #ffffff10', borderRadius: '0.5rem', fontSize: '10px' }} />
+                      <Bar dataKey="revenue" radius={[6, 6, 0, 0]}>
                         {MOCK_STATS.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={index === 3 ? '#FF007A' : '#00FFFF'} fillOpacity={0.6} />
                         ))}
@@ -238,23 +237,21 @@ function AdminContent() {
               </div>
 
               {/* SIDE MONITOR */}
-              <div className="space-y-6">
-                <div className="bg-white/[0.02] border border-white/5 p-8 rounded-[2.5rem] h-full">
-                  <h3 className="text-xl font-black italic uppercase mb-6 flex items-center gap-2">
-                    <AlertTriangle className="text-accent h-5 w-5" /> Alertas Críticas
-                  </h3>
-                  <div className="space-y-4">
-                    {[
-                      { msg: 'Stock bajo: Johnnie Walker', type: 'warning' },
-                      { msg: 'Alta demanda en Zona Norte', type: 'info' },
-                      { msg: '3 pedidos con > 25min retraso', type: 'error' },
-                    ].map((alert, i) => (
-                      <div key={i} className="p-4 rounded-xl bg-white/5 border-l-4 border-accent flex justify-between items-center">
-                        <span className="text-sm font-bold">{alert.msg}</span>
-                        <ChevronRight className="h-4 w-4 text-gray-600" />
-                      </div>
-                    ))}
-                  </div>
+              <div className="bg-white/[0.02] border border-white/5 p-6 rounded-[2rem]">
+                <h3 className="text-base font-black italic uppercase mb-4 flex items-center gap-2">
+                  <AlertTriangle className="text-accent h-4 w-4" /> Alertas
+                </h3>
+                <div className="space-y-3">
+                  {[
+                    { msg: 'Stock bajo: Johnnie Walker', type: 'warning' },
+                    { msg: 'Alta demanda en Zona Norte', type: 'info' },
+                    { msg: '3 pedidos con retraso', type: 'error' },
+                  ].map((alert, i) => (
+                    <div key={i} className="p-3 rounded-xl bg-white/5 border-l-4 border-accent flex justify-between items-center text-xs">
+                      <span className="font-bold">{alert.msg}</span>
+                      <ChevronRight className="h-4 w-4 text-gray-600" />
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
@@ -263,78 +260,78 @@ function AdminContent() {
 
         {/* INVENTORY VIEW */}
         {activeTab === 'inventory' && (
-          <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
+          <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
             <div className="flex flex-col md:flex-row gap-4">
               <div className="relative flex-1">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600 h-5 w-5" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-600 h-4 w-4" />
                 <Input 
                   placeholder="Filtrar por SKU o Nombre..." 
-                  className="bg-white/5 border-white/10 h-16 pl-12 rounded-2xl font-bold text-lg focus:border-secondary"
+                  className="bg-white/5 border-white/10 h-12 pl-10 rounded-xl font-bold text-sm focus:border-secondary"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
             </div>
 
-            <div className="bg-white/[0.02] border border-white/5 rounded-[2.5rem] overflow-hidden">
+            <div className="bg-white/[0.02] border border-white/5 rounded-[1.5rem] overflow-hidden">
               <Table>
                 <TableHeader className="bg-white/5">
                   <TableRow className="border-white/5 hover:bg-transparent">
-                    <TableHead className="text-gray-600 font-black uppercase p-8 tracking-widest text-[10px]">PRODUCTO</TableHead>
-                    <TableHead className="text-gray-600 font-black uppercase p-8 tracking-widest text-[10px]">PRECIO VENTA</TableHead>
-                    <TableHead className="text-gray-600 font-black uppercase p-8 tracking-widest text-[10px]">STOCK</TableHead>
-                    <TableHead className="text-gray-600 font-black uppercase p-8 tracking-widest text-[10px]">ESTADO</TableHead>
-                    <TableHead className="text-right p-8">ACCIONES</TableHead>
+                    <TableHead className="text-gray-600 font-black uppercase p-4 tracking-widest text-[8px]">PRODUCTO</TableHead>
+                    <TableHead className="text-gray-600 font-black uppercase p-4 tracking-widest text-[8px]">PRECIO VENTA</TableHead>
+                    <TableHead className="text-gray-600 font-black uppercase p-4 tracking-widest text-[8px]">STOCK</TableHead>
+                    <TableHead className="text-gray-600 font-black uppercase p-4 tracking-widest text-[8px]">ESTADO</TableHead>
+                    <TableHead className="text-right p-4">ACCIONES</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {inventory.map((item) => (
                     <TableRow key={item.id} className="border-white/5 hover:bg-white/5 transition-colors">
-                      <TableCell className="p-8">
-                        <div className="space-y-1">
-                          <p className="font-black text-2xl italic tracking-tighter">{item.name}</p>
-                          <Badge className="bg-white/5 text-gray-500 text-[8px] border-none font-black uppercase">{item.category}</Badge>
+                      <TableCell className="p-4">
+                        <div className="space-y-0.5">
+                          <p className="font-black text-lg italic tracking-tighter">{item.name}</p>
+                          <Badge className="bg-white/5 text-gray-500 text-[7px] border-none font-black uppercase px-1.5 py-0">{item.category}</Badge>
                         </div>
                       </TableCell>
-                      <TableCell className="p-8 font-black text-secondary text-2xl italic">{formatCurrency(item.price)}</TableCell>
-                      <TableCell className="p-8">
+                      <TableCell className="p-4 font-black text-secondary text-lg italic">{formatCurrency(item.price)}</TableCell>
+                      <TableCell className="p-4">
                         <div className="flex flex-col">
-                          <span className={`text-4xl font-black italic ${item.stock <= item.minStock ? 'text-accent' : 'text-white'}`}>{item.stock}</span>
-                          <span className="text-[8px] font-black text-gray-600 uppercase">Unidades</span>
+                          <span className={`text-2xl font-black italic ${item.stock <= item.minStock ? 'text-accent' : 'text-white'}`}>{item.stock}</span>
+                          <span className="text-[7px] font-black text-gray-600 uppercase">Unidades</span>
                         </div>
                       </TableCell>
-                      <TableCell className="p-8">
-                        <Badge className={`${item.stock <= item.minStock ? 'bg-accent/10 text-accent' : 'bg-green-500/10 text-green-400'} font-black px-4 border-none`}>
+                      <TableCell className="p-4">
+                        <Badge className={`${item.stock <= item.minStock ? 'bg-accent/10 text-accent' : 'bg-green-500/10 text-green-400'} font-black px-2 py-0 border-none text-[9px]`}>
                           {item.stock <= item.minStock ? 'REABASTECER' : 'ÓPTIMO'}
                         </Badge>
                       </TableCell>
-                      <TableCell className="p-8 text-right space-x-2">
+                      <TableCell className="p-4 text-right space-x-1">
                         <Dialog>
                           <DialogTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-12 w-12 rounded-xl text-gray-500 hover:text-white"><Edit3 className="h-5 w-5" /></Button>
+                            <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg text-gray-500 hover:text-white"><Edit3 className="h-4 w-4" /></Button>
                           </DialogTrigger>
-                          <DialogContent className="bg-card border-white/10 text-white rounded-[2rem] p-10 max-w-lg">
+                          <DialogContent className="bg-card border-white/10 text-white rounded-[1.5rem] p-8 max-w-md">
                             <DialogHeader>
-                              <DialogTitle className="text-2xl font-black italic text-secondary uppercase">EDITAR EXISTENCIAS: {item.name}</DialogTitle>
+                              <DialogTitle className="text-xl font-black italic text-secondary uppercase">EDITAR STOCK: {item.name}</DialogTitle>
                             </DialogHeader>
-                            <div className="space-y-6 mt-6">
-                              <div className="space-y-2">
-                                <Label className="text-[10px] font-black uppercase text-gray-500">Nombre del Producto</Label>
-                                <Input className="bg-white/5 border-white/10 h-14" defaultValue={item.name} />
+                            <div className="space-y-4 mt-6">
+                              <div className="space-y-1">
+                                <Label className="text-[9px] font-black uppercase text-gray-500">Nombre</Label>
+                                <Input className="bg-white/5 border-white/10 h-11 text-sm" defaultValue={item.name} />
                               </div>
-                              <div className="space-y-2">
-                                <Label className="text-[10px] font-black uppercase text-gray-500">Precio (COP)</Label>
-                                <Input type="number" className="bg-white/5 border-white/10 h-14" defaultValue={item.price} />
+                              <div className="space-y-1">
+                                <Label className="text-[9px] font-black uppercase text-gray-500">Precio (COP)</Label>
+                                <Input type="number" className="bg-white/5 border-white/10 h-11 text-sm" defaultValue={item.price} />
                               </div>
-                              <div className="space-y-2">
-                                <Label className="text-[10px] font-black uppercase text-gray-500">Stock Actual</Label>
-                                <Input type="number" className="bg-white/5 border-white/10 h-14" defaultValue={item.stock} />
+                              <div className="space-y-1">
+                                <Label className="text-[9px] font-black uppercase text-gray-500">Stock Actual</Label>
+                                <Input type="number" className="bg-white/5 border-white/10 h-11 text-sm" defaultValue={item.stock} />
                               </div>
                             </div>
-                            <Button className="w-full h-16 bg-secondary text-black font-black italic text-xl mt-8 rounded-xl uppercase neon-glow-secondary">CONFIRMAR ACTUALIZACIÓN</Button>
+                            <Button className="w-full h-12 bg-secondary text-black font-black italic text-lg mt-6 rounded-lg uppercase neon-glow-secondary">ACTUALIZAR</Button>
                           </DialogContent>
                         </Dialog>
-                        <Button variant="ghost" size="icon" className="h-12 w-12 rounded-xl text-gray-500 hover:text-destructive"><Trash2 className="h-5 w-5" /></Button>
+                        <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg text-gray-500 hover:text-destructive"><Trash2 className="h-4 w-4" /></Button>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -346,32 +343,32 @@ function AdminContent() {
 
         {/* DELIVERIES VIEW */}
         {activeTab === 'deliveries' && (
-          <div className="space-y-10 animate-in fade-in duration-700">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-               <div className="md:col-span-2 bg-white/[0.02] border border-white/5 rounded-[3rem] overflow-hidden h-[600px] relative group">
+          <div className="space-y-8 animate-in fade-in duration-700">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+               <div className="md:col-span-2 bg-white/[0.02] border border-white/5 rounded-[2rem] overflow-hidden h-[450px] relative group">
                   <img src="https://picsum.photos/seed/map-bogota/1200/800" className="w-full h-full object-cover grayscale brightness-[0.3] contrast-150 transition-all group-hover:brightness-50" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent" />
-                  <div className="absolute bottom-10 left-10 space-y-2">
-                    <Badge className="bg-secondary text-black font-black animate-pulse px-6 py-2">8 REPARTIDORES EN RUTA</Badge>
-                    <p className="text-sm font-bold text-gray-400">Mapa Satelital en Tiempo Real</p>
+                  <div className="absolute bottom-6 left-6 space-y-1">
+                    <Badge className="bg-secondary text-black font-black animate-pulse px-4 py-1 text-[10px]">8 REPARTIDORES EN RUTA</Badge>
+                    <p className="text-[10px] font-bold text-gray-400">Mapa Satelital en Tiempo Real</p>
                   </div>
                </div>
-               <div className="space-y-6">
+               <div className="space-y-4">
                   {MOCK_DELIVERIES.map((order) => (
-                    <div key={order.id} className="bg-white/[0.02] border border-white/5 p-6 rounded-[2rem] space-y-4 hover:border-secondary/30 transition-all cursor-pointer">
+                    <div key={order.id} className="bg-white/[0.02] border border-white/5 p-4 rounded-[1.5rem] space-y-3 hover:border-secondary/30 transition-all cursor-pointer">
                       <div className="flex justify-between items-start">
-                        <p className="font-black text-secondary italic text-lg">{order.id}</p>
-                        <Badge className="bg-secondary/10 text-secondary border-none text-[8px] font-black">{order.status}</Badge>
+                        <p className="font-black text-secondary italic text-base">{order.id}</p>
+                        <Badge className="bg-secondary/10 text-secondary border-none text-[7px] font-black uppercase">{order.status}</Badge>
                       </div>
-                      <div className="space-y-1">
-                        <p className="text-sm font-bold text-gray-300">{order.customer}</p>
-                        <p className="text-xs text-gray-500 flex items-center gap-1"><MapPin className="h-3 w-3" /> {order.address}</p>
+                      <div className="space-y-0.5">
+                        <p className="text-xs font-bold text-gray-300">{order.customer}</p>
+                        <p className="text-[10px] text-gray-500 flex items-center gap-1"><MapPin className="h-2.5 w-2.5" /> {order.address}</p>
                       </div>
                       <div className="flex justify-between items-center pt-2 border-t border-white/5">
-                        <span className="text-xs font-black text-gray-600">{order.driver}</span>
+                        <span className="text-[9px] font-black text-gray-600">{order.driver}</span>
                         <div className="text-right">
-                          <p className="text-[10px] font-black text-gray-500 uppercase">Total</p>
-                          <span className="text-sm font-black italic text-primary">{formatCurrency(order.total)}</span>
+                          <p className="text-[8px] font-black text-gray-500 uppercase">Total</p>
+                          <span className="text-xs font-black italic text-primary">{formatCurrency(order.total)}</span>
                         </div>
                       </div>
                     </div>
@@ -383,30 +380,30 @@ function AdminContent() {
 
         {/* STAFF VIEW */}
         {activeTab === 'staff' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 animate-in fade-in duration-700">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in duration-700">
             {MOCK_STAFF.map((member) => (
-              <div key={member.id} className="bg-white/[0.02] border border-white/5 p-10 rounded-[3rem] space-y-8 group hover:border-primary/50 transition-all relative">
+              <div key={member.id} className="bg-white/[0.02] border border-white/5 p-6 rounded-[2rem] space-y-6 group hover:border-primary/50 transition-all relative">
                 <div className="flex justify-between items-start">
-                  <div className="h-16 w-16 bg-white/5 rounded-2xl flex items-center justify-center text-primary group-hover:neon-glow-primary transition-all">
-                    <Users className="h-8 w-8" />
+                  <div className="h-12 w-12 bg-white/5 rounded-xl flex items-center justify-center text-primary group-hover:neon-glow-primary transition-all">
+                    <Users className="h-6 w-6" />
                   </div>
-                  <Badge className={`${member.status === 'Online' ? 'bg-green-500/10 text-green-400' : 'bg-secondary/10 text-secondary'} font-black px-4`}>{member.status}</Badge>
+                  <Badge className={`${member.status === 'Online' ? 'bg-green-500/10 text-green-400' : 'bg-secondary/10 text-secondary'} font-black px-3 py-0 text-[10px]`}>{member.status}</Badge>
                 </div>
                 <div>
-                  <h3 className="text-3xl font-black italic tracking-tighter uppercase">{member.name}</h3>
-                  <p className="text-[10px] font-black text-gray-600 uppercase tracking-widest mt-1">Cédula: {member.cedula}</p>
+                  <h3 className="text-xl font-black italic tracking-tighter uppercase">{member.name}</h3>
+                  <p className="text-[8px] font-black text-gray-600 uppercase tracking-widest mt-0.5">Cédula: {member.cedula}</p>
                 </div>
-                <div className="flex gap-3">
-                  <Button className="flex-1 h-14 bg-white/5 border border-white/10 hover:bg-white/10 font-black italic rounded-xl">PERFIL</Button>
-                  <Button variant="ghost" className="h-14 w-14 rounded-xl text-destructive hover:bg-destructive/10"><Trash2 className="h-5 w-5" /></Button>
+                <div className="flex gap-2">
+                  <Button className="flex-1 h-11 bg-white/5 border border-white/10 hover:bg-white/10 font-black italic rounded-lg text-sm">PERFIL</Button>
+                  <Button variant="ghost" className="h-11 w-11 rounded-lg text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>
                 </div>
               </div>
             ))}
-            <div className="bg-white/[0.01] border border-dashed border-white/10 rounded-[3rem] flex flex-col items-center justify-center p-12 space-y-6 hover:bg-white/[0.03] transition-all cursor-pointer group">
-               <div className="h-20 w-20 bg-primary/10 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <UserPlus className="h-10 w-10 text-primary" />
+            <div className="bg-white/[0.01] border border-dashed border-white/10 rounded-[2rem] flex flex-col items-center justify-center p-8 space-y-4 hover:bg-white/[0.03] transition-all cursor-pointer group">
+               <div className="h-14 w-14 bg-primary/10 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <UserPlus className="h-7 w-7 text-primary" />
                </div>
-               <p className="font-black italic text-xl tracking-tight text-gray-500">REGISTRAR NUEVO MIEMBRO</p>
+               <p className="font-black italic text-base tracking-tight text-gray-500">NUEVO MIEMBRO</p>
             </div>
           </div>
         )}
