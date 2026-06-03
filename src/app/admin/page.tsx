@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, useState, Suspense, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useUserRole } from '@/lib/store';
 import { StaffNavigation } from '@/components/StaffNavigation';
@@ -79,11 +79,11 @@ const CATEGORIAS_CONTABLES = [
 ];
 
 const INITIAL_INVENTORY = [
-  { id: '1', name: 'Johnnie Walker Black 750ml', stock: 12, category: 'whisky', price: 185000, cost: 130000, minStock: 5 },
-  { id: '2', name: 'Aguardiente Antioqueño 750ml', stock: 24, category: 'aguardiente', price: 65000, cost: 42000, minStock: 10 },
-  { id: '3', name: 'Don Julio 70', stock: 5, category: 'tequila', price: 420000, cost: 310000, minStock: 4 },
-  { id: '4', name: 'Heineken 6-Pack', stock: 45, category: 'cerveza', price: 32000, cost: 22000, minStock: 20 },
-  { id: '5', name: 'Hielo (Bolsa 5kg)', stock: 0, category: 'complementos', price: 15000, cost: 5000, minStock: 10 },
+  { id: '1', name: 'Johnnie Walker Black 750ml', stock: 12, category: 'whisky', price: 185000, cost: 130000, minStock: 5, image: 'https://picsum.photos/seed/1/400/500' },
+  { id: '2', name: 'Aguardiente Antioqueño 750ml', stock: 24, category: 'aguardiente', price: 65000, cost: 42000, minStock: 10, image: 'https://picsum.photos/seed/2/400/500' },
+  { id: '3', name: 'Don Julio 70', stock: 5, category: 'tequila', price: 420000, cost: 310000, minStock: 4, image: 'https://picsum.photos/seed/3/400/500' },
+  { id: '4', name: 'Heineken 6-Pack', stock: 45, category: 'cerveza', price: 32000, cost: 22000, minStock: 20, image: 'https://picsum.photos/seed/4/400/500' },
+  { id: '5', name: 'Hielo (Bolsa 5kg)', stock: 0, category: 'complementos', price: 15000, cost: 5000, minStock: 10, image: 'https://picsum.photos/seed/5/400/500' },
 ];
 
 const MOCK_STAFF = [
@@ -131,12 +131,92 @@ const MOCK_DELIVERIES = [
   },
 ];
 
+// Sub-componente para manejar la edición individual con estado de imagen local
+function EditCatalogDialog({ product, onUpdate }: { product: any, onUpdate: (id: string, updates: any) => void }) {
+  const [previewImage, setPreviewImage] = useState(product.image);
+  const [formData, setFormData] = useState({ ...product });
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const result = reader.result as string;
+        setPreviewImage(result);
+        setFormData(prev => ({ ...prev, image: result }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSave = () => {
+    onUpdate(product.id, formData);
+    toast({
+      title: "Catálogo Actualizado",
+      description: `${product.name} se ha guardado con éxito.`,
+    });
+  };
+
+  return (
+    <DialogContent className="bg-card border-white/10 text-white rounded-[1.5rem] p-8 max-w-md">
+      <DialogHeader>
+        <DialogTitle className="text-xl font-black italic text-primary uppercase">EDITAR CATÁLOGO: {product.name}</DialogTitle>
+      </DialogHeader>
+      <div className="space-y-4 mt-6">
+        <div className="aspect-video rounded-xl bg-white/5 border border-dashed border-white/10 flex flex-col items-center justify-center relative overflow-hidden group">
+          <img 
+            src={previewImage} 
+            className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-60 transition-opacity" 
+            alt="Preview"
+          />
+          <Upload className="h-6 w-6 text-primary relative z-10" />
+          <p className="text-[10px] font-black uppercase text-gray-300 relative z-10 mt-2">CAMBIAR IMAGEN</p>
+          <Input 
+            type="file" 
+            accept="image/*"
+            className="absolute inset-0 opacity-0 cursor-pointer z-20" 
+            onChange={handleFileChange}
+          />
+        </div>
+        <div className="space-y-1">
+          <Label className="text-[9px] font-black uppercase text-gray-500">Nombre Público</Label>
+          <Input 
+            className="bg-white/5 border-white/10 h-11 text-sm" 
+            value={formData.name} 
+            onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+          />
+        </div>
+        <div className="space-y-1">
+          <Label className="text-[9px] font-black uppercase text-gray-500">Precio Venta (COP)</Label>
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-primary font-bold text-sm">$</span>
+            <Input 
+              type="number" 
+              className="bg-white/5 border-white/10 h-11 pl-7 text-sm" 
+              value={formData.price} 
+              onChange={(e) => setFormData(prev => ({ ...prev, price: Number(e.target.value) }))}
+            />
+          </div>
+        </div>
+      </div>
+      <DialogClose asChild>
+        <Button 
+          className="w-full h-12 bg-primary text-white font-black italic text-lg mt-6 rounded-lg uppercase neon-glow-primary"
+          onClick={handleSave}
+        >
+          GUARDAR EN CATÁLOGO
+        </Button>
+      </DialogClose>
+    </DialogContent>
+  );
+}
+
 function AdminContent() {
   const { isLoggedIn, role, isInitialized } = useUserRole();
   const router = useRouter();
   const searchParams = useSearchParams();
   const activeTab = searchParams.get('tab') || 'dashboard';
-  const [inventory] = useState(INITIAL_INVENTORY);
+  const [inventory, setInventory] = useState(INITIAL_INVENTORY);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedOrder, setSelectedOrder] = useState<typeof MOCK_DELIVERIES[0] | null>(null);
 
@@ -151,12 +231,14 @@ function AdminContent() {
 
   const totalCapital = inventory.reduce((acc, item) => acc + (item.cost * item.stock), 0);
 
-  const handleUpdateProduct = (name: string) => {
-    toast({
-      title: "Actualización Exitosa",
-      description: `El producto ${name} ha sido actualizado correctamente.`,
-    });
+  const handleUpdateProduct = (id: string, updates: any) => {
+    setInventory(prev => prev.map(item => item.id === id ? { ...item, ...updates } : item));
   };
+
+  const filteredInventory = inventory.filter(item => 
+    item.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    item.category.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div className="min-h-screen bg-black text-white selection:bg-primary">
@@ -413,7 +495,7 @@ function AdminContent() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {inventory.map((item) => (
+                  {filteredInventory.map((item) => (
                     <TableRow key={item.id} className="border-white/5 hover:bg-white/5 transition-colors">
                       <TableCell className="p-4">
                         <div className="space-y-0.5">
@@ -445,11 +527,15 @@ function AdminContent() {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
                               <div className="space-y-1">
                                 <Label className="text-[9px] font-black uppercase text-gray-500">Nombre del Producto</Label>
-                                <Input className="bg-white/5 border-white/10 h-11 text-sm" defaultValue={item.name} />
+                                <Input 
+                                  className="bg-white/5 border-white/10 h-11 text-sm" 
+                                  defaultValue={item.name} 
+                                  onChange={(e) => handleUpdateProduct(item.id, { name: e.target.value })}
+                                />
                               </div>
                               <div className="space-y-1">
                                 <Label className="text-[9px] font-black uppercase text-gray-500">Categoría</Label>
-                                <Select defaultValue={item.category}>
+                                <Select defaultValue={item.category} onValueChange={(val) => handleUpdateProduct(item.id, { category: val })}>
                                   <SelectTrigger className="bg-white/5 border-white/10 h-11 text-sm">
                                     <SelectValue />
                                   </SelectTrigger>
@@ -464,29 +550,48 @@ function AdminContent() {
                                 <Label className="text-[9px] font-black uppercase text-gray-500">Precio Venta (COP)</Label>
                                 <div className="relative">
                                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary font-bold text-sm">$</span>
-                                  <Input type="number" className="bg-white/5 border-white/10 h-11 pl-7 text-sm" defaultValue={item.price} />
+                                  <Input 
+                                    type="number" 
+                                    className="bg-white/5 border-white/10 h-11 pl-7 text-sm" 
+                                    defaultValue={item.price} 
+                                    onChange={(e) => handleUpdateProduct(item.id, { price: Number(e.target.value) })}
+                                  />
                                 </div>
                               </div>
                               <div className="space-y-1">
                                 <Label className="text-[9px] font-black uppercase text-gray-500">Costo Unitario (COP)</Label>
                                 <div className="relative">
                                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-sm">$</span>
-                                  <Input type="number" className="bg-white/5 border-white/10 h-11 pl-7 text-sm" defaultValue={item.cost} />
+                                  <Input 
+                                    type="number" 
+                                    className="bg-white/5 border-white/10 h-11 pl-7 text-sm" 
+                                    defaultValue={item.cost} 
+                                    onChange={(e) => handleUpdateProduct(item.id, { cost: Number(e.target.value) })}
+                                  />
                                 </div>
                               </div>
                               <div className="space-y-1">
                                 <Label className="text-[9px] font-black uppercase text-gray-500">Stock Actual</Label>
-                                <Input type="number" className="bg-white/5 border-white/10 h-11 text-sm" defaultValue={item.stock} />
+                                <Input 
+                                  type="number" 
+                                  className="bg-white/5 border-white/10 h-11 text-sm" 
+                                  defaultValue={item.stock} 
+                                  onChange={(e) => handleUpdateProduct(item.id, { stock: Number(e.target.value) })}
+                                />
                               </div>
                               <div className="space-y-1">
                                 <Label className="text-[9px] font-black uppercase text-gray-500">Stock Mínimo</Label>
-                                <Input type="number" className="bg-white/5 border-white/10 h-11 text-sm" defaultValue={item.minStock} />
+                                <Input 
+                                  type="number" 
+                                  className="bg-white/5 border-white/10 h-11 text-sm" 
+                                  defaultValue={item.minStock} 
+                                  onChange={(e) => handleUpdateProduct(item.id, { minStock: Number(e.target.value) })}
+                                />
                               </div>
                             </div>
                             <DialogClose asChild>
                               <Button 
                                 className="w-full h-12 bg-secondary text-black font-black italic text-lg mt-6 rounded-lg uppercase neon-glow-secondary"
-                                onClick={() => handleUpdateProduct(item.name)}
                               >
                                 CONFIRMAR CAMBIOS
                               </Button>
@@ -519,11 +624,11 @@ function AdminContent() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {inventory.map((product) => (
+              {filteredInventory.map((product) => (
                 <Card key={product.id} className="bg-white/[0.02] border border-white/5 overflow-hidden rounded-[1.5rem] group hover:border-primary/50 transition-all">
                   <div className="h-32 bg-white/5 relative">
                     <img 
-                      src={`https://picsum.photos/seed/${product.id}/400/200`} 
+                      src={product.image} 
                       className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all"
                       alt={product.name}
                     />
@@ -538,38 +643,7 @@ function AdminContent() {
                           <DialogTrigger asChild>
                             <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg text-gray-600 hover:text-white"><Edit3 className="h-3 w-3" /></Button>
                           </DialogTrigger>
-                          <DialogContent className="bg-card border-white/10 text-white rounded-[1.5rem] p-8 max-md">
-                            <DialogHeader>
-                              <DialogTitle className="text-xl font-black italic text-primary uppercase">EDITAR CATÁLOGO: {product.name}</DialogTitle>
-                            </DialogHeader>
-                            <div className="space-y-4 mt-6">
-                              <div className="aspect-video rounded-xl bg-white/5 border border-dashed border-white/10 flex flex-col items-center justify-center relative overflow-hidden group">
-                                <img src={`https://picsum.photos/seed/${product.id}/400/200`} className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-60 transition-opacity" />
-                                <Upload className="h-6 w-6 text-primary relative z-10" />
-                                <p className="text-[10px] font-black uppercase text-gray-300 relative z-10 mt-2">CAMBIAR IMAGEN</p>
-                                <Input type="file" className="absolute inset-0 opacity-0 cursor-pointer z-20" />
-                              </div>
-                              <div className="space-y-1">
-                                <Label className="text-[9px] font-black uppercase text-gray-500">Nombre Público</Label>
-                                <Input className="bg-white/5 border-white/10 h-11 text-sm" defaultValue={product.name} />
-                              </div>
-                              <div className="space-y-1">
-                                <Label className="text-[9px] font-black uppercase text-gray-500">Precio Venta (COP)</Label>
-                                <div className="relative">
-                                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-primary font-bold text-sm">$</span>
-                                  <Input type="number" className="bg-white/5 border-white/10 h-11 pl-7 text-sm" defaultValue={product.price} />
-                                </div>
-                              </div>
-                            </div>
-                            <DialogClose asChild>
-                              <Button 
-                                className="w-full h-12 bg-primary text-white font-black italic text-lg mt-6 rounded-lg uppercase neon-glow-primary"
-                                onClick={() => handleUpdateProduct(product.name)}
-                              >
-                                GUARDAR EN CATÁLOGO
-                              </Button>
-                            </DialogClose>
-                          </DialogContent>
+                          <EditCatalogDialog product={product} onUpdate={handleUpdateProduct} />
                         </Dialog>
                         <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg text-gray-600 hover:text-destructive"><Trash2 className="h-3 w-3" /></Button>
                       </div>
