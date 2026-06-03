@@ -173,64 +173,10 @@ function AdminContent() {
             <p className="text-gray-400 font-bold uppercase text-[10px] tracking-widest pl-1">Auditoría Financiera y Logística PartyFlow</p>
           </div>
           
-          <div className="flex flex-wrap gap-4">
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button className="bg-primary hover:bg-primary/90 neon-glow-primary font-black italic px-8 h-14 rounded-2xl text-lg tracking-tight">
-                  <Plus className="mr-2 h-6 w-6 fill-white" /> NUEVA ENTRADA BODEGA
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="bg-card/95 border-white/10 glass-morphism text-white max-w-2xl rounded-[2.5rem] p-10">
-                <DialogHeader>
-                  <DialogTitle className="text-3xl font-black italic text-primary uppercase tracking-tighter">REGISTRO DE MERCANCÍA</DialogTitle>
-                  <CardDescription className="text-gray-400 uppercase font-black text-[10px] tracking-widest">Afecta el capital invertido y stock disponible</CardDescription>
-                </DialogHeader>
-                <form className="space-y-6 pt-6" onSubmit={handleSaveProduct}>
-                  <div className="grid grid-cols-2 gap-6">
-                    <div className="space-y-2 col-span-2">
-                      <Label className="text-gray-500 font-black uppercase text-[10px] tracking-widest">Nombre Completo del Producto (SKU)</Label>
-                      <Input placeholder="Ej. Ron Viejo de Caldas 8 Años 750ml" className="bg-white/5 border-white/10 h-14 font-bold rounded-xl" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-gray-500 font-black uppercase text-[10px] tracking-widest">Categoría Contable</Label>
-                      <Select>
-                        <SelectTrigger className="bg-white/5 border-white/10 h-14 rounded-xl font-bold">
-                          <SelectValue placeholder="Seleccionar..." />
-                        </SelectTrigger>
-                        <SelectContent className="bg-black border-white/10 text-white">
-                          {CATEGORIAS_CONTABLES.map(cat => (
-                            <SelectItem key={cat.id} value={cat.id} className="font-bold">
-                              {cat.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-gray-500 font-black uppercase text-[10px] tracking-widest">Stock Inicial (Unidades)</Label>
-                      <Input type="number" placeholder="0" className="bg-white/5 border-white/10 h-14 font-black text-white rounded-xl" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-gray-500 font-black uppercase text-[10px] tracking-widest">Costo Unitario de Adquisición</Label>
-                      <div className="relative">
-                        <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500" />
-                        <Input type="number" placeholder="0" className="bg-white/5 border-white/10 h-14 pl-12 font-black text-secondary rounded-xl" />
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-gray-500 font-black uppercase text-[10px] tracking-widest">Precio de Venta Sugerido</Label>
-                      <div className="relative">
-                        <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500" />
-                        <Input type="number" placeholder="0" className="bg-white/5 border-white/10 h-14 pl-12 font-black text-primary rounded-xl" />
-                      </div>
-                    </div>
-                  </div>
-                  <Button type="submit" className="w-full h-16 bg-primary font-black italic text-xl neon-glow-primary rounded-2xl mt-4 uppercase tracking-widest">
-                    VINCULAR PRODUCTO A BODEGA
-                  </Button>
-                </form>
-              </DialogContent>
-            </Dialog>
+          <div className="hidden lg:block">
+            <Badge variant="outline" className="border-primary/20 text-primary/60 font-black italic px-4 py-2">
+               ESTADO DE RED: SEGURO
+            </Badge>
           </div>
         </div>
 
@@ -332,7 +278,66 @@ function AdminContent() {
             <Card className="bg-card/40 border-white/10 glass-morphism overflow-hidden rounded-[3rem] animate-in slide-in-from-bottom-4 duration-500 shadow-2xl">
                 <CardHeader className="p-10 border-b border-white/5 flex flex-col xl:flex-row items-center justify-between gap-8">
                    <div className="space-y-2">
-                      <CardTitle className="text-4xl font-black italic tracking-tighter uppercase leading-none">AUDITORÍA DE EXISTENCIAS</CardTitle>
+                      <div className="flex items-center gap-4">
+                         <CardTitle className="text-4xl font-black italic tracking-tighter uppercase leading-none">AUDITORÍA DE EXISTENCIAS</CardTitle>
+                         <Dialog>
+                            <DialogTrigger asChild>
+                              <Button size="sm" className="bg-primary hover:bg-primary/90 neon-glow-primary font-black italic px-6 h-10 rounded-xl text-xs tracking-tight">
+                                <Plus className="mr-1 h-4 w-4 fill-white" /> NUEVA ENTRADA
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="bg-card/95 border-white/10 glass-morphism text-white max-w-2xl rounded-[2.5rem] p-10">
+                              <DialogHeader>
+                                <DialogTitle className="text-3xl font-black italic text-primary uppercase tracking-tighter">REGISTRO DE MERCANCÍA</DialogTitle>
+                                <CardDescription className="text-gray-400 uppercase font-black text-[10px] tracking-widest">Afecta el capital invertido y stock disponible</CardDescription>
+                              </DialogHeader>
+                              <form className="space-y-6 pt-6" onSubmit={handleSaveProduct}>
+                                <div className="grid grid-cols-2 gap-6">
+                                  <div className="space-y-2 col-span-2">
+                                    <Label className="text-gray-500 font-black uppercase text-[10px] tracking-widest">Nombre Completo del Producto (SKU)</Label>
+                                    <Input placeholder="Ej. Ron Viejo de Caldas 8 Años 750ml" className="bg-white/5 border-white/10 h-14 font-bold rounded-xl" />
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label className="text-gray-500 font-black uppercase text-[10px] tracking-widest">Categoría Contable</Label>
+                                    <Select>
+                                      <SelectTrigger className="bg-white/5 border-white/10 h-14 rounded-xl font-bold">
+                                        <SelectValue placeholder="Seleccionar..." />
+                                      </SelectTrigger>
+                                      <SelectContent className="bg-black border-white/10 text-white">
+                                        {CATEGORIAS_CONTABLES.map(cat => (
+                                          <SelectItem key={cat.id} value={cat.id} className="font-bold">
+                                            {cat.label}
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label className="text-gray-500 font-black uppercase text-[10px] tracking-widest">Stock Inicial (Unidades)</Label>
+                                    <Input type="number" placeholder="0" className="bg-white/5 border-white/10 h-14 font-black text-white rounded-xl" />
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label className="text-gray-500 font-black uppercase text-[10px] tracking-widest">Costo Unitario de Adquisición</Label>
+                                    <div className="relative">
+                                      <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500" />
+                                      <Input type="number" placeholder="0" className="bg-white/5 border-white/10 h-14 pl-12 font-black text-secondary rounded-xl" />
+                                    </div>
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label className="text-gray-500 font-black uppercase text-[10px] tracking-widest">Precio de Venta Sugerido</Label>
+                                    <div className="relative">
+                                      <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500" />
+                                      <Input type="number" placeholder="0" className="bg-white/5 border-white/10 h-14 pl-12 font-black text-primary rounded-xl" />
+                                    </div>
+                                  </div>
+                                </div>
+                                <Button type="submit" className="w-full h-16 bg-primary font-black italic text-xl neon-glow-primary rounded-2xl mt-4 uppercase tracking-widest">
+                                  VINCULAR PRODUCTO A BODEGA
+                                </Button>
+                              </form>
+                            </DialogContent>
+                         </Dialog>
+                      </div>
                       <CardDescription className="text-gray-500 font-bold uppercase text-[10px] tracking-[0.3em]">Gestión de capital en bodega y valoración de stock</CardDescription>
                    </div>
                    <div className="flex flex-wrap gap-4 w-full xl:w-auto">
