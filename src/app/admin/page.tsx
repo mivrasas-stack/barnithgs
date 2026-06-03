@@ -4,9 +4,8 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUserRole } from '@/lib/store';
-import { Navigation } from '@/components/Navigation';
+import { StaffNavigation } from '@/components/StaffNavigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as ChartTooltip, ResponsiveContainer, Cell } from 'recharts';
@@ -40,7 +39,7 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      <Navigation />
+      <StaffNavigation />
       <main className="container mx-auto px-4 py-12 space-y-12 animate-in fade-in duration-700">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
           <div>

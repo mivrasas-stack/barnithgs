@@ -8,34 +8,15 @@ import { Button } from '@/components/ui/button';
 import { 
   ShoppingCart, 
   Menu, 
-  User, 
-  LayoutDashboard, 
-  Truck, 
-  Box, 
   Beer,
-  ChevronDown,
-  Zap,
-  LogOut,
   Lock
 } from 'lucide-react';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
 
 export function Navigation() {
-  const { role, changeRole, isLoggedIn, logout } = useUserRole();
   const { cart } = useCart();
-  const router = useRouter();
+  const { isLoggedIn } = useUserRole();
   const itemCount = cart.reduce((acc, item) => acc + item.quantity, 0);
-
-  const handleLogout = () => {
-    logout();
-    router.push('/');
-  };
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b border-white/10 glass-morphism">
@@ -58,32 +39,6 @@ export function Navigation() {
         </div>
 
         <div className="flex items-center gap-4">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="hidden md:flex gap-2 font-bold text-gray-300 hover:text-white">
-                <User className="h-4 w-4" />
-                <span className="capitalize">{role === 'client' ? 'Cliente' : role === 'admin' ? 'Admin' : role === 'driver' ? 'Repartidor' : 'Almacén'}</span>
-                <ChevronDown className="h-3 w-3" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56 glass-morphism border-white/20 p-2">
-              <DropdownMenuItem onClick={() => changeRole('client')} className="rounded-lg p-3 cursor-pointer hover:bg-primary/10">
-                <User className="mr-3 h-4 w-4 text-primary" /> <span className="font-bold">Vista Cliente</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => changeRole('admin')} className="rounded-lg p-3 cursor-pointer hover:bg-primary/10">
-                <LayoutDashboard className="mr-3 h-4 w-4 text-primary" /> <span className="font-bold">Panel Admin</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => changeRole('driver')} className="rounded-lg p-3 cursor-pointer hover:bg-primary/10">
-                <Truck className="mr-3 h-4 w-4 text-primary" /> <span className="font-bold">Vista Repartidor</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => changeRole('warehouse')} className="rounded-lg p-3 cursor-pointer hover:bg-primary/10">
-                <Box className="mr-3 h-4 w-4 text-primary" /> <span className="font-bold">Vista Almacén</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          <div className="h-8 w-[1px] bg-white/10 hidden md:block" />
-
           <Link href="/cart">
             <Button variant="ghost" size="icon" className="relative h-12 w-12 hover:bg-white/10 rounded-xl">
               <ShoppingCart className="h-6 w-6 text-white" />
@@ -95,17 +50,16 @@ export function Navigation() {
             </Button>
           </Link>
 
-          {isLoggedIn ? (
-            <Button variant="ghost" size="icon" onClick={handleLogout} className="h-12 w-12 text-destructive hover:bg-destructive/10 rounded-xl">
-              <LogOut className="h-6 w-6" />
+          <div className="h-8 w-[1px] bg-white/10 hidden md:block" />
+
+          <Link href="/login">
+            <Button 
+              variant="outline" 
+              className={`hidden md:flex border-primary/40 text-primary font-black tracking-widest px-6 rounded-full h-12 hover:bg-primary/10 transition-all ${isLoggedIn ? 'neon-glow-primary' : ''}`}
+            >
+              <Lock className="mr-2 h-4 w-4" /> {isLoggedIn ? 'PANEL STAFF' : 'ACCESO STAFF'}
             </Button>
-          ) : (
-            <Link href="/login">
-              <Button variant="outline" className="hidden md:flex border-primary text-primary font-black tracking-widest px-6 rounded-full h-12 hover:bg-primary/10 transition-all">
-                <Lock className="mr-2 h-4 w-4" /> ACCESO STAFF
-              </Button>
-            </Link>
-          )}
+          </Link>
 
           <Button variant="ghost" size="icon" className="md:hidden h-12 w-12 hover:bg-white/10">
             <Menu className="h-6 w-6" />

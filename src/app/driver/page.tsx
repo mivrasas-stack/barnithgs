@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUserRole } from '@/lib/store';
-import { Navigation } from '@/components/Navigation';
+import { StaffNavigation } from '@/components/StaffNavigation';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -51,7 +51,7 @@ export default function DriverPage() {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      <Navigation />
+      <StaffNavigation />
       <main className="container mx-auto px-4 py-12 space-y-12 animate-in fade-in duration-700">
         <div className="flex items-center justify-between p-8 bg-card/40 rounded-[2.5rem] border border-white/10 glass-morphism shadow-[0_0_30px_rgba(0,0,0,0.5)]">
           <div className="flex items-center gap-6">

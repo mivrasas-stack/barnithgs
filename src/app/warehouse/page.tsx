@@ -4,12 +4,12 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUserRole } from '@/lib/store';
-import { Navigation } from '@/components/Navigation';
+import { StaffNavigation } from '@/components/StaffNavigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
-import { Box, Package, ClipboardCheck, History, Clock, Zap } from 'lucide-react';
+import { Box, Package, ClipboardCheck } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
 const INITIAL_PACKING_ORDERS = [
@@ -74,7 +74,7 @@ export default function WarehousePage() {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      <Navigation />
+      <StaffNavigation />
       <main className="container mx-auto px-4 py-12 space-y-12 animate-in fade-in duration-700">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
           <div>
