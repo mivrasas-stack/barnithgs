@@ -21,7 +21,7 @@ import {
   XAxis, 
   YAxis, 
   CartesianGrid, 
-  Tooltip as ChartTooltip, 
+  ChartTooltip, 
   ResponsiveContainer, 
   Cell 
 } from 'recharts';
@@ -41,7 +41,8 @@ import {
   Edit3,
   Trash2,
   ShieldCheck,
-  UserPlus
+  UserPlus,
+  CreditCard
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -62,10 +63,10 @@ const INITIAL_INVENTORY = [
 ];
 
 const MOCK_STAFF = [
-  { id: 'S1', name: 'Carlos Mendoza', role: 'admin', status: 'Online', lastActive: 'Ahora' },
-  { id: 'S2', name: 'Ana Rodríguez', role: 'driver', status: 'En Entrega', lastActive: '5 min' },
-  { id: 'S3', name: 'Juan Pérez', role: 'warehouse', status: 'Online', lastActive: '12 min' },
-  { id: 'S4', name: 'Luis Martínez', role: 'driver', status: 'Offline', lastActive: '2h' },
+  { id: 'S1', name: 'Carlos Mendoza', role: 'admin', status: 'Online', lastActive: 'Ahora', cedula: '1020304050' },
+  { id: 'S2', name: 'Ana Rodríguez', role: 'driver', status: 'En Entrega', lastActive: '5 min', cedula: '1098765432' },
+  { id: 'S3', name: 'Juan Pérez', role: 'warehouse', status: 'Online', lastActive: '12 min', cedula: '1033445566' },
+  { id: 'S4', name: 'Luis Martínez', role: 'driver', status: 'Offline', lastActive: '2h', cedula: '1077889900' },
 ];
 
 export default function AdminPage() {
@@ -100,12 +101,19 @@ export default function AdminPage() {
     setEditingItem(null);
   };
 
+  const handleSaveStaff = (e: React.FormEvent) => {
+    e.preventDefault();
+    toast({
+      title: "STAFF ACTUALIZADO",
+      description: "La información del personal ha sido guardada con éxito.",
+    });
+  };
+
   return (
     <div className="min-h-screen bg-black text-white">
       <StaffNavigation />
       
       <main className="container mx-auto px-4 py-12 space-y-12 animate-in fade-in duration-700">
-        {/* Header Central de Comando */}
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8">
           <div>
             <h1 className="text-5xl font-black font-headline italic tracking-tighter flex items-center gap-4">
@@ -198,7 +206,6 @@ export default function AdminPage() {
           </TabsList>
 
           <TabsContent value="dashboard" className="space-y-12">
-            {/* Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                {[
                  { title: 'Pedidos Activos', value: '24', icon: ShoppingCart, color: 'text-secondary', bg: 'bg-secondary/10' },
@@ -231,10 +238,6 @@ export default function AdminPage() {
                         <CartesianGrid strokeDasharray="3 3" stroke="#2a2e3f" vertical={false} />
                         <XAxis dataKey="name" stroke="#64748b" fontSize={12} fontWeight="bold" />
                         <YAxis stroke="#64748b" fontSize={12} fontWeight="bold" />
-                        <ChartTooltip 
-                          contentStyle={{ backgroundColor: '#000000', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px' }}
-                          itemStyle={{ color: '#FF007A', fontWeight: 'bold' }}
-                        />
                         <Bar dataKey="orders" radius={[6, 6, 0, 0]}>
                           {MOCK_STATS.map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={index === 2 ? '#FF007A' : '#00FFFF'} />
@@ -364,9 +367,48 @@ export default function AdminPage() {
                    </h2>
                    <p className="text-gray-500 font-medium">Administra el equipo que hace posible la rumba.</p>
                 </div>
-                <Button className="bg-secondary text-black font-black italic rounded-xl h-12 px-8">
-                   <UserPlus className="mr-2 h-5 w-5" /> NUEVO STAFF
-                </Button>
+                <Dialog>
+                   <DialogTrigger asChild>
+                      <Button className="bg-secondary text-black font-black italic rounded-xl h-12 px-8">
+                         <UserPlus className="mr-2 h-5 w-5" /> NUEVO STAFF
+                      </Button>
+                   </DialogTrigger>
+                   <DialogContent className="bg-card/95 border-white/10 text-white glass-morphism">
+                      <DialogHeader>
+                         <DialogTitle className="text-2xl font-black italic text-secondary">REGISTRAR NUEVO TALENTO</DialogTitle>
+                      </DialogHeader>
+                      <form className="space-y-6 pt-6" onSubmit={handleSaveStaff}>
+                         <div className="space-y-2">
+                            <Label className="uppercase text-[10px] font-black text-gray-500">Nombre Completo</Label>
+                            <Input placeholder="Ej. Juan Pérez" className="bg-white/5 border-white/10 h-14 font-bold" />
+                         </div>
+                         <div className="space-y-2">
+                            <Label className="uppercase text-[10px] font-black text-gray-500">Número de Cédula</Label>
+                            <div className="relative">
+                               <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-secondary/40" />
+                               <Input placeholder="Ej. 1020304050" className="bg-white/5 border-white/10 h-14 pl-12 font-black tracking-widest" />
+                            </div>
+                            <p className="text-[9px] text-gray-500 font-bold uppercase mt-1">Los últimos 4 dígitos serán su PIN de acceso.</p>
+                         </div>
+                         <div className="space-y-2">
+                            <Label className="uppercase text-[10px] font-black text-gray-500">Rol del Sistema</Label>
+                            <Select>
+                               <SelectTrigger className="bg-white/5 border-white/10 h-14">
+                                  <SelectValue placeholder="Seleccionar Rol..." />
+                               </SelectTrigger>
+                               <SelectContent className="bg-black border-white/10 text-white">
+                                  <SelectItem value="admin">Administrador</SelectItem>
+                                  <SelectItem value="driver">Repartidor (Driver)</SelectItem>
+                                  <SelectItem value="warehouse">Almacén (Warehouse)</SelectItem>
+                               </SelectContent>
+                            </Select>
+                         </div>
+                         <Button type="submit" className="w-full h-16 bg-secondary text-black font-black italic text-lg rounded-2xl neon-glow-secondary mt-4">
+                            FINALIZAR REGISTRO
+                         </Button>
+                      </form>
+                   </DialogContent>
+                </Dialog>
              </div>
 
              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -379,7 +421,10 @@ export default function AdminPage() {
                             </div>
                             <div>
                                <h3 className="text-2xl font-black italic">{member.name}</h3>
-                               <Badge className="bg-white/10 text-gray-400 font-black uppercase text-[10px] mt-1">{member.role}</Badge>
+                               <div className="flex gap-2 items-center mt-1">
+                                 <Badge className="bg-white/10 text-gray-400 font-black uppercase text-[10px]">{member.role}</Badge>
+                                 <span className="text-[10px] text-gray-600 font-bold">CC: {member.cedula}</span>
+                               </div>
                             </div>
                          </div>
                          <div className="text-right">
@@ -408,6 +453,13 @@ export default function AdminPage() {
                                      <Input defaultValue={member.name} className="bg-white/5 border-white/10 h-14 font-bold" />
                                   </div>
                                   <div className="space-y-2">
+                                     <Label className="uppercase text-[10px] font-black text-gray-500">Cédula de Identidad</Label>
+                                     <div className="relative">
+                                        <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-secondary/40" />
+                                        <Input defaultValue={member.cedula} className="bg-white/5 border-white/10 h-14 pl-12 font-black tracking-widest" />
+                                     </div>
+                                  </div>
+                                  <div className="space-y-2">
                                      <Label className="uppercase text-[10px] font-black text-gray-500">Rol del Sistema</Label>
                                      <Select defaultValue={member.role}>
                                         <SelectTrigger className="bg-white/5 border-white/10 h-14">
@@ -424,7 +476,7 @@ export default function AdminPage() {
                                      <Button variant="destructive" className="h-16 font-black rounded-2xl flex items-center gap-2">
                                         <Trash2 className="h-5 w-5" /> BAJA STAFF
                                      </Button>
-                                     <Button className="h-16 bg-secondary text-black font-black italic rounded-2xl neon-glow-secondary">
+                                     <Button className="h-16 bg-secondary text-black font-black italic rounded-2xl neon-glow-secondary" onClick={() => toast({ title: "Cambios guardados." })}>
                                         GUARDAR CAMBIOS
                                      </Button>
                                   </div>

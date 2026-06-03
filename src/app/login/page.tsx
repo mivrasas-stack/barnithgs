@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from 'react';
@@ -6,12 +5,15 @@ import { useRouter } from 'next/navigation';
 import { useUserRole, Role } from '@/lib/store';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { ShieldCheck, Lock, Truck, Box, LayoutDashboard, ChevronRight, Info } from 'lucide-react';
+import { ShieldCheck, Lock, Truck, Box, LayoutDashboard, ChevronRight, Info, CreditCard } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { Navigation } from '@/components/Navigation';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 export default function LoginPage() {
+  const [cedula, setCedula] = useState('');
   const [digits, setDigits] = useState('');
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
   const router = useRouter();
@@ -27,11 +29,20 @@ export default function LoginPage() {
       return;
     }
 
+    if (!cedula) {
+      toast({
+        variant: "destructive",
+        title: "CÉDULA REQUERIDA",
+        description: "Ingresa tu número de identificación completo.",
+      });
+      return;
+    }
+
     if (digits.length !== 4) {
       toast({
         variant: "destructive",
-        title: "CLAVE INCOMPLETA",
-        description: "Debes ingresar 4 dígitos.",
+        title: "PIN INCOMPLETO",
+        description: "Digita los últimos 4 números de tu cédula.",
       });
       return;
     }
@@ -52,7 +63,7 @@ export default function LoginPage() {
       toast({
         variant: "destructive",
         title: "ERROR DE ACCESO",
-        description: "Clave incorrecta para el rol seleccionado.",
+        description: "El PIN no coincide con la cédula o rol seleccionado.",
       });
       setDigits('');
     }
@@ -65,18 +76,18 @@ export default function LoginPage() {
   const clear = () => setDigits('');
 
   const roleConfigs = [
-    { id: 'admin' as Role, name: 'ADMIN', icon: LayoutDashboard, hint: 'Pin: 1111' },
-    { id: 'driver' as Role, name: 'DRIVER', icon: Truck, hint: 'Pin: 2222' },
-    { id: 'warehouse' as Role, name: 'ALMACÉN', icon: Box, hint: 'Pin: 3333' },
+    { id: 'admin' as Role, name: 'ADMIN', icon: LayoutDashboard, hint: 'Cédula: 1111' },
+    { id: 'driver' as Role, name: 'DRIVER', icon: Truck, hint: 'Cédula: 2222' },
+    { id: 'warehouse' as Role, name: 'ALMACÉN', icon: Box, hint: 'Cédula: 3333' },
   ];
 
   return (
     <div className="min-h-screen bg-black text-white selection:bg-primary">
       <Navigation />
       <main className="container mx-auto px-4 py-12 flex flex-col items-center justify-center min-h-[calc(100vh-80px)]">
-        <div className="w-full max-w-4xl grid grid-cols-1 lg:grid-cols-2 gap-12 items-center animate-in fade-in zoom-in duration-700">
+        <div className="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-2 gap-12 items-center animate-in fade-in zoom-in duration-700">
           
-          {/* Lado Izquierdo: Selección de Rol */}
+          {/* Lado Izquierdo: Selección de Rol y Datos */}
           <div className="space-y-10">
             <div className="space-y-4">
               <div className="h-16 w-16 bg-secondary/20 rounded-2xl flex items-center justify-center neon-glow-secondary border border-secondary/40">
@@ -86,49 +97,54 @@ export default function LoginPage() {
                 PORTAL <br /> <span className="text-secondary neon-text-secondary">STAFF VIP</span>
               </h1>
               <p className="text-gray-500 font-medium max-w-sm">
-                Selecciona tu rol y autentícate para ingresar al sistema de control interno.
+                Autenticación biométrica y digital para el personal de PartyFlow.
               </p>
             </div>
 
-            <div className="space-y-4">
-              {roleConfigs.map((role) => (
-                <div key={role.id} className="relative">
-                  <button
-                    onClick={() => setSelectedRole(role.id)}
-                    className={`w-full group p-6 rounded-[2rem] border-2 flex items-center justify-between transition-all duration-300 ${
-                      selectedRole === role.id 
-                      ? 'bg-secondary/10 border-secondary neon-glow-secondary' 
-                      : 'bg-white/5 border-white/5 hover:border-white/20'
-                    }`}
-                  >
-                    <div className="flex items-center gap-5">
-                      <div className={`h-12 w-12 rounded-xl flex items-center justify-center transition-all ${
-                        selectedRole === role.id ? 'bg-secondary text-black' : 'bg-white/10 text-gray-400 group-hover:text-white'
-                      }`}>
-                        <role.icon className="h-6 w-6" />
+            <div className="space-y-6">
+              <div className="space-y-4">
+                <Label className="uppercase text-[10px] font-black tracking-widest text-secondary">1. Selecciona tu Rol</Label>
+                <div className="grid grid-cols-1 gap-3">
+                  {roleConfigs.map((role) => (
+                    <button
+                      key={role.id}
+                      onClick={() => setSelectedRole(role.id)}
+                      className={`group p-4 rounded-2xl border-2 flex items-center justify-between transition-all duration-300 ${
+                        selectedRole === role.id 
+                        ? 'bg-secondary/10 border-secondary neon-glow-secondary' 
+                        : 'bg-white/5 border-white/5 hover:border-white/20'
+                      }`}
+                    >
+                      <div className="flex items-center gap-4">
+                        <role.icon className={`h-5 w-5 ${selectedRole === role.id ? 'text-secondary' : 'text-gray-500'}`} />
+                        <span className={`text-lg font-black italic tracking-widest ${selectedRole === role.id ? 'text-white' : 'text-gray-500'}`}>
+                          {role.name}
+                        </span>
                       </div>
-                      <span className={`text-xl font-black italic tracking-widest transition-all ${
-                        selectedRole === role.id ? 'text-white' : 'text-gray-500'
-                      }`}>
-                        {role.name}
-                      </span>
-                    </div>
-                    {selectedRole === role.id && <ChevronRight className="h-6 w-6 text-secondary" />}
-                  </button>
-                  {/* Hint para pruebas */}
-                  <div className="absolute -top-2 -right-2">
-                    <Badge variant="outline" className="bg-black text-[10px] border-white/10 text-gray-500">
-                      {role.hint}
-                    </Badge>
-                  </div>
+                      {selectedRole === role.id && <ChevronRight className="h-5 w-5 text-secondary" />}
+                    </button>
+                  ))}
                 </div>
-              ))}
+              </div>
+
+              <div className="space-y-4">
+                <Label className="uppercase text-[10px] font-black tracking-widest text-secondary">2. Identificación</Label>
+                <div className="relative group">
+                  <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500 group-focus-within:text-secondary transition-colors" />
+                  <Input 
+                    placeholder="Ingresa tu Cédula" 
+                    value={cedula}
+                    onChange={(e) => setCedula(e.target.value)}
+                    className="h-14 pl-12 bg-white/5 border-white/10 rounded-2xl focus:border-secondary/50 font-black tracking-[0.2em] text-lg"
+                  />
+                </div>
+              </div>
             </div>
 
             <div className="p-6 bg-white/5 rounded-2xl border border-white/10 flex items-start gap-4">
               <Info className="h-5 w-5 text-secondary mt-1" />
               <p className="text-sm text-gray-400">
-                <span className="text-secondary font-bold">Nota de prueba:</span> Utiliza las claves indicadas arriba de cada rol para acceder.
+                <span className="text-secondary font-bold">Ayuda:</span> Para este prototipo, usa cualquier número y los últimos 4 dígitos como PIN (ej: admin 1111).
               </p>
             </div>
           </div>
@@ -139,7 +155,7 @@ export default function LoginPage() {
             <Card className="bg-card/40 border-white/10 glass-morphism rounded-[3.5rem] overflow-hidden p-10 space-y-10 relative z-10">
               <div className="text-center space-y-2">
                 <Lock className="h-6 w-6 text-gray-600 mx-auto mb-2" />
-                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-500">DIGITA TU CLAVE STAFF</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-500">3. DIGITA TU PIN (ÚLTIMOS 4)</p>
               </div>
 
               <div className="flex justify-center gap-4">
