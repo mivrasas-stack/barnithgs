@@ -41,7 +41,7 @@ export default function WarehousePage() {
   const [orders, setOrders] = useState(INITIAL_PACKING_ORDERS);
 
   useEffect(() => {
-    if (isInitialized && (!isLoggedIn || role !== 'warehouse')) {
+    if (isInitialized && (!isLoggedIn || (role !== 'warehouse' && role !== 'admin'))) {
       router.push('/login');
     }
   }, [isLoggedIn, role, router, isInitialized]);
@@ -54,7 +54,7 @@ export default function WarehousePage() {
     );
   }
 
-  if (!isLoggedIn || role !== 'warehouse') return null;
+  if (!isLoggedIn || (role !== 'warehouse' && role !== 'admin')) return null;
 
   const toggleItem = (orderId: string, itemName: string) => {
     setOrders(prev => prev.map(order => {

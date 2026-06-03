@@ -19,7 +19,7 @@ export default function DriverPage() {
   const [activeOrder, setActiveOrder] = useState<any>(null);
 
   useEffect(() => {
-    if (isInitialized && (!isLoggedIn || role !== 'driver')) {
+    if (isInitialized && (!isLoggedIn || (role !== 'driver' && role !== 'admin'))) {
       router.push('/login');
     }
   }, [isLoggedIn, role, router, isInitialized]);
@@ -32,7 +32,7 @@ export default function DriverPage() {
     );
   }
 
-  if (!isLoggedIn || role !== 'driver') return null;
+  if (!isLoggedIn || (role !== 'driver' && role !== 'admin')) return null;
 
   const simulateNewOrder = () => {
     if (!isOnline) {
