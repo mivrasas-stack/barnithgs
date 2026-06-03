@@ -414,16 +414,16 @@ function AdminContent() {
                                        <form className="space-y-8" onSubmit={handleSaveProduct}>
                                           <div className="grid grid-cols-2 gap-8">
                                              <div className="space-y-4">
-                                                <Label className="uppercase text-[10px] font-black text-gray-500 tracking-widest">Existencia Física Real</Label>
+                                                <Label className="uppercase text-[10px] font-black text-gray-500 tracking-widest pl-1">Existencia Física Real</Label>
                                                 <div className="relative">
                                                   <Box className="absolute left-4 top-1/2 -translate-y-1/2 h-6 w-6 text-gray-600" />
                                                   <Input type="number" defaultValue={item.stock} className="bg-white/5 border-white/10 h-16 pl-14 font-black text-3xl rounded-2xl focus:border-primary" />
                                                 </div>
                                              </div>
                                              <div className="space-y-4">
-                                                <Label className="uppercase text-[10px] font-black text-gray-500 tracking-widest">Motivo Contable</Label>
+                                                <Label className="uppercase text-[10px] font-black text-gray-500 tracking-widest pl-1">Motivo Contable</Label>
                                                 <Select required>
-                                                   <SelectTrigger className="bg-white/5 border-white/10 h-16 rounded-2xl font-bold text-lg">
+                                                   <SelectTrigger className="bg-white/5 border-white/10 h-16 rounded-2xl font-bold text-lg px-6 focus:ring-primary/40 focus:border-primary">
                                                       <SelectValue placeholder="Definir Acción..." />
                                                    </SelectTrigger>
                                                    <SelectContent className="bg-black border-white/10 text-white">
@@ -437,10 +437,10 @@ function AdminContent() {
                                              </div>
                                           </div>
                                           <div className="space-y-4">
-                                            <Label className="uppercase text-[10px] font-black text-gray-500 tracking-widest">Notas de la Operación</Label>
-                                            <Input placeholder="Ej. Se encontró botella rota en estante superior..." className="bg-white/5 border-white/10 h-16 rounded-2xl font-medium" />
+                                            <Label className="uppercase text-[10px] font-black text-gray-500 tracking-widest pl-1">Notas de la Operación</Label>
+                                            <Input placeholder="Ej. Se encontró botella rota en estante superior..." className="bg-white/5 border-white/10 h-16 rounded-2xl font-medium px-6" />
                                           </div>
-                                          <Button type="submit" className="w-full h-20 bg-primary font-black italic text-2xl rounded-[1.5rem] neon-glow-primary uppercase tracking-widest">
+                                          <Button type="submit" className="w-full h-20 bg-primary font-black italic text-2xl rounded-[1.5rem] neon-glow-primary uppercase tracking-widest shadow-[0_10px_40px_rgba(255,0,122,0.3)] hover:scale-[1.02] transition-transform">
                                              CONFIRMAR MOVIMIENTO AUDITABLE
                                           </Button>
                                        </form>
@@ -527,19 +527,19 @@ function AdminContent() {
                       </DialogHeader>
                       <form className="space-y-8" onSubmit={(e) => { e.preventDefault(); toast({ title: "Personal registrado exitosamente." }); }}>
                          <div className="space-y-4">
-                            <Label className="uppercase text-[10px] font-black text-gray-500 tracking-[0.2em]">Nombre Completo del Colaborador</Label>
+                            <Label className="uppercase text-[10px] font-black text-gray-500 tracking-[0.2em] pl-1">Nombre Completo del Colaborador</Label>
                             <Input placeholder="Ej. Carlos Mendoza" className="bg-white/5 border-white/10 h-16 font-bold rounded-2xl text-lg px-6" />
                          </div>
                          <div className="space-y-4">
-                            <Label className="uppercase text-[10px] font-black text-gray-500 tracking-[0.2em]">Número de Cédula (Login ID)</Label>
+                            <Label className="uppercase text-[10px] font-black text-gray-500 tracking-[0.2em] pl-1">Número de Cédula (Login ID)</Label>
                             <div className="relative">
                                <CreditCard className="absolute left-6 top-1/2 -translate-y-1/2 h-6 w-6 text-secondary" />
                                <Input placeholder="Ej. 1020304050" className="bg-white/5 border-white/10 h-16 pl-16 font-black tracking-widest rounded-2xl text-2xl" />
                             </div>
-                            <p className="text-[9px] text-secondary/70 font-bold uppercase tracking-widest">Los últimos 4 dígitos serán su PIN de acceso.</p>
+                            <p className="text-[9px] text-secondary/70 font-bold uppercase tracking-widest pl-1">Los últimos 4 dígitos serán su PIN de acceso.</p>
                          </div>
                          <div className="space-y-4">
-                            <Label className="uppercase text-[10px] font-black text-gray-500 tracking-[0.2em]">Responsabilidad en el Sistema</Label>
+                            <Label className="uppercase text-[10px] font-black text-gray-500 tracking-[0.2em] pl-1">Responsabilidad en el Sistema</Label>
                             <Select>
                                <SelectTrigger className="bg-white/5 border-white/10 h-16 rounded-2xl font-bold text-lg px-6">
                                   <SelectValue placeholder="Definir Privilegios..." />
@@ -551,7 +551,7 @@ function AdminContent() {
                                </SelectContent>
                             </Select>
                          </div>
-                         <Button type="submit" className="w-full h-20 bg-secondary text-black font-black italic text-2xl rounded-[1.8rem] neon-glow-secondary mt-4 tracking-widest">
+                         <Button type="submit" className="w-full h-20 bg-secondary text-black font-black italic text-2xl rounded-[1.8rem] neon-glow-secondary mt-4 tracking-widest hover:scale-[1.02] transition-transform">
                             FINALIZAR VÍNCULO LABORAL
                          </Button>
                       </form>
