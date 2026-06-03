@@ -34,18 +34,18 @@ export function MoodRecommender() {
     }
   };
 
-  const handleAddToCart = (name: string, category: string) => {
-    // Generar precio realista en COP (entre 45k y 450k)
-    const price = Math.floor(Math.random() * 400000) + 45000;
+  const handleAddToCart = (name: string, category: string, price?: number) => {
+    // Generar precio realista en COP (entre 45k y 450k) si no se provee
+    const finalPrice = price || Math.floor(Math.random() * 400000) + 45000;
     const mockProduct: Product = {
       id: Math.random().toString(36).substr(2, 9),
       name,
       category,
-      price,
+      price: finalPrice,
       image: "https://picsum.photos/seed/liquor/400/500"
     };
     addToCart(mockProduct);
-    toast({ title: `¡${name} (${formatCurrency(price)}) añadido al carrito!` });
+    toast({ title: `¡${name} (${formatCurrency(finalPrice)}) añadido al carrito!` });
   };
 
   return (
@@ -59,17 +59,16 @@ export function MoodRecommender() {
         </p>
         <div className="flex flex-wrap justify-center gap-6 pt-4">
           {MOODS.map((m) => (
-            <Button
+            <button
               key={m.id}
-              variant="outline"
-              className={`h-32 w-40 flex flex-col gap-3 rounded-2xl border-white/10 bg-white/5 hover:bg-white/10 transition-all hover:scale-110 active:scale-95 group ${loading ? 'opacity-50 pointer-events-none' : ''}`}
+              className={`h-32 w-40 flex flex-col items-center justify-center gap-3 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 transition-all hover:scale-110 active:scale-95 group ${loading ? 'opacity-50 pointer-events-none' : ''}`}
               onClick={() => getRecs(m.label)}
             >
               <div className={`p-3 rounded-full bg-black/40 transition-all group-hover:bg-black/60 ${m.glow}`}>
                 <m.icon className={`h-8 w-8 ${m.color}`} />
               </div>
-              <span className="text-xs font-black tracking-widest">{m.label}</span>
-            </Button>
+              <span className="text-xs font-black tracking-widest text-white">{m.label}</span>
+            </button>
           ))}
         </div>
       </div>
@@ -86,56 +85,68 @@ export function MoodRecommender() {
 
       {recommendations && !loading && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 animate-in fade-in slide-in-from-bottom-8 duration-700">
-          {recommendations.recommendations.liquors.map((liq, idx) => (
-            <Card key={idx} className="card-neon-border group overflow-hidden rounded-[2.5rem]">
-              <CardHeader className="p-0 h-56 relative overflow-hidden">
-                <img 
-                   src={`https://picsum.photos/seed/liq-${idx}/400/300`} 
-                   alt={liq.name} 
-                   className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
-                <div className="absolute bottom-6 left-6 right-6">
-                  <Badge variant="secondary" className="mb-3 font-black bg-secondary text-black">{liq.category}</Badge>
-                  <CardTitle className="text-2xl text-white font-black tracking-tight">{liq.name}</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent className="p-8 space-y-6">
-                <p className="text-gray-400 font-medium leading-relaxed line-clamp-2">{liq.description}</p>
-                <Button 
-                   className="w-full h-14 rounded-2xl bg-secondary text-black font-black tracking-widest hover:bg-secondary/90 neon-glow-secondary transition-all"
-                   onClick={() => handleAddToCart(liq.name, liq.category)}
-                >
-                  <ShoppingCart className="mr-2 h-5 w-5" /> AL CARRITO
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
-          
-          {recommendations.recommendations.combos.map((combo, idx) => (
-            <Card key={`combo-${idx}`} className="bg-black/40 border-primary/40 overflow-hidden border-2 rounded-[2.5rem] relative group hover:border-primary transition-all">
-               <div className="absolute top-6 right-6 z-10">
-                 <Badge className="bg-primary font-black neon-glow-primary animate-bounce">MEJOR PRECIO</Badge>
-               </div>
-               <CardContent className="p-10 space-y-8">
-                  <h3 className="text-3xl font-black font-headline text-primary neon-text-primary tracking-tighter leading-none">{combo.name}</h3>
-                  <p className="text-gray-300 font-medium">{combo.description}</p>
-                  <ul className="space-y-3">
-                    {combo.items.map((item, i) => (
-                      <li key={i} className="text-sm font-bold flex items-center gap-3 text-gray-400">
-                        <div className="h-2 w-2 rounded-full bg-secondary neon-glow-secondary" /> {item}
-                      </li>
-                    ))}
-                  </ul>
+          {recommendations.recommendations.liquors.map((liq, idx) => {
+            const simulatedPrice = Math.floor(Math.random() * 300000) + 60000;
+            return (
+              <Card key={idx} className="card-neon-border group overflow-hidden rounded-[2.5rem] bg-card/40">
+                <CardHeader className="p-0 h-56 relative overflow-hidden">
+                  <img 
+                     src={`https://picsum.photos/seed/liq-${idx}/400/300`} 
+                     alt={liq.name} 
+                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
+                  <div className="absolute bottom-6 left-6 right-6">
+                    <Badge variant="secondary" className="mb-3 font-black bg-secondary text-black">{liq.category}</Badge>
+                    <CardTitle className="text-2xl text-white font-black tracking-tight">{liq.name}</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-8 space-y-6">
+                  <div className="space-y-2">
+                    <p className="text-gray-400 font-medium leading-relaxed line-clamp-2 text-sm">{liq.description}</p>
+                    <p className="text-xl font-black text-secondary neon-text-secondary">{formatCurrency(simulatedPrice)}</p>
+                  </div>
                   <Button 
-                    className="w-full h-16 rounded-2xl bg-primary text-white font-black tracking-widest neon-glow-primary hover:bg-primary/90 transition-all"
-                    onClick={() => handleAddToCart(combo.name, 'Combo')}
+                     className="w-full h-14 rounded-2xl bg-secondary text-black font-black tracking-widest hover:bg-secondary/90 neon-glow-secondary transition-all"
+                     onClick={() => handleAddToCart(liq.name, liq.category, simulatedPrice)}
                   >
-                    AGREGAR COMBO VIP
+                    <ShoppingCart className="mr-2 h-5 w-5" /> AL CARRITO
                   </Button>
-               </CardContent>
-            </Card>
-          ))}
+                </CardContent>
+              </Card>
+            );
+          })}
+          
+          {recommendations.recommendations.combos.map((combo, idx) => {
+            const simulatedComboPrice = Math.floor(Math.random() * 450000) + 120000;
+            return (
+              <Card key={`combo-${idx}`} className="bg-black/40 border-primary/40 overflow-hidden border-2 rounded-[2.5rem] relative group hover:border-primary transition-all">
+                 <div className="absolute top-6 right-6 z-10">
+                   <Badge className="bg-primary font-black neon-glow-primary animate-bounce">AHOOOORA</Badge>
+                 </div>
+                 <CardContent className="p-10 space-y-8">
+                    <div className="space-y-4">
+                      <h3 className="text-3xl font-black font-headline text-primary neon-text-primary tracking-tighter leading-none">{combo.name}</h3>
+                      <p className="text-gray-300 font-medium text-sm">{combo.description}</p>
+                      <p className="text-2xl font-black text-primary neon-text-primary">{formatCurrency(simulatedComboPrice)}</p>
+                    </div>
+                    <ul className="space-y-3">
+                      {combo.items.map((item, i) => (
+                        <li key={i} className="text-sm font-bold flex items-center gap-3 text-gray-400">
+                          <div className="h-2 w-2 rounded-full bg-secondary neon-glow-secondary" /> {item}
+                        </li>
+                      ))}
+                    </ul>
+                    <Button 
+                      className="w-full h-16 rounded-2xl bg-primary text-white font-black tracking-widest neon-glow-primary hover:bg-primary/90 transition-all"
+                      onClick={() => handleAddToCart(combo.name, 'Combo', simulatedComboPrice)}
+                    >
+                      AGREGAR COMBO VIP
+                    </Button>
+                 </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
     </div>

@@ -202,11 +202,17 @@ function AdminContent() {
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-[9px] font-black uppercase text-gray-500">Costo Adquisición (COP)</Label>
-                    <Input type="number" className="bg-white/5 border-white/10 h-11 text-sm" placeholder="0" />
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm font-bold">$</span>
+                      <Input type="number" className="bg-white/5 border-white/10 h-11 pl-7 text-sm" placeholder="0" />
+                    </div>
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-[9px] font-black uppercase text-gray-500">Precio Venta (COP)</Label>
-                    <Input type="number" className="bg-white/5 border-white/10 h-11 text-sm" placeholder="0" />
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm font-bold">$</span>
+                      <Input type="number" className="bg-white/5 border-white/10 h-11 pl-7 text-sm" placeholder="0" />
+                    </div>
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-[9px] font-black uppercase text-gray-500">Stock Inicial</Label>
@@ -262,7 +268,10 @@ function AdminContent() {
                       <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
                       <XAxis dataKey="name" stroke="#ffffff20" fontSize={10} fontWeight="bold" />
                       <YAxis hide />
-                      <ChartTooltip contentStyle={{ backgroundColor: '#000', border: '1px solid #ffffff10', borderRadius: '0.5rem', fontSize: '10px' }} />
+                      <ChartTooltip 
+                        formatter={(value: number) => formatCurrency(value)}
+                        contentStyle={{ backgroundColor: '#000', border: '1px solid #ffffff10', borderRadius: '0.5rem', fontSize: '10px' }} 
+                      />
                       <Bar dataKey="revenue" radius={[6, 6, 0, 0]}>
                         {MOCK_STATS.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={index === 3 ? '#FF007A' : '#00FFFF'} fillOpacity={0.6} />
@@ -358,7 +367,10 @@ function AdminContent() {
                               </div>
                               <div className="space-y-1">
                                 <Label className="text-[9px] font-black uppercase text-gray-500">Precio (COP)</Label>
-                                <Input type="number" className="bg-white/5 border-white/10 h-11 text-sm" defaultValue={item.price} />
+                                <div className="relative">
+                                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm font-bold">$</span>
+                                  <Input type="number" className="bg-white/5 border-white/10 h-11 pl-7 text-sm" defaultValue={item.price} />
+                                </div>
                               </div>
                               <div className="space-y-1">
                                 <Label className="text-[9px] font-black uppercase text-gray-500">Stock Actual</Label>
