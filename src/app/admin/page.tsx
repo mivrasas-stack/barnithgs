@@ -219,6 +219,7 @@ function AdminContent() {
   const [inventory, setInventory] = useState(INITIAL_INVENTORY);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedOrder, setSelectedOrder] = useState<typeof MOCK_DELIVERIES[0] | null>(null);
+  const [newProductImage, setNewProductImage] = useState<string | null>(null);
 
   useEffect(() => {
     if (isInitialized && (!isLoggedIn || role !== 'admin')) {
@@ -233,6 +234,17 @@ function AdminContent() {
 
   const handleUpdateProduct = (id: string, updates: any) => {
     setInventory(prev => prev.map(item => item.id === id ? { ...item, ...updates } : item));
+  };
+
+  const handleNewProductImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setNewProductImage(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const filteredInventory = inventory.filter(item => 
@@ -280,11 +292,22 @@ function AdminContent() {
                   <div className="space-y-4">
                     <Label className="text-[9px] font-black uppercase text-gray-500">Imagen del Producto</Label>
                     <div className="aspect-square rounded-2xl border-2 border-dashed border-white/10 bg-white/5 flex flex-col items-center justify-center gap-3 group hover:border-primary/40 transition-all cursor-pointer relative overflow-hidden">
-                       <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-all">
-                          <Upload className="h-6 w-6" />
-                       </div>
-                       <p className="text-[10px] font-black italic text-gray-400 uppercase tracking-tighter">SUBIR ARCHIVO</p>
-                       <Input type="file" className="absolute inset-0 opacity-0 cursor-pointer" />
+                       {newProductImage ? (
+                         <img src={newProductImage} className="absolute inset-0 w-full h-full object-cover" alt="Preview" />
+                       ) : (
+                         <>
+                           <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-all">
+                              <Upload className="h-6 w-6" />
+                           </div>
+                           <p className="text-[10px] font-black italic text-gray-400 uppercase tracking-tighter">SUBIR ARCHIVO</p>
+                         </>
+                       )}
+                       <Input 
+                        type="file" 
+                        accept="image/*"
+                        className="absolute inset-0 opacity-0 cursor-pointer z-10" 
+                        onChange={handleNewProductImageChange}
+                       />
                     </div>
                   </div>
 
