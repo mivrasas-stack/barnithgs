@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState, Suspense } from 'react';
@@ -54,7 +55,8 @@ import {
   ChevronRight,
   Phone,
   Package,
-  Calendar
+  Calendar,
+  History
 } from 'lucide-react';
 
 const MOCK_STATS = [
@@ -156,10 +158,11 @@ function AdminContent() {
         {/* SECTION HEADER - COMPACT */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 pb-4 border-b border-white/5">
           <div className="space-y-1">
-            <h1 className="text-4xl font-black italic tracking-tighter uppercase leading-none">
+            <h1 className="text-3xl font-black italic tracking-tighter uppercase leading-none">
               {activeTab === 'dashboard' && <><span className="text-primary neon-text-primary">COMMAND</span> CENTER</>}
               {activeTab === 'inventory' && <><span className="text-secondary neon-text-secondary">STOCK</span> CONTROL</>}
               {activeTab === 'deliveries' && <><span className="text-secondary neon-text-secondary">LIVE</span> LOGISTICS</>}
+              {activeTab === 'catalog' && <><span className="text-primary neon-text-primary">STORE</span> FRONT</>}
               {activeTab === 'staff' && <><span className="text-primary neon-text-primary">STAFF</span> ROSTER</>}
               {activeTab === 'history' && <><span className="text-gray-400">AUDIT</span> LOG</>}
             </h1>
@@ -168,11 +171,11 @@ function AdminContent() {
             </p>
           </div>
           
-          {activeTab === 'inventory' && (
+          {(activeTab === 'inventory' || activeTab === 'catalog') && (
             <Dialog>
               <DialogTrigger asChild>
                 <Button className="bg-primary hover:bg-primary/90 h-10 px-6 rounded-xl font-black italic text-sm tracking-tight neon-glow-primary">
-                  <Plus className="mr-2 h-4 w-4" /> NUEVA ENTRADA BODEGA
+                  <Plus className="mr-2 h-4 w-4" /> NUEVA ENTRADA
                 </Button>
               </DialogTrigger>
               <DialogContent className="bg-card border-white/10 text-white rounded-[1.5rem] p-8 max-w-xl">
@@ -426,6 +429,48 @@ function AdminContent() {
                   ))}
                 </TableBody>
               </Table>
+            </div>
+          </div>
+        )}
+
+        {/* CATALOG VIEW - PRODUCT MANAGEMENT */}
+        {activeTab === 'catalog' && (
+          <div className="space-y-6 animate-in fade-in duration-700">
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-600 h-4 w-4" />
+                <Input 
+                  placeholder="Buscar en el catálogo público..." 
+                  className="bg-white/5 border-white/10 h-10 pl-10 rounded-xl font-bold text-sm focus:border-primary"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {inventory.map((product) => (
+                <Card key={product.id} className="bg-white/[0.02] border border-white/5 overflow-hidden rounded-[1.5rem] group hover:border-primary/50 transition-all">
+                  <div className="h-32 bg-white/5 relative">
+                    <img 
+                      src={`https://picsum.photos/seed/${product.id}/400/200`} 
+                      className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all"
+                      alt={product.name}
+                    />
+                    <Badge className="absolute top-2 right-2 bg-black/60 text-[8px] font-black uppercase border-none">{product.category}</Badge>
+                  </div>
+                  <CardContent className="p-4 space-y-3">
+                    <h3 className="font-black italic text-xs truncate uppercase tracking-tight">{product.name}</h3>
+                    <div className="flex justify-between items-end">
+                      <span className="text-primary font-black italic text-sm">{formatCurrency(product.price)}</span>
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg text-gray-600 hover:text-white"><Edit3 className="h-3 w-3" /></Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg text-gray-600 hover:text-destructive"><Trash2 className="h-3 w-3" /></Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
           </div>
         )}
