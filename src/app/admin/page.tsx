@@ -56,7 +56,9 @@ import {
   Phone,
   Package,
   Calendar,
-  History
+  History,
+  Image as ImageIcon,
+  Upload
 } from 'lucide-react';
 
 const MOCK_STATS = [
@@ -178,55 +180,72 @@ function AdminContent() {
                   <Plus className="mr-2 h-4 w-4" /> NUEVA ENTRADA
                 </Button>
               </DialogTrigger>
-              <DialogContent className="bg-card border-white/10 text-white rounded-[1.5rem] p-8 max-w-xl">
+              <DialogContent className="bg-card border-white/10 text-white rounded-[2rem] p-8 max-w-xl">
                 <DialogHeader>
-                  <DialogTitle className="text-2xl font-black italic text-primary uppercase">REGISTRO DE MERCANCÍA</DialogTitle>
-                  <DialogDescription className="text-gray-500 font-bold text-[10px] uppercase">Ingreso de stock con valoración COP</DialogDescription>
+                  <DialogTitle className="text-2xl font-black italic text-primary uppercase">REGISTRO DE PRODUCTO</DialogTitle>
+                  <DialogDescription className="text-gray-500 font-bold text-[10px] uppercase">Añade un nuevo trago al arsenal de PartyFlow</DialogDescription>
                 </DialogHeader>
-                <div className="grid grid-cols-2 gap-4 mt-6">
-                  <div className="col-span-2 space-y-1.5">
-                    <Label className="text-[9px] font-black uppercase text-gray-500">Nombre del Producto</Label>
-                    <Input className="bg-white/5 border-white/10 h-11 placeholder:text-gray-600 text-sm" placeholder="Ej: Johnnie Walker Red Label" />
-                  </div>
-                  <div className="col-span-2 space-y-1.5">
-                    <Label className="text-[9px] font-black uppercase text-gray-500">Categoría Contable</Label>
-                    <Select>
-                      <SelectTrigger className="bg-white/5 border-white/10 h-11 text-sm">
-                        <SelectValue placeholder="Seleccionar categoría..." />
-                      </SelectTrigger>
-                      <SelectContent className="bg-card border-white/10 text-white">
-                        {CATEGORIAS_CONTABLES.map((cat) => (
-                          <SelectItem key={cat.id} value={cat.id}>
-                            {cat.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-[9px] font-black uppercase text-gray-500">Costo Adquisición (COP)</Label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm font-bold">$</span>
-                      <Input type="number" className="bg-white/5 border-white/10 h-11 pl-7 text-sm" placeholder="0" />
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                  {/* Left Column: Image Upload */}
+                  <div className="space-y-4">
+                    <Label className="text-[9px] font-black uppercase text-gray-500">Imagen del Producto</Label>
+                    <div className="aspect-square rounded-2xl border-2 border-dashed border-white/10 bg-white/5 flex flex-col items-center justify-center gap-3 group hover:border-primary/40 transition-all cursor-pointer relative overflow-hidden">
+                       <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-all">
+                          <Upload className="h-6 w-6" />
+                       </div>
+                       <p className="text-[10px] font-black italic text-gray-400 uppercase tracking-tighter">SUBIR ARCHIVO</p>
+                       <Input type="file" className="absolute inset-0 opacity-0 cursor-pointer" />
                     </div>
                   </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-[9px] font-black uppercase text-gray-500">Precio Venta (COP)</Label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm font-bold">$</span>
-                      <Input type="number" className="bg-white/5 border-white/10 h-11 pl-7 text-sm" placeholder="0" />
+
+                  {/* Right Column: Basic Info */}
+                  <div className="space-y-5">
+                    <div className="space-y-1.5">
+                      <Label className="text-[9px] font-black uppercase text-gray-500">Nombre del Producto</Label>
+                      <Input className="bg-white/5 border-white/10 h-11 placeholder:text-gray-600 text-sm" placeholder="Ej: Don Julio 70" />
                     </div>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-[9px] font-black uppercase text-gray-500">Stock Inicial</Label>
-                    <Input type="number" className="bg-white/5 border-white/10 h-11 text-sm" placeholder="0" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-[9px] font-black uppercase text-gray-500">Stock Mínimo</Label>
-                    <Input type="number" className="bg-white/5 border-white/10 h-11 text-sm" placeholder="5" />
+                    
+                    <div className="space-y-1.5">
+                      <Label className="text-[9px] font-black uppercase text-gray-500">Precio Venta (COP)</Label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-primary font-black text-sm">$</span>
+                        <Input type="number" className="bg-white/5 border-white/10 h-11 pl-7 text-sm font-black" placeholder="0" />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label className="text-[9px] font-black uppercase text-gray-500">Categoría</Label>
+                      <Select>
+                        <SelectTrigger className="bg-white/5 border-white/10 h-11 text-sm">
+                          <SelectValue placeholder="Seleccionar..." />
+                        </SelectTrigger>
+                        <SelectContent className="bg-card border-white/10 text-white">
+                          {CATEGORIAS_CONTABLES.map((cat) => (
+                            <SelectItem key={cat.id} value={cat.id}>
+                              {cat.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <Label className="text-[9px] font-black uppercase text-gray-500">Stock Inicial</Label>
+                        <Input type="number" className="bg-white/5 border-white/10 h-11 text-sm" placeholder="0" />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-[9px] font-black uppercase text-gray-500">Mínimo</Label>
+                        <Input type="number" className="bg-white/5 border-white/10 h-11 text-sm" placeholder="5" />
+                      </div>
+                    </div>
                   </div>
                 </div>
-                <Button className="w-full h-12 bg-primary font-black italic text-lg mt-6 rounded-lg uppercase neon-glow-primary">Vincular a Bodega</Button>
+
+                <Button className="w-full h-12 bg-primary font-black italic text-lg mt-8 rounded-xl uppercase neon-glow-primary tracking-widest">
+                  PUBLICAR EN CATÁLOGO
+                </Button>
               </DialogContent>
             </Dialog>
           )}
