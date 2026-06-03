@@ -51,7 +51,8 @@ import {
   Clock,
   Zap,
   CheckCircle2,
-  Navigation as NavIcon
+  Navigation as NavIcon,
+  LayoutDashboard
 } from 'lucide-react';
 
 const MOCK_STATS = [
@@ -63,28 +64,20 @@ const MOCK_STATS = [
 ];
 
 const CATEGORIAS_CONTABLES = [
-  { id: 'aguardiente', label: 'Aguardiente (Nacional)', color: 'bg-blue-500/20 text-blue-400' },
-  { id: 'ron', label: 'Ron', color: 'bg-orange-500/20 text-orange-400' },
-  { id: 'whisky', label: 'Whisky (Importado)', color: 'bg-amber-500/20 text-amber-400' },
-  { id: 'tequila', label: 'Tequila', color: 'bg-green-500/20 text-green-400' },
-  { id: 'vodka', label: 'Vodka', color: 'bg-cyan-500/20 text-cyan-400' },
-  { id: 'ginebra', label: 'Ginebra', color: 'bg-teal-500/20 text-teal-400' },
-  { id: 'cerveza', label: 'Cerveza', color: 'bg-yellow-500/20 text-yellow-400' },
-  { id: 'vino', label: 'Vino / Espumoso', color: 'bg-red-500/20 text-red-400' },
-  { id: 'mezcladores', label: 'Mezcladores (Sodas/Jugos)', color: 'bg-purple-500/20 text-purple-400' },
-  { id: 'energizantes', label: 'Energizantes', color: 'bg-pink-500/20 text-pink-400' },
-  { id: 'complementos', label: 'Complementos (Hielo/Vasos)', color: 'bg-slate-500/20 text-slate-400' },
-  { id: 'combos', label: 'Combos VIP', color: 'bg-primary/20 text-primary' },
+  { id: 'aguardiente', label: 'Aguardiente', color: 'bg-blue-500/10 text-blue-400' },
+  { id: 'ron', label: 'Ron', color: 'bg-orange-500/10 text-orange-400' },
+  { id: 'whisky', label: 'Whisky', color: 'bg-amber-500/10 text-amber-400' },
+  { id: 'tequila', label: 'Tequila', color: 'bg-green-500/10 text-green-400' },
+  { id: 'cerveza', label: 'Cerveza', color: 'bg-yellow-500/10 text-yellow-400' },
+  { id: 'combos', label: 'Combos VIP', color: 'bg-primary/10 text-primary' },
 ];
 
 const INITIAL_INVENTORY = [
   { id: '1', name: 'Johnnie Walker Black 750ml', stock: 12, category: 'whisky', price: 185000, cost: 130000, minStock: 5 },
-  { id: '2', name: 'Aguardiente Antioqueño Sin Azúcar 750ml', stock: 24, category: 'aguardiente', price: 65000, cost: 42000, minStock: 10 },
+  { id: '2', name: 'Aguardiente Antioqueño 750ml', stock: 24, category: 'aguardiente', price: 65000, cost: 42000, minStock: 10 },
   { id: '3', name: 'Don Julio 70', stock: 5, category: 'tequila', price: 420000, cost: 310000, minStock: 4 },
-  { id: '4', name: 'Heineken 6-Pack (Lata)', stock: 45, category: 'cerveza', price: 32000, cost: 22000, minStock: 20 },
+  { id: '4', name: 'Heineken 6-Pack', stock: 45, category: 'cerveza', price: 32000, cost: 22000, minStock: 20 },
   { id: '5', name: 'Hielo (Bolsa 5kg)', stock: 0, category: 'complementos', price: 15000, cost: 5000, minStock: 10 },
-  { id: '6', name: 'Red Bull 250ml', stock: 60, category: 'energizantes', price: 12000, cost: 7500, minStock: 24 },
-  { id: '7', name: 'Ron Viejo de Caldas 8 Años 750ml', stock: 18, category: 'ron', price: 85000, cost: 58000, minStock: 8 },
 ];
 
 const MOCK_STAFF = [
@@ -93,18 +86,10 @@ const MOCK_STAFF = [
   { id: 'S3', name: 'Juan Pérez', role: 'warehouse', status: 'Online', lastActive: '12 min', cedula: '1033445566' },
 ];
 
-const INITIAL_AUDIT_LOGS = [
-  { id: 'LOG-001', type: 'VENTA', item: 'Johnnie Walker Black', user: 'App Client', delta: -1, reason: 'Venta Directa', date: 'Hace 5 min' },
-  { id: 'LOG-002', type: 'AJUSTE', item: 'Hielo (Bolsa 5kg)', user: 'Carlos Mendoza', delta: -10, reason: 'Merma (Derretido)', date: 'Hace 15 min' },
-  { id: 'LOG-003', type: 'REPOSICIÓN', item: 'Heineken 6-Pack', user: 'Juan Pérez', delta: 50, reason: 'Entrada Proveedor', date: 'Hace 1h' },
-  { id: 'LOG-004', type: 'AJUSTE', item: 'Grey Goose 750ml', user: 'Carlos Mendoza', delta: -1, reason: 'Botella Rota', date: 'Hace 2h' },
-];
-
 const MOCK_DELIVERIES = [
   { id: 'ORD-5501', customer: 'Andrés Felipe', address: 'Calle 100 #15-30', status: 'ENTREGANDO', driver: 'Ana Rodríguez', time: '12 min', total: 245000 },
   { id: 'ORD-5502', customer: 'Juliana G.', address: 'Cra 7 #72-10', status: 'EMPACANDO', driver: 'Pendiente', time: '4 min', total: 85000 },
-  { id: 'ORD-5503', customer: 'Ricardo M.', address: 'Cl 127 #45-12', status: 'PENDIENTE', driver: 'Pendiente', time: '1 min', total: 420000 },
-  { id: 'ORD-5504', customer: 'Sofía V.', address: 'Av Boyacá #116-40', status: 'COMPLETADO', driver: 'Carlos Mendoza', time: '25 min', total: 115000 },
+  { id: 'ORD-5503', customer: 'Sofía V.', address: 'Av Boyacá #116-40', status: 'COMPLETADO', driver: 'Carlos Mendoza', time: '25 min', total: 115000 },
 ];
 
 function AdminContent() {
@@ -113,9 +98,7 @@ function AdminContent() {
   const searchParams = useSearchParams();
   const activeTab = searchParams.get('tab') || 'dashboard';
   const [inventory] = useState(INITIAL_INVENTORY);
-  const [auditLogs] = useState(INITIAL_AUDIT_LOGS);
   const [searchTerm, setSearchTerm] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('all');
 
   useEffect(() => {
     if (isInitialized && (!isLoggedIn || role !== 'admin')) {
@@ -123,628 +106,261 @@ function AdminContent() {
     }
   }, [isInitialized, isLoggedIn, role, router]);
 
-  if (!isInitialized) {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <Loader2 className="h-12 w-12 text-primary animate-spin" />
-      </div>
-    );
-  }
-
+  if (!isInitialized) return <div className="min-h-screen bg-black flex items-center justify-center"><Loader2 className="h-12 w-12 text-primary animate-spin" /></div>;
   if (!isLoggedIn || role !== 'admin') return null;
 
-  const handleSaveProduct = (e: React.FormEvent) => {
-    e.preventDefault();
-    toast({
-      title: "OPERACIÓN REGISTRADA",
-      description: "El cambio ha sido auditado y guardado en la base de datos contable.",
-    });
-  };
-
-  const filteredInventory = inventory.filter(item => {
-    const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = categoryFilter === 'all' || item.category === categoryFilter;
-    return matchesSearch && matchesCategory;
-  });
-
   const totalCapital = inventory.reduce((acc, item) => acc + (item.cost * item.stock), 0);
-  const projectedRevenue = inventory.reduce((acc, item) => acc + (item.price * item.stock), 0);
-
-  const getCategoryBadge = (catId: string) => {
-    const cat = CATEGORIAS_CONTABLES.find(c => c.id === catId);
-    return (
-      <Badge className={`${cat?.color || 'bg-white/10 text-gray-400'} border-none font-black text-[9px] uppercase tracking-tighter`}>
-        {cat?.label || 'Sin Categoría'}
-      </Badge>
-    );
-  };
-
-  const getDeliveryStatusColor = (status: string) => {
-    switch(status) {
-      case 'ENTREGANDO': return 'bg-secondary/20 text-secondary border-secondary/40';
-      case 'EMPACANDO': return 'bg-amber-500/20 text-amber-400 border-amber-500/40';
-      case 'PENDIENTE': return 'bg-red-500/20 text-red-400 border-red-500/40';
-      case 'COMPLETADO': return 'bg-green-500/20 text-green-400 border-green-500/40';
-      default: return 'bg-white/10 text-gray-400';
-    }
-  };
 
   return (
-    <div className="min-h-screen bg-black text-white selection:bg-primary selection:text-white">
+    <div className="min-h-screen bg-black text-white selection:bg-primary">
       <StaffNavigation />
       
-      <main className="container mx-auto px-4 py-12 space-y-12">
-        {/* HEADER DE COMANDO */}
-        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8 bg-card/40 p-8 rounded-[2.5rem] border border-white/10 glass-morphism shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
-          <div className="space-y-2">
-            <div className="flex items-center gap-3">
-              <div className="h-12 w-12 bg-primary/20 rounded-2xl flex items-center justify-center neon-glow-primary">
-                <ShieldCheck className="h-7 w-7 text-primary" />
-              </div>
-              <h1 className="text-4xl font-black italic tracking-tighter uppercase">
-                ADMIN <span className="text-primary neon-text-primary">CONTROL</span>
-              </h1>
-            </div>
-            <p className="text-gray-400 font-bold uppercase text-[10px] tracking-widest pl-1">Supervisión Total PartyFlow</p>
+      <main className="container mx-auto px-6 py-12 max-w-[1600px] space-y-16">
+        
+        {/* SECTION HEADER - MINIMALIST & BOLD */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 pb-8 border-b border-white/5">
+          <div className="space-y-1">
+            <h1 className="text-6xl font-black italic tracking-tighter uppercase leading-none">
+              {activeTab === 'dashboard' && <><span className="text-primary neon-text-primary">COMMAND</span> CENTER</>}
+              {activeTab === 'inventory' && <><span className="text-secondary neon-text-secondary">STOCK</span> CONTROL</>}
+              {activeTab === 'deliveries' && <><span className="text-secondary neon-text-secondary">LIVE</span> LOGISTICS</>}
+              {activeTab === 'staff' && <><span className="text-primary neon-text-primary">STAFF</span> ROSTER</>}
+              {activeTab === 'catalog' && <><span className="text-accent neon-text-accent">STORE</span> DESIGN</>}
+              {activeTab === 'history' && <><span className="text-gray-400">AUDIT</span> LOG</>}
+            </h1>
+            <p className="text-gray-500 font-bold uppercase text-[10px] tracking-[0.4em] pl-1">
+              PartyFlow OS v4.0 • Bogota, CO
+            </p>
           </div>
           
-          <div className="hidden lg:block">
-            <Badge variant="outline" className="border-primary/20 text-primary/60 font-black italic px-4 py-2 uppercase">
-               SISTEMA DE GESTIÓN EMPRESARIAL
-            </Badge>
-          </div>
+          {activeTab === 'inventory' && (
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button className="bg-primary hover:bg-primary/90 h-16 px-10 rounded-2xl font-black italic text-lg tracking-tight neon-glow-primary">
+                  <Plus className="mr-2 h-6 w-6" /> NUEVA ENTRADA
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="bg-card border-white/10 text-white rounded-[2rem] p-10 max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle className="text-3xl font-black italic text-primary uppercase">REGISTRO DE MERCANCÍA</DialogTitle>
+                </DialogHeader>
+                <div className="grid grid-cols-2 gap-6 mt-6">
+                  <div className="col-span-2 space-y-2">
+                    <Label className="text-[10px] font-black uppercase text-gray-500">Nombre del Producto</Label>
+                    <Input className="bg-white/5 border-white/10 h-14" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-black uppercase text-gray-500">Costo Adquisición</Label>
+                    <Input type="number" className="bg-white/5 border-white/10 h-14" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-black uppercase text-gray-500">Precio Venta</Label>
+                    <Input type="number" className="bg-white/5 border-white/10 h-14" />
+                  </div>
+                </div>
+                <Button className="w-full h-16 bg-primary font-black italic text-xl mt-8 rounded-xl uppercase">Vincular a Bodega</Button>
+              </DialogContent>
+            </Dialog>
+          )}
         </div>
 
-        {/* TABS DE GESTIÓN */}
-        <div className="space-y-12">
-          {activeTab === 'dashboard' && (
-            <div className="space-y-12 animate-in fade-in duration-500">
-              {/* KPIs FINANCIEROS */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                {[
-                  { title: 'Ventas del Turno', value: formatCurrency(12450000), icon: DollarSign, color: 'text-primary', bg: 'bg-primary/10', trend: '+12%', up: true },
-                  { title: 'Capital en Stock', value: formatCurrency(totalCapital), icon: Box, color: 'text-secondary', bg: 'bg-secondary/10', trend: 'Auditado', up: true },
-                  { title: 'Utilidad Proyectada', value: formatCurrency(projectedRevenue - totalCapital), icon: TrendingUp, color: 'text-accent', bg: 'bg-accent/10', trend: 'Potencial', up: true },
-                  { title: 'Pérdida por Merma', value: formatCurrency(185000), icon: AlertTriangle, color: 'text-destructive', bg: 'bg-destructive/10', trend: 'Turno Hoy', up: false }
-                ].map((stat, i) => (
-                  <Card key={i} className="bg-card/40 border-white/10 glass-morphism overflow-hidden group hover:border-primary/50 transition-all duration-300">
-                    <CardContent className="p-8 space-y-4">
-                      <div className="flex items-center justify-between">
-                        <div className={`h-14 w-14 rounded-2xl ${stat.bg} flex items-center justify-center ${stat.color} group-hover:scale-110 transition-transform shadow-lg`}>
-                          <stat.icon className="h-7 w-7" />
-                        </div>
-                        <Badge className={`${stat.up ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'} font-black border-none px-3`}>
-                          {stat.up ? <ArrowUpRight className="h-3 w-3 mr-1" /> : <ArrowDownRight className="h-3 w-3 mr-1" />}
-                          {stat.trend}
-                        </Badge>
-                      </div>
-                      <div>
-                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em]">{stat.title}</p>
-                        <h4 className="text-3xl font-black italic tracking-tighter">{stat.value}</h4>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-
-              {/* GRÁFICOS Y ALERTAS */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-                <Card className="lg:col-span-2 bg-card/40 border-white/10 glass-morphism p-10 rounded-[3rem]">
-                   <div className="flex justify-between items-center mb-10">
-                      <div>
-                        <h3 className="text-3xl font-black italic tracking-tighter">TRÁFICO DE VENTAS (COP)</h3>
-                        <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mt-1">Análisis por hora del turno actual</p>
-                      </div>
-                      <div className="flex gap-2">
-                        <Badge className="bg-primary/20 text-primary border-none font-black italic">EN VIVO</Badge>
-                      </div>
-                   </div>
-                   <div className="h-[350px]">
-                     <ResponsiveContainer width="100%" height="100%">
-                       <BarChart data={MOCK_STATS}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" vertical={false} />
-                          <XAxis dataKey="name" stroke="#64748b" fontSize={12} fontWeight="bold" axisLine={false} tickLine={false} />
-                          <YAxis stroke="#64748b" fontSize={12} fontWeight="bold" axisLine={false} tickLine={false} />
-                          <ChartTooltip 
-                            contentStyle={{ backgroundColor: 'rgba(0,0,0,0.9)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '1.5rem', color: '#fff' }}
-                            itemStyle={{ color: '#FF007A', fontWeight: 'bold' }}
-                            cursor={{ fill: 'rgba(255,255,255,0.05)' }}
-                          />
-                          <Bar dataKey="revenue" radius={[15, 15, 0, 0]}>
-                            {MOCK_STATS.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={index === 3 ? '#FF007A' : '#00FFFF'} fillOpacity={0.8} />
-                            ))}
-                          </Bar>
-                       </BarChart>
-                     </ResponsiveContainer>
-                   </div>
-                </Card>
-
-                <div className="space-y-8">
-                  <Card className="bg-card/40 border-white/10 glass-morphism p-8 rounded-[2.5rem] shadow-xl">
-                    <div className="flex items-center gap-3 mb-8">
-                      <div className="h-10 w-10 bg-secondary/20 rounded-xl flex items-center justify-center">
-                        <ClipboardList className="text-secondary h-6 w-6" />
-                      </div>
-                      <h3 className="text-xl font-black italic uppercase tracking-tighter">AJUSTES RECIENTES</h3>
+        {/* DASHBOARD VIEW */}
+        {activeTab === 'dashboard' && (
+          <div className="space-y-16 animate-in fade-in duration-700">
+            {/* KPI STRIP */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {[
+                { label: 'Ingresos Hoy', value: formatCurrency(12450000), trend: '+14%', icon: DollarSign, color: 'text-primary' },
+                { label: 'Capital Stock', value: formatCurrency(totalCapital), trend: 'Auditado', icon: Box, color: 'text-secondary' },
+                { label: 'Pedidos Turno', value: '142', trend: 'Pico: 00:00', icon: Zap, color: 'text-accent' },
+                { label: 'Tiempo Entrega', value: '18 min', trend: '-2 min', icon: Clock, color: 'text-green-400' },
+              ].map((kpi, i) => (
+                <div key={i} className="bg-white/[0.02] border border-white/5 p-8 rounded-[2rem] space-y-4 hover:border-white/10 transition-all">
+                  <div className="flex justify-between items-start">
+                    <div className={`h-12 w-12 rounded-xl bg-white/5 flex items-center justify-center ${kpi.color}`}>
+                      <kpi.icon className="h-6 w-6" />
                     </div>
-                    <div className="space-y-4">
-                       {auditLogs.slice(0, 4).map((log, idx) => (
-                         <div key={idx} className="flex flex-col p-5 rounded-[1.5rem] bg-white/5 border border-white/5 hover:border-white/10 transition-all">
-                            <div className="flex justify-between items-start">
-                              <Badge variant="outline" className={`${log.type === 'REPOSICIÓN' ? 'border-green-500/50 text-green-400' : 'border-primary/50 text-primary'} text-[8px] font-black h-5`}>{log.type}</Badge>
-                              <span className="text-[9px] text-gray-500 font-bold uppercase">{log.date}</span>
-                            </div>
-                            <p className="font-bold text-sm mt-3 leading-tight">{log.item}</p>
-                            <div className="flex justify-between items-center mt-3 pt-3 border-t border-white/5">
-                              <span className="text-xs text-gray-400 font-bold">Variación: <span className={log.delta > 0 ? 'text-green-400' : 'text-red-400'}>{log.delta > 0 ? '+' : ''}{log.delta} UND</span></span>
-                              <span className="text-[8px] font-black uppercase text-gray-600">ID: {log.user.split(' ')[0]}</span>
-                            </div>
-                         </div>
-                       ))}
-                    </div>
-                  </Card>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'inventory' && (
-            <Card className="bg-card/40 border-white/10 glass-morphism overflow-hidden rounded-[3rem] animate-in slide-in-from-bottom-4 duration-500 shadow-2xl">
-                <CardHeader className="p-10 border-b border-white/5 flex flex-col xl:flex-row items-center justify-between gap-8">
-                   <div className="space-y-2">
-                      <div className="flex items-center gap-4">
-                         <CardTitle className="text-4xl font-black italic tracking-tighter uppercase leading-none">CONTROL DE INVENTARIO</CardTitle>
-                         <Dialog>
-                            <DialogTrigger asChild>
-                              <Button size="sm" className="bg-primary hover:bg-primary/90 neon-glow-primary font-black italic px-6 h-10 rounded-xl text-xs tracking-tight">
-                                <Plus className="mr-1 h-4 w-4 fill-white" /> NUEVA ENTRADA
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent className="bg-card/95 border-white/10 glass-morphism text-white max-w-2xl rounded-[2.5rem] p-10">
-                              <DialogHeader>
-                                <DialogTitle className="text-3xl font-black italic text-primary uppercase tracking-tighter">REGISTRO DE MERCANCÍA</DialogTitle>
-                                <CardDescription className="text-gray-400 uppercase font-black text-[10px] tracking-widest">Afecta el capital invertido y stock disponible</CardDescription>
-                              </DialogHeader>
-                              <form className="space-y-6 pt-6" onSubmit={handleSaveProduct}>
-                                <div className="grid grid-cols-2 gap-6">
-                                  <div className="space-y-2 col-span-2">
-                                    <Label className="text-gray-500 font-black uppercase text-[10px] tracking-widest">Nombre Completo del Producto (SKU)</Label>
-                                    <Input placeholder="Ej. Ron Viejo de Caldas 8 Años 750ml" className="bg-white/5 border-white/10 h-14 font-bold rounded-xl" />
-                                  </div>
-                                  <div className="space-y-2">
-                                    <Label className="text-gray-500 font-black uppercase text-[10px] tracking-widest">Categoría Contable</Label>
-                                    <Select>
-                                      <SelectTrigger className="bg-white/5 border-white/10 h-14 rounded-xl font-bold">
-                                        <SelectValue placeholder="Seleccionar..." />
-                                      </SelectTrigger>
-                                      <SelectContent className="bg-black border-white/10 text-white">
-                                        {CATEGORIAS_CONTABLES.map(cat => (
-                                          <SelectItem key={cat.id} value={cat.id} className="font-bold">
-                                            {cat.label}
-                                          </SelectItem>
-                                        ))}
-                                      </SelectContent>
-                                    </Select>
-                                  </div>
-                                  <div className="space-y-2">
-                                    <Label className="text-gray-500 font-black uppercase text-[10px] tracking-widest">Stock Inicial (Unidades)</Label>
-                                    <Input type="number" placeholder="0" className="bg-white/5 border-white/10 h-14 font-black text-white rounded-xl" />
-                                  </div>
-                                  <div className="space-y-2">
-                                    <Label className="text-gray-500 font-black uppercase text-[10px] tracking-widest">Costo Unitario de Adquisición</Label>
-                                    <div className="relative">
-                                      <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500" />
-                                      <Input type="number" placeholder="0" className="bg-white/5 border-white/10 h-14 pl-12 font-black text-secondary rounded-xl" />
-                                    </div>
-                                  </div>
-                                  <div className="space-y-2">
-                                    <Label className="text-gray-500 font-black uppercase text-[10px] tracking-widest">Precio de Venta Sugerido</Label>
-                                    <div className="relative">
-                                      <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500" />
-                                      <Input type="number" placeholder="0" className="bg-white/5 border-white/10 h-14 pl-12 font-black text-primary rounded-xl" />
-                                    </div>
-                                  </div>
-                                </div>
-                                <Button type="submit" className="w-full h-16 bg-primary font-black italic text-xl neon-glow-primary rounded-2xl mt-4 uppercase tracking-widest">
-                                  VINCULAR PRODUCTO A BODEGA
-                                </Button>
-                              </form>
-                            </DialogContent>
-                         </Dialog>
-                      </div>
-                      <CardDescription className="text-gray-500 font-bold uppercase text-[10px] tracking-[0.3em]">Gestión de capital en bodega y valoración de stock</CardDescription>
-                   </div>
-                   <div className="flex flex-wrap gap-4 w-full xl:w-auto">
-                      <div className="relative flex-1 xl:w-80">
-                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 h-5 w-5" />
-                         <Input 
-                            placeholder="Buscar SKU o nombre..." 
-                            className="bg-white/5 border-white/10 pl-12 h-14 font-bold rounded-2xl focus:border-primary"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                         />
-                      </div>
-                      <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                        <SelectTrigger className="bg-white/5 border-white/10 h-14 rounded-2xl w-full xl:w-64 font-bold">
-                          <Filter className="mr-2 h-4 w-4 text-gray-500" />
-                          <SelectValue placeholder="Filtrar por Categoría" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-black border-white/10 text-white">
-                          <SelectItem value="all">Todas las Categorías</SelectItem>
-                          {CATEGORIAS_CONTABLES.map(cat => (
-                            <SelectItem key={cat.id} value={cat.id}>{cat.label}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                   </div>
-                </CardHeader>
-                <CardContent className="p-0">
-                   <Table>
-                      <TableHeader className="bg-white/5">
-                        <TableRow className="border-white/5 hover:bg-transparent">
-                          <TableHead className="text-gray-500 font-black uppercase p-10 tracking-widest text-[10px]">PRODUCTO / CATEGORÍA</TableHead>
-                          <TableHead className="text-gray-500 font-black uppercase p-10 tracking-widest text-[10px]">CAPITAL (COSTO)</TableHead>
-                          <TableHead className="text-gray-500 font-black uppercase p-10 tracking-widest text-[10px]">PRECIO VENTA</TableHead>
-                          <TableHead className="text-gray-500 font-black uppercase p-10 tracking-widest text-[10px]">EXISTENCIAS</TableHead>
-                          <TableHead className="text-gray-500 font-black uppercase p-10 tracking-widest text-[10px]">ESTADO CONTROL</TableHead>
-                          <TableHead className="text-right p-10">ACCIONES</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {filteredInventory.map((item) => {
-                          const isLow = item.stock < item.minStock;
-                          const isOut = item.stock === 0;
-                          return (
-                            <TableRow key={item.id} className="border-white/5 hover:bg-white/5 transition-colors group">
-                              <TableCell className="p-10">
-                                <div className="space-y-2">
-                                  <p className="font-black text-2xl italic tracking-tighter group-hover:text-primary transition-colors">{item.name}</p>
-                                  {getCategoryBadge(item.category)}
-                                </div>
-                              </TableCell>
-                              <TableCell className="p-10 font-black text-gray-400 text-lg">{formatCurrency(item.cost * item.stock)}</TableCell>
-                              <TableCell className="p-10 font-black text-secondary text-2xl italic tracking-tight">{formatCurrency(item.price)}</TableCell>
-                              <TableCell className="p-10">
-                                 <div className="flex flex-col">
-                                   <span className={`text-4xl font-black italic ${isOut ? 'text-destructive' : isLow ? 'text-accent' : 'text-white'}`}>
-                                     {item.stock}
-                                   </span>
-                                   <span className="text-[10px] uppercase font-bold text-gray-600">Unidades Disponibles</span>
-                                 </div>
-                              </TableCell>
-                              <TableCell className="p-10">
-                                 <Badge className={`${isOut ? 'bg-destructive/20 text-destructive' : isLow ? 'bg-accent/20 text-accent' : 'bg-green-500/20 text-green-400'} font-black px-6 py-2 rounded-xl border-none text-[10px] tracking-widest shadow-lg`}>
-                                   {isOut ? 'STOCK CRÍTICO' : isLow ? 'BAJO STOCK' : 'NIVEL ÓPTIMO'}
-                                 </Badge>
-                              </TableCell>
-                              <TableCell className="p-10 text-right">
-                                 <Dialog>
-                                    <DialogTrigger asChild>
-                                       <Button size="lg" className="bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 font-black rounded-2xl h-14 px-8 italic tracking-tight">
-                                          <Edit3 className="mr-3 h-5 w-5" /> AUDITAR
-                                       </Button>
-                                    </DialogTrigger>
-                                    <DialogContent className="bg-card/95 border-white/10 text-white glass-morphism rounded-[3rem] p-12 shadow-[0_0_100px_rgba(255,0,122,0.2)]">
-                                       <DialogHeader className="mb-10">
-                                          <DialogTitle className="text-4xl font-black italic tracking-tighter uppercase text-primary">AJUSTE DE INVENTARIO</DialogTitle>
-                                          <CardDescription className="text-gray-400 uppercase font-black text-[10px] tracking-[0.3em] mt-2">SKU: {item.name}</CardDescription>
-                                       </DialogHeader>
-                                       <form className="space-y-8" onSubmit={handleSaveProduct}>
-                                          <div className="grid grid-cols-2 gap-8">
-                                             <div className="space-y-4">
-                                                <Label className="uppercase text-[10px] font-black text-gray-500 tracking-widest pl-1">Existencia Física Real</Label>
-                                                <div className="relative">
-                                                  <Box className="absolute left-4 top-1/2 -translate-y-1/2 h-6 w-6 text-gray-600" />
-                                                  <Input type="number" defaultValue={item.stock} className="bg-white/5 border-white/10 h-16 pl-14 font-black text-3xl rounded-2xl focus:border-primary" />
-                                                </div>
-                                             </div>
-                                             <div className="space-y-4">
-                                                <Label className="uppercase text-[10px] font-black text-gray-500 tracking-widest pl-1">Motivo Contable</Label>
-                                                <Select required>
-                                                   <SelectTrigger className="bg-white/5 border-white/10 h-16 rounded-2xl font-bold text-lg px-6 focus:ring-primary/40 focus:border-primary">
-                                                      <SelectValue placeholder="Definir Acción..." />
-                                                   </SelectTrigger>
-                                                   <SelectContent className="bg-black border-white/10 text-white">
-                                                      <SelectItem value="sale">Venta Directa Manual</SelectItem>
-                                                      <SelectItem value="broken">Botella Rota (Merma)</SelectItem>
-                                                      <SelectItem value="restock">Reposición de Proveedor</SelectItem>
-                                                      <SelectItem value="adjustment">Ajuste de Conteo Físico</SelectItem>
-                                                      <SelectItem value="lost">Pérdida no Justificada</SelectItem>
-                                                   </SelectContent>
-                                                </Select>
-                                             </div>
-                                          </div>
-                                          <div className="space-y-4">
-                                            <Label className="uppercase text-[10px] font-black text-gray-500 tracking-widest pl-1">Notas de la Operación</Label>
-                                            <Input placeholder="Ej. Se encontró botella rota en estante superior..." className="bg-white/5 border-white/10 h-16 rounded-2xl font-medium px-6" />
-                                          </div>
-                                          <Button type="submit" className="w-full h-20 bg-primary font-black italic text-2xl rounded-[1.5rem] neon-glow-primary uppercase tracking-widest shadow-[0_10px_40px_rgba(255,0,122,0.3)] hover:scale-[1.02] transition-transform">
-                                             CONFIRMAR MOVIMIENTO AUDITABLE
-                                          </Button>
-                                       </form>
-                                    </DialogContent>
-                                 </Dialog>
-                              </TableCell>
-                            </TableRow>
-                          );
-                        })}
-                      </TableBody>
-                   </Table>
-                </CardContent>
-             </Card>
-          )}
-
-          {activeTab === 'history' && (
-            <Card className="bg-card/40 border-white/10 glass-morphism overflow-hidden rounded-[3rem] animate-in slide-in-from-bottom-4 duration-500 shadow-2xl">
-                <CardHeader className="p-10 border-b border-white/5 flex flex-row items-center justify-between">
-                   <div className="space-y-1">
-                      <CardTitle className="text-4xl font-black italic tracking-tighter uppercase leading-none">BITÁCORA DE CONTROL</CardTitle>
-                      <CardDescription className="text-gray-500 font-bold uppercase text-[10px] tracking-[0.3em]">Registro inalterable de cada unidad de trago y peso invertido</CardDescription>
-                   </div>
-                   <Button variant="outline" className="border-secondary text-secondary font-black italic rounded-xl px-8 h-12 hover:bg-secondary/10 shadow-lg">
-                     EXPORTAR LIBRO CONTABLE (PDF)
-                   </Button>
-                </CardHeader>
-                <CardContent className="p-0">
-                   <Table>
-                      <TableHeader className="bg-white/5">
-                        <TableRow className="border-white/5 hover:bg-transparent">
-                          <TableHead className="text-gray-500 font-black uppercase p-10 tracking-widest text-[10px]">OP ID</TableHead>
-                          <TableHead className="text-gray-500 font-black uppercase p-10 tracking-widest text-[10px]">ACCIÓN / TIPO</TableHead>
-                          <TableHead className="text-gray-500 font-black uppercase p-10 tracking-widest text-[10px]">PRODUCTO AFECTADO</TableHead>
-                          <TableHead className="text-gray-500 font-black uppercase p-10 tracking-widest text-[10px]">VARIACIÓN</TableHead>
-                          <TableHead className="text-gray-500 font-black uppercase p-10 tracking-widest text-[10px]">OPERARIO / STAFF</TableHead>
-                          <TableHead className="text-gray-500 font-black uppercase p-10 tracking-widest text-[10px]">JUSTIFICACIÓN</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {auditLogs.map((log) => (
-                          <TableRow key={log.id} className="border-white/5 hover:bg-white/5 transition-colors">
-                            <TableCell className="p-10 font-black text-primary italic text-lg">{log.id}</TableCell>
-                            <TableCell className="p-10 font-black">
-                               <Badge className={`${log.type === 'VENTA' ? 'bg-secondary/20 text-secondary' : log.type === 'AJUSTE' ? 'bg-destructive/20 text-destructive' : 'bg-green-500/20 text-green-400'} border-none font-black px-4 py-1 text-[9px] tracking-widest`}>
-                                 {log.type}
-                               </Badge>
-                            </TableCell>
-                            <TableCell className="p-10 font-bold text-gray-200 text-lg tracking-tight">{log.item}</TableCell>
-                            <TableCell className={`p-10 font-black text-3xl italic tracking-tighter ${log.delta > 0 ? 'text-secondary' : 'text-destructive'}`}>
-                              {log.delta > 0 ? '+' : ''}{log.delta} <span className="text-[10px] uppercase text-gray-600 not-italic">Und</span>
-                            </TableCell>
-                            <TableCell className="p-10 text-gray-400 font-bold uppercase text-[10px] tracking-widest">{log.user}</TableCell>
-                            <TableCell className="p-10">
-                               <div className="flex items-center gap-2">
-                                 <FileText className="h-4 w-4 text-gray-700" />
-                                 <span className="text-xs font-medium text-gray-500 italic">{log.reason}</span>
-                               </div>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                   </Table>
-                </CardContent>
-             </Card>
-          )}
-
-          {activeTab === 'deliveries' && (
-            <div className="space-y-12 animate-in fade-in duration-500">
-               {/* KPIs LOGÍSTICOS */}
-               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                {[
-                  { title: 'Pedidos Activos', value: '12', icon: Truck, color: 'text-secondary', bg: 'bg-secondary/10', trend: 'En Ruta', up: true },
-                  { title: 'Tiempo Promedio', value: '18 min', icon: Clock, color: 'text-primary', bg: 'bg-primary/10', trend: 'Turno', up: false },
-                  { title: 'Repartidores Online', value: '5', icon: Users, color: 'text-green-400', bg: 'bg-green-400/10', trend: 'Disponibles', up: true },
-                  { title: 'Ventas Logística', value: formatCurrency(2450000), icon: DollarSign, color: 'text-accent', bg: 'bg-accent/10', trend: 'Hoy', up: true }
-                ].map((stat, i) => (
-                  <Card key={i} className="bg-card/40 border-white/10 glass-morphism p-8 space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div className={`h-12 w-12 rounded-xl ${stat.bg} flex items-center justify-center ${stat.color}`}>
-                        <stat.icon className="h-6 w-6" />
-                      </div>
-                      <Badge className="bg-white/5 text-gray-400 border-none font-black text-[10px]">{stat.trend}</Badge>
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{stat.title}</p>
-                      <h4 className="text-3xl font-black italic tracking-tighter">{stat.value}</h4>
-                    </div>
-                  </Card>
-                ))}
-              </div>
-
-              {/* TABLA DE ENTREGAS EN VIVO */}
-              <Card className="bg-card/40 border-white/10 glass-morphism overflow-hidden rounded-[3rem] shadow-2xl">
-                  <CardHeader className="p-10 border-b border-white/5 flex flex-col md:flex-row items-center justify-between gap-6">
-                     <div className="space-y-1">
-                        <CardTitle className="text-4xl font-black italic tracking-tighter uppercase leading-none">SEGUIMIENTO DE RUTAS</CardTitle>
-                        <CardDescription className="text-gray-500 font-bold uppercase text-[10px] tracking-widest">Control satelital de pedidos y repartidores</CardDescription>
-                     </div>
-                     <div className="flex gap-4">
-                        <Button variant="outline" className="border-secondary text-secondary font-black italic rounded-xl h-12 px-6">
-                           MAPA EN VIVO
-                        </Button>
-                        <Button className="bg-secondary text-black font-black italic rounded-xl h-12 px-6 neon-glow-secondary">
-                           ASIGNAR REPARTIDOR
-                        </Button>
-                     </div>
-                  </CardHeader>
-                  <CardContent className="p-0">
-                     <Table>
-                        <TableHeader className="bg-white/5">
-                           <TableRow className="border-white/5 hover:bg-transparent">
-                              <TableHead className="text-gray-500 font-black uppercase p-8 tracking-widest text-[10px]">ID / CLIENTE</TableHead>
-                              <TableHead className="text-gray-500 font-black uppercase p-8 tracking-widest text-[10px]">DIRECCIÓN / DESTINO</TableHead>
-                              <TableHead className="text-gray-500 font-black uppercase p-8 tracking-widest text-[10px]">REPARTIDOR</TableHead>
-                              <TableHead className="text-gray-500 font-black uppercase p-8 tracking-widest text-[10px]">ESTADO</TableHead>
-                              <TableHead className="text-gray-500 font-black uppercase p-8 tracking-widest text-[10px]">TIEMPO</TableHead>
-                              <TableHead className="text-right p-8 text-[10px] uppercase font-black">ACCIONES</TableHead>
-                           </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                           {MOCK_DELIVERIES.map((order) => (
-                             <TableRow key={order.id} className="border-white/5 hover:bg-white/5 transition-all group">
-                                <TableCell className="p-8">
-                                   <div className="space-y-1">
-                                      <p className="font-black text-primary text-xl italic">{order.id}</p>
-                                      <p className="text-sm font-bold text-gray-400">{order.customer}</p>
-                                   </div>
-                                </TableCell>
-                                <TableCell className="p-8">
-                                   <div className="flex items-center gap-3">
-                                      <MapPin className="h-4 w-4 text-secondary" />
-                                      <span className="font-bold text-gray-200">{order.address}</span>
-                                   </div>
-                                </TableCell>
-                                <TableCell className="p-8">
-                                   <Badge variant="outline" className="border-white/10 bg-white/5 font-black px-4 py-1">
-                                      {order.driver}
-                                   </Badge>
-                                </TableCell>
-                                <TableCell className="p-8">
-                                   <Badge className={`${getDeliveryStatusColor(order.status)} font-black px-4 py-1 text-[10px] border`}>
-                                      {order.status}
-                                   </Badge>
-                                </TableCell>
-                                <TableCell className="p-8 font-black italic text-lg text-gray-400">{order.time}</TableCell>
-                                <TableCell className="p-8 text-right">
-                                   <Button variant="ghost" size="icon" className="text-secondary hover:bg-secondary/10 rounded-xl">
-                                      <NavIcon className="h-5 w-5" />
-                                   </Button>
-                                   <Button variant="ghost" size="icon" className="text-primary hover:bg-primary/10 rounded-xl">
-                                      <CheckCircle2 className="h-5 w-5" />
-                                   </Button>
-                                </TableCell>
-                             </TableRow>
-                           ))}
-                        </TableBody>
-                     </Table>
-                  </CardContent>
-              </Card>
-            </div>
-          )}
-
-          {activeTab === 'staff' && (
-            <div className="space-y-12 animate-in fade-in duration-500">
-              <div className="flex flex-col md:flex-row justify-between items-end gap-6">
-                <div className="space-y-2">
-                   <h2 className="text-5xl font-black italic tracking-tighter uppercase leading-none">RUMBEROS <span className="text-secondary neon-text-secondary">STAFF</span></h2>
-                   <p className="text-gray-400 font-bold uppercase text-[10px] tracking-[0.3em] pl-1">Gestión operativa de equipo</p>
-                </div>
-                <Dialog>
-                   <DialogTrigger asChild>
-                      <Button className="bg-secondary text-black font-black italic rounded-[1.5rem] h-16 px-12 text-xl tracking-tight neon-glow-secondary">
-                         <UserPlus className="mr-3 h-7 w-7" /> REGISTRAR OPERATIVO
-                      </Button>
-                   </DialogTrigger>
-                   <DialogContent className="bg-card/95 border-white/10 text-white glass-morphism rounded-[3rem] p-12 shadow-[0_0_100px_rgba(0,255,255,0.2)]">
-                      <DialogHeader className="mb-10">
-                         <DialogTitle className="text-4xl font-black italic tracking-tighter text-secondary uppercase">NUEVO MIEMBRO STAFF</DialogTitle>
-                         <p className="text-gray-400 uppercase font-black text-[10px] tracking-widest mt-1">Configura credenciales oficiales y roles operativos</p>
-                      </DialogHeader>
-                      <form className="space-y-8" onSubmit={(e) => { e.preventDefault(); toast({ title: "Personal registrado exitosamente." }); }}>
-                         <div className="space-y-4">
-                            <Label className="uppercase text-[10px] font-black text-gray-500 tracking-[0.2em] pl-1">Nombre Completo del Colaborador</Label>
-                            <Input placeholder="Ej. Carlos Mendoza" className="bg-white/5 border-white/10 h-16 font-bold rounded-2xl text-lg px-6" />
-                         </div>
-                         <div className="space-y-4">
-                            <Label className="uppercase text-[10px] font-black text-gray-500 tracking-[0.2em] pl-1">Número de Cédula (Login ID)</Label>
-                            <div className="relative">
-                               <CreditCard className="absolute left-6 top-1/2 -translate-y-1/2 h-6 w-6 text-secondary" />
-                               <Input placeholder="Ej. 1020304050" className="bg-white/5 border-white/10 h-16 pl-16 font-black tracking-widest rounded-2xl text-2xl" />
-                            </div>
-                            <p className="text-[9px] text-secondary/70 font-bold uppercase tracking-widest pl-1">Los últimos 4 dígitos serán su PIN de acceso.</p>
-                         </div>
-                         <div className="space-y-4">
-                            <Label className="uppercase text-[10px] font-black text-gray-500 tracking-[0.2em] pl-1">Responsabilidad en el Sistema</Label>
-                            <Select>
-                               <SelectTrigger className="bg-white/5 border-white/10 h-16 rounded-2xl font-bold text-lg px-6">
-                                  <SelectValue placeholder="Definir Privilegios..." />
-                               </SelectTrigger>
-                               <SelectContent className="bg-black border-white/10 text-white">
-                                  <SelectItem value="admin">Administrador (Control Total)</SelectItem>
-                                  <SelectItem value="driver">Repartidor Flash (Logística)</SelectItem>
-                                  <SelectItem value="warehouse">Almacén (Empaque y Stock)</SelectItem>
-                               </SelectContent>
-                            </Select>
-                         </div>
-                         <Button type="submit" className="w-full h-20 bg-secondary text-black font-black italic text-2xl rounded-[1.8rem] neon-glow-secondary mt-4 tracking-widest hover:scale-[1.02] transition-transform">
-                            FINALIZAR VÍNCULO LABORAL
-                         </Button>
-                      </form>
-                   </DialogContent>
-                </Dialog>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                {MOCK_STAFF.map((member) => (
-                   <Card key={member.id} className="bg-card/40 border-white/10 glass-morphism p-10 rounded-[3rem] group hover:border-secondary/50 transition-all relative shadow-2xl overflow-hidden">
-                      <div className="absolute top-0 right-0 h-32 w-32 bg-secondary/5 blur-3xl -z-10" />
-                      <div className="flex items-center justify-between mb-10">
-                         <div className="flex items-center gap-6">
-                            <div className="h-20 w-20 rounded-[1.5rem] bg-white/5 flex items-center justify-center border border-white/10 shadow-lg group-hover:neon-glow-secondary transition-all">
-                               <Users className="h-10 w-10 text-secondary" />
-                            </div>
-                            <div>
-                               <h3 className="text-3xl font-black italic tracking-tighter">{member.name}</h3>
-                               <div className="flex flex-wrap gap-3 items-center mt-2">
-                                 <Badge className="bg-secondary/10 text-secondary font-black uppercase text-[10px] border-none px-3">{member.role}</Badge>
-                                 <span className="text-[10px] text-gray-600 font-bold tracking-widest">ID: {member.cedula}</span>
-                               </div>
-                            </div>
-                         </div>
-                         <Badge className={`${member.status === 'Online' || member.status === 'En Entrega' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'} font-black rounded-lg px-4 py-1 border-none text-[10px] shadow-sm`}>
-                            {member.status.toUpperCase()}
-                         </Badge>
-                      </div>
-                      
-                      <div className="flex gap-4">
-                         <Button variant="outline" className="flex-1 h-16 text-lg font-black italic border-white/10 hover:bg-white/5 rounded-2xl tracking-tight">VER AUDITORÍA</Button>
-                         <Button className="flex-1 bg-white/5 border border-white/10 hover:bg-secondary/20 hover:text-secondary hover:border-secondary/40 h-16 font-black rounded-2xl text-lg italic tracking-tight">EDITAR ROL</Button>
-                      </div>
-                   </Card>
-                ))}
-             </div>
-            </div>
-          )}
-
-          {activeTab === 'catalog' && (
-            <div className="space-y-12 animate-in fade-in duration-500">
-               <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-                  <div className="space-y-2">
-                    <h2 className="text-5xl font-black italic tracking-tighter uppercase leading-none">ESTRUCTURA DE <span className="text-primary neon-text-primary">TIENDA</span></h2>
-                    <p className="text-gray-400 font-bold uppercase text-[10px] tracking-[0.3em] pl-1">Curaduría de productos visibles</p>
+                    <span className="text-[10px] font-black text-gray-600 uppercase tracking-widest">{kpi.trend}</span>
                   </div>
-                  <Button className="bg-primary text-white font-black italic px-10 h-16 rounded-[1.5rem] text-xl tracking-tight neon-glow-primary uppercase">
-                    <Plus className="mr-3 h-7 w-7" /> PUBLICAR ITEM
-                  </Button>
-               </div>
-               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
-                  {inventory.map((item, idx) => (
-                     <Card key={idx} className="bg-card/40 border-white/10 overflow-hidden group hover:border-primary/50 transition-all rounded-[2.5rem] relative shadow-2xl">
-                        <div className="h-56 relative bg-black flex items-center justify-center overflow-hidden">
-                           <img src={`https://picsum.photos/seed/catalog-${idx}/500/400`} className="w-full h-full object-cover opacity-50 group-hover:scale-110 group-hover:opacity-100 transition-all duration-700 grayscale group-hover:grayscale-0" alt={item.name} />
-                           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
-                           <div className="absolute top-4 left-4">
-                             {getCategoryBadge(item.category)}
-                           </div>
+                  <div>
+                    <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">{kpi.label}</p>
+                    <h4 className="text-4xl font-black italic tracking-tighter">{kpi.value}</h4>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+              {/* MAIN CHART */}
+              <div className="lg:col-span-2 bg-white/[0.02] border border-white/5 p-10 rounded-[3rem]">
+                <div className="flex justify-between items-center mb-10">
+                  <h3 className="text-2xl font-black italic uppercase tracking-tight">Flujo de Caja por Hora</h3>
+                  <Badge className="bg-primary/20 text-primary border-none font-black italic px-4">EN VIVO</Badge>
+                </div>
+                <div className="h-[400px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={MOCK_STATS}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
+                      <XAxis dataKey="name" stroke="#ffffff20" fontSize={12} fontWeight="bold" />
+                      <YAxis hide />
+                      <ChartTooltip contentStyle={{ backgroundColor: '#000', border: '1px solid #ffffff10', borderRadius: '1rem' }} />
+                      <Bar dataKey="revenue" radius={[10, 10, 0, 0]}>
+                        {MOCK_STATS.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={index === 3 ? '#FF007A' : '#00FFFF'} fillOpacity={0.6} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              {/* SIDE MONITOR */}
+              <div className="space-y-6">
+                <div className="bg-white/[0.02] border border-white/5 p-8 rounded-[2.5rem] h-full">
+                  <h3 className="text-xl font-black italic uppercase mb-6 flex items-center gap-2">
+                    <AlertTriangle className="text-accent h-5 w-5" /> Alertas Críticas
+                  </h3>
+                  <div className="space-y-4">
+                    {[
+                      { msg: 'Stock bajo: Johnnie Walker', type: 'warning' },
+                      { msg: 'Alta demanda en Zona Norte', type: 'info' },
+                      { msg: '3 pedidos con > 25min retraso', type: 'error' },
+                    ].map((alert, i) => (
+                      <div key={i} className="p-4 rounded-xl bg-white/5 border-l-4 border-accent flex justify-between items-center">
+                        <span className="text-sm font-bold">{alert.msg}</span>
+                        <ChevronRight className="h-4 w-4 text-gray-600" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* INVENTORY VIEW */}
+        {activeTab === 'inventory' && (
+          <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600 h-5 w-5" />
+                <Input 
+                  placeholder="Filtrar por SKU o Nombre..." 
+                  className="bg-white/5 border-white/10 h-16 pl-12 rounded-2xl font-bold text-lg focus:border-secondary"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="bg-white/[0.02] border border-white/5 rounded-[2.5rem] overflow-hidden">
+              <Table>
+                <TableHeader className="bg-white/5">
+                  <TableRow className="border-white/5 hover:bg-transparent">
+                    <TableHead className="text-gray-600 font-black uppercase p-8 tracking-widest text-[10px]">PRODUCTO</TableHead>
+                    <TableHead className="text-gray-600 font-black uppercase p-8 tracking-widest text-[10px]">PRECIO VENTA</TableHead>
+                    <TableHead className="text-gray-600 font-black uppercase p-8 tracking-widest text-[10px]">STOCK</TableHead>
+                    <TableHead className="text-gray-600 font-black uppercase p-8 tracking-widest text-[10px]">ESTADO</TableHead>
+                    <TableHead className="text-right p-8">ACCIONES</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {inventory.map((item) => (
+                    <TableRow key={item.id} className="border-white/5 hover:bg-white/5 transition-colors">
+                      <TableCell className="p-8">
+                        <div className="space-y-1">
+                          <p className="font-black text-2xl italic tracking-tighter">{item.name}</p>
+                          <Badge className="bg-white/5 text-gray-500 text-[8px] border-none font-black uppercase">{item.category}</Badge>
                         </div>
-                        <CardContent className="p-8 space-y-6">
-                           <div className="space-y-1">
-                              <h3 className="font-black italic text-2xl leading-none tracking-tight line-clamp-1">{item.name}</h3>
-                              <p className="text-secondary font-black text-2xl italic tracking-tight">{formatCurrency(item.price)}</p>
-                           </div>
-                           <div className="flex gap-3">
-                             <Button className="flex-1 bg-primary/20 text-primary border border-primary/20 hover:bg-primary/30 h-14 font-black rounded-2xl tracking-tighter italic text-lg">EDITAR</Button>
-                             <Button variant="outline" size="icon" className="h-14 w-14 rounded-2xl border-white/10 text-destructive hover:bg-destructive/10">
-                               <Trash2 className="h-6 w-6" />
-                             </Button>
-                           </div>
-                        </CardContent>
-                     </Card>
+                      </TableCell>
+                      <TableCell className="p-8 font-black text-secondary text-2xl italic">{formatCurrency(item.price)}</TableCell>
+                      <TableCell className="p-8">
+                        <div className="flex flex-col">
+                          <span className={`text-4xl font-black italic ${item.stock <= item.minStock ? 'text-accent' : 'text-white'}`}>{item.stock}</span>
+                          <span className="text-[8px] font-black text-gray-600 uppercase">Unidades</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="p-8">
+                        <Badge className={`${item.stock <= item.minStock ? 'bg-accent/10 text-accent' : 'bg-green-500/10 text-green-400'} font-black px-4 border-none`}>
+                          {item.stock <= item.minStock ? 'REABASTECER' : 'ÓPTIMO'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="p-8 text-right space-x-2">
+                        <Button variant="ghost" size="icon" className="h-12 w-12 rounded-xl text-gray-500 hover:text-white"><Edit3 className="h-5 w-5" /></Button>
+                        <Button variant="ghost" size="icon" className="h-12 w-12 rounded-xl text-gray-500 hover:text-destructive"><Trash2 className="h-5 w-5" /></Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        )}
+
+        {/* DELIVERIES VIEW */}
+        {activeTab === 'deliveries' && (
+          <div className="space-y-10 animate-in fade-in duration-700">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+               <div className="md:col-span-2 bg-white/[0.02] border border-white/5 rounded-[3rem] overflow-hidden h-[600px] relative group">
+                  <img src="https://picsum.photos/seed/map-bogota/1200/800" className="w-full h-full object-cover grayscale brightness-[0.3] contrast-150 transition-all group-hover:brightness-50" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent" />
+                  <div className="absolute bottom-10 left-10 space-y-2">
+                    <Badge className="bg-secondary text-black font-black animate-pulse px-6 py-2">8 REPARTIDORES EN RUTA</Badge>
+                    <p className="text-sm font-bold text-gray-400">Mapa Satelital en Tiempo Real</p>
+                  </div>
+               </div>
+               <div className="space-y-6">
+                  {MOCK_DELIVERIES.map((order) => (
+                    <div key={order.id} className="bg-white/[0.02] border border-white/5 p-6 rounded-[2rem] space-y-4 hover:border-secondary/30 transition-all cursor-pointer">
+                      <div className="flex justify-between items-start">
+                        <p className="font-black text-secondary italic text-lg">{order.id}</p>
+                        <Badge className="bg-secondary/10 text-secondary border-none text-[8px] font-black">{order.status}</Badge>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-sm font-bold text-gray-300">{order.customer}</p>
+                        <p className="text-xs text-gray-500 flex items-center gap-1"><MapPin className="h-3 w-3" /> {order.address}</p>
+                      </div>
+                      <div className="flex justify-between items-center pt-2 border-t border-white/5">
+                        <span className="text-xs font-black text-gray-600">{order.driver}</span>
+                        <span className="text-sm font-black italic">{order.time}</span>
+                      </div>
+                    </div>
                   ))}
                </div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
+
+        {/* STAFF VIEW */}
+        {activeTab === 'staff' && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 animate-in fade-in duration-700">
+            {MOCK_STAFF.map((member) => (
+              <div key={member.id} className="bg-white/[0.02] border border-white/5 p-10 rounded-[3rem] space-y-8 group hover:border-primary/50 transition-all relative">
+                <div className="flex justify-between items-start">
+                  <div className="h-16 w-16 bg-white/5 rounded-2xl flex items-center justify-center text-primary group-hover:neon-glow-primary transition-all">
+                    <Users className="h-8 w-8" />
+                  </div>
+                  <Badge className={`${member.status === 'Online' ? 'bg-green-500/10 text-green-400' : 'bg-secondary/10 text-secondary'} font-black px-4`}>{member.status}</Badge>
+                </div>
+                <div>
+                  <h3 className="text-3xl font-black italic tracking-tighter uppercase">{member.name}</h3>
+                  <p className="text-[10px] font-black text-gray-600 uppercase tracking-widest mt-1">Cédula: {member.cedula}</p>
+                </div>
+                <div className="flex gap-3">
+                  <Button className="flex-1 h-14 bg-white/5 border border-white/10 hover:bg-white/10 font-black italic rounded-xl">PERFIL</Button>
+                  <Button variant="ghost" className="h-14 w-14 rounded-xl text-destructive hover:bg-destructive/10"><Trash2 className="h-5 w-5" /></Button>
+                </div>
+              </div>
+            ))}
+            <div className="bg-white/[0.01] border border-dashed border-white/10 rounded-[3rem] flex flex-col items-center justify-center p-12 space-y-6 hover:bg-white/[0.03] transition-all cursor-pointer group">
+               <div className="h-20 w-20 bg-primary/10 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <UserPlus className="h-10 w-10 text-primary" />
+               </div>
+               <p className="font-black italic text-xl tracking-tight text-gray-500">REGISTRAR NUEVO MIEMBRO</p>
+            </div>
+          </div>
+        )}
+
       </main>
     </div>
   );
