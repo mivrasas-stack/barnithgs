@@ -52,7 +52,8 @@ import {
   Zap,
   CheckCircle2,
   Navigation as NavIcon,
-  LayoutDashboard
+  LayoutDashboard,
+  ChevronRight
 } from 'lucide-react';
 
 const MOCK_STATS = [
