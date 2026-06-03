@@ -61,7 +61,7 @@ export default function DriverPage() {
   return (
     <div className="min-h-screen bg-black text-white">
       <StaffNavigation />
-      <main className="container mx-auto px-4 py-12 space-y-12 animate-in fade-in duration-700">
+      <main className="md:pl-20 transition-all duration-300 container mx-auto px-4 py-12 space-y-12 animate-in fade-in duration-700">
         <div className="flex items-center justify-between p-8 bg-card/40 rounded-[2.5rem] border border-white/10 glass-morphism shadow-[0_0_30px_rgba(0,0,0,0.5)]">
           <div className="flex items-center gap-6">
              <div className={`h-16 w-16 rounded-2xl flex items-center justify-center transition-all duration-500 ${isOnline ? 'bg-secondary/20 text-secondary neon-glow-secondary' : 'bg-white/5 text-gray-500'}`}>

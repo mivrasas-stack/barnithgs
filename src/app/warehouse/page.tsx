@@ -83,7 +83,7 @@ export default function WarehousePage() {
   return (
     <div className="min-h-screen bg-black text-white">
       <StaffNavigation />
-      <main className="container mx-auto px-4 py-12 space-y-12 animate-in fade-in duration-700">
+      <main className="md:pl-20 transition-all duration-300 container mx-auto px-4 py-12 space-y-12 animate-in fade-in duration-700">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
           <div>
             <h1 className="text-5xl font-black font-headline italic tracking-tighter flex items-center gap-4">

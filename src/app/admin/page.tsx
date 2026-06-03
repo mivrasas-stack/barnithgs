@@ -26,7 +26,6 @@ import {
   Tooltip as ChartTooltip
 } from 'recharts';
 import { 
-  BarChart as ChartIcon, 
   ShoppingCart, 
   Users, 
   AlertTriangle, 
@@ -116,7 +115,7 @@ function AdminContent() {
     <div className="min-h-screen bg-black text-white selection:bg-primary">
       <StaffNavigation />
       
-      <main className="container mx-auto px-6 py-12 max-w-[1600px] space-y-16">
+      <main className="md:pl-20 transition-all duration-300 container mx-auto px-6 py-12 max-w-[1600px] space-y-16">
         
         {/* SECTION HEADER - MINIMALIST & BOLD */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 pb-8 border-b border-white/5">
