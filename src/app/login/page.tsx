@@ -4,69 +4,58 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUserRole, Role } from '@/lib/store';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { ShieldCheck, Lock, Truck, Box, LayoutDashboard, ChevronRight, Info, CreditCard } from 'lucide-react';
+import { Card } from '@/components/ui/card';
+import { Lock, ShieldCheck, Loader2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { Navigation } from '@/components/Navigation';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 
 export default function LoginPage() {
-  const [cedula, setCedula] = useState('');
   const [digits, setDigits] = useState('');
-  const [selectedRole, setSelectedRole] = useState<Role | null>(null);
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
   const router = useRouter();
   const { login } = useUserRole();
 
   const handleLogin = () => {
-    if (!selectedRole) {
-      toast({ 
-        variant: "destructive", 
-        title: "ROL NO SELECCIONADO", 
-        description: "Elige tu puesto de trabajo primero." 
-      });
-      return;
-    }
-
-    if (!cedula) {
-      toast({
-        variant: "destructive",
-        title: "CÉDULA REQUERIDA",
-        description: "Ingresa tu número de identificación completo.",
-      });
-      return;
-    }
-
     if (digits.length !== 4) {
       toast({
         variant: "destructive",
         title: "PIN INCOMPLETO",
-        description: "Digita los últimos 4 números de tu cédula.",
+        description: "Digita tu código de acceso de 4 números.",
       });
       return;
     }
 
-    const success = login(selectedRole, digits);
+    setIsAuthenticating(true);
 
-    if (success) {
-      toast({
-        title: "¡ACCESO CONCEDIDO!",
-        description: `Bienvenido al sistema Staff, ${selectedRole.toUpperCase()}.`,
-      });
-      
-      if (selectedRole === 'admin') router.push('/admin');
-      else if (selectedRole === 'driver') router.push('/driver');
-      else if (selectedRole === 'warehouse') router.push('/warehouse');
-      else router.push('/');
-    } else {
-      toast({
-        variant: "destructive",
-        title: "ERROR DE ACCESO",
-        description: "El PIN no coincide con la cédula o rol seleccionado.",
-      });
-      setDigits('');
-    }
+    // Intentamos loguear buscando a qué rol pertenece el PIN ingresado
+    // En un sistema real, esto validaría contra la base de datos de empleados
+    let authenticatedRole: Role | null = null;
+    
+    if (digits === '1111') authenticatedRole = 'admin';
+    else if (digits === '2222') authenticatedRole = 'driver';
+    else if (digits === '3333') authenticatedRole = 'warehouse';
+
+    setTimeout(() => {
+      if (authenticatedRole) {
+        login(authenticatedRole, digits);
+        toast({
+          title: "¡ACCESO CONCEDIDO!",
+          description: `Bienvenido al sistema Staff, ${authenticatedRole.toUpperCase()}.`,
+        });
+        
+        if (authenticatedRole === 'admin') router.push('/admin');
+        else if (authenticatedRole === 'driver') router.push('/driver');
+        else if (authenticatedRole === 'warehouse') router.push('/warehouse');
+      } else {
+        toast({
+          variant: "destructive",
+          title: "ACCESO DENEGADO",
+          description: "El PIN ingresado no es válido para ningún miembro del staff.",
+        });
+        setDigits('');
+      }
+      setIsAuthenticating(false);
+    }, 800);
   };
 
   const appendDigit = (d: string) => {
@@ -75,123 +64,81 @@ export default function LoginPage() {
 
   const clear = () => setDigits('');
 
-  const roleConfigs = [
-    { id: 'admin' as Role, name: 'ADMIN', icon: LayoutDashboard, hint: 'Cédula: 1111' },
-    { id: 'driver' as Role, name: 'DRIVER', icon: Truck, hint: 'Cédula: 2222' },
-    { id: 'warehouse' as Role, name: 'ALMACÉN', icon: Box, hint: 'Cédula: 3333' },
-  ];
-
   return (
-    <div className="min-h-screen bg-black text-white selection:bg-primary">
+    <div className="min-h-screen bg-black text-white selection:bg-primary overflow-hidden">
       <Navigation />
-      <main className="container mx-auto px-4 py-12 flex flex-col items-center justify-center min-h-[calc(100vh-80px)]">
-        <div className="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-2 gap-12 items-center animate-in fade-in zoom-in duration-700">
+      
+      <main className="container mx-auto px-4 flex flex-col items-center justify-center min-h-[calc(100vh-80px)]">
+        <div className="w-full max-w-md animate-in fade-in zoom-in duration-700 relative">
           
-          {/* Lado Izquierdo: Selección de Rol y Datos */}
-          <div className="space-y-10">
-            <div className="space-y-4">
-              <div className="h-16 w-16 bg-secondary/20 rounded-2xl flex items-center justify-center neon-glow-secondary border border-secondary/40">
-                <ShieldCheck className="h-8 w-8 text-secondary" />
-              </div>
-              <h1 className="text-5xl font-black italic tracking-tighter leading-none">
-                PORTAL <br /> <span className="text-secondary neon-text-secondary">STAFF VIP</span>
-              </h1>
-              <p className="text-gray-500 font-medium max-w-sm">
-                Autenticación biométrica y digital para el personal de PartyFlow.
-              </p>
-            </div>
+          {/* Elementos de fondo decorativos */}
+          <div className="absolute -top-20 -left-20 w-64 h-64 bg-primary/10 blur-[120px] rounded-full" />
+          <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-secondary/10 blur-[120px] rounded-full" />
 
-            <div className="space-y-6">
-              <div className="space-y-4">
-                <Label className="uppercase text-[10px] font-black tracking-widest text-secondary">1. Selecciona tu Rol</Label>
-                <div className="grid grid-cols-1 gap-3">
-                  {roleConfigs.map((role) => (
-                    <button
-                      key={role.id}
-                      onClick={() => setSelectedRole(role.id)}
-                      className={`group p-4 rounded-2xl border-2 flex items-center justify-between transition-all duration-300 ${
-                        selectedRole === role.id 
-                        ? 'bg-secondary/10 border-secondary neon-glow-secondary' 
-                        : 'bg-white/5 border-white/5 hover:border-white/20'
-                      }`}
-                    >
-                      <div className="flex items-center gap-4">
-                        <role.icon className={`h-5 w-5 ${selectedRole === role.id ? 'text-secondary' : 'text-gray-500'}`} />
-                        <span className={`text-lg font-black italic tracking-widest ${selectedRole === role.id ? 'text-white' : 'text-gray-500'}`}>
-                          {role.name}
-                        </span>
-                      </div>
-                      {selectedRole === role.id && <ChevronRight className="h-5 w-5 text-secondary" />}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <Label className="uppercase text-[10px] font-black tracking-widest text-secondary">2. Identificación</Label>
-                <div className="relative group">
-                  <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500 group-focus-within:text-secondary transition-colors" />
-                  <Input 
-                    placeholder="Ingresa tu Cédula" 
-                    value={cedula}
-                    onChange={(e) => setCedula(e.target.value)}
-                    className="h-14 pl-12 bg-white/5 border-white/10 rounded-2xl focus:border-secondary/50 font-black tracking-[0.2em] text-lg"
-                  />
-                </div>
-              </div>
+          <div className="text-center space-y-4 mb-10">
+            <div className="h-16 w-16 bg-primary/20 rounded-2xl flex items-center justify-center neon-glow-primary border border-primary/40 mx-auto">
+              <ShieldCheck className="h-8 w-8 text-primary" />
             </div>
-
-            <div className="p-6 bg-white/5 rounded-2xl border border-white/10 flex items-start gap-4">
-              <Info className="h-5 w-5 text-secondary mt-1" />
-              <p className="text-sm text-gray-400">
-                <span className="text-secondary font-bold">Ayuda:</span> Para este prototipo, usa cualquier número y los últimos 4 dígitos como PIN (ej: admin 1111).
-              </p>
-            </div>
+            <h1 className="text-4xl font-black italic tracking-tighter">
+              PORTAL <span className="text-primary neon-text-primary">STAFF</span>
+            </h1>
+            <p className="text-gray-500 font-bold uppercase text-[10px] tracking-[0.3em]">Autenticación Biométrica Digital</p>
           </div>
 
-          {/* Lado Derecho: Teclado Numérico */}
-          <div className="relative">
-            <div className="absolute inset-0 bg-secondary/5 blur-[100px] rounded-full" />
-            <Card className="bg-card/40 border-white/10 glass-morphism rounded-[3.5rem] overflow-hidden p-10 space-y-10 relative z-10">
-              <div className="text-center space-y-2">
-                <Lock className="h-6 w-6 text-gray-600 mx-auto mb-2" />
-                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-500">3. DIGITA TU PIN (ÚLTIMOS 4)</p>
-              </div>
+          <Card className="bg-card/40 border-white/10 glass-morphism rounded-[3rem] overflow-hidden p-8 space-y-8 relative z-10 shadow-2xl">
+            <div className="text-center space-y-2">
+              <Lock className="h-5 w-5 text-gray-600 mx-auto mb-2" />
+              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400">INGRESA TU PIN DE ACCESO</p>
+            </div>
 
-              <div className="flex justify-center gap-4">
-                {[0, 1, 2, 3].map((i) => (
-                  <div 
-                    key={i} 
-                    className={`h-20 w-14 rounded-2xl border-2 flex items-center justify-center text-4xl font-black transition-all duration-500 ${
-                      digits[i] ? 'border-secondary text-secondary neon-glow-secondary' : 'border-white/5 text-gray-800'
-                    }`}
-                  >
-                    {digits[i] ? '•' : ''}
-                  </div>
-                ))}
-              </div>
+            {/* Visualizador de PIN */}
+            <div className="flex justify-center gap-4">
+              {[0, 1, 2, 3].map((i) => (
+                <div 
+                  key={i} 
+                  className={`h-16 w-12 rounded-xl border-2 flex items-center justify-center text-3xl font-black transition-all duration-300 ${
+                    digits[i] ? 'border-primary text-primary neon-glow-primary' : 'border-white/5 text-gray-800'
+                  }`}
+                >
+                  {digits[i] ? '•' : ''}
+                </div>
+              ))}
+            </div>
 
-              <div className="grid grid-cols-3 gap-4">
-                {['1', '2', '3', '4', '5', '6', '7', '8', '9', 'C', '0', 'OK'].map((btn) => (
-                  <Button
-                    key={btn}
-                    variant="outline"
-                    className={`h-16 rounded-2xl text-xl font-black transition-all border-none ${
-                      btn === 'OK' ? 'bg-secondary text-black neon-glow-secondary hover:bg-secondary/90' : 
-                      btn === 'C' ? 'bg-destructive/10 text-destructive hover:bg-destructive/20' :
-                      'bg-white/5 text-white hover:bg-white/10'
-                    }`}
-                    onClick={() => {
-                      if (btn === 'C') clear();
-                      else if (btn === 'OK') handleLogin();
-                      else appendDigit(btn);
-                    }}
-                  >
-                    {btn}
-                  </Button>
-                ))}
-              </div>
-            </Card>
+            {/* Teclado Numérico */}
+            <div className="grid grid-cols-3 gap-3">
+              {['1', '2', '3', '4', '5', '6', '7', '8', '9', 'C', '0', 'OK'].map((btn) => (
+                <Button
+                  key={btn}
+                  variant="outline"
+                  disabled={isAuthenticating}
+                  className={`h-14 rounded-xl text-xl font-black transition-all border-none ${
+                    btn === 'OK' ? 'bg-primary text-white neon-glow-primary hover:bg-primary/90' : 
+                    btn === 'C' ? 'bg-white/5 text-destructive hover:bg-destructive/10' :
+                    'bg-white/5 text-white hover:bg-white/10'
+                  }`}
+                  onClick={() => {
+                    if (btn === 'C') clear();
+                    else if (btn === 'OK') handleLogin();
+                    else appendDigit(btn);
+                  }}
+                >
+                  {btn === 'OK' && isAuthenticating ? <Loader2 className="h-6 w-6 animate-spin" /> : btn}
+                </Button>
+              ))}
+            </div>
+
+            <p className="text-[9px] text-gray-600 text-center font-bold uppercase tracking-widest pt-4">
+              Punto de acceso restringido a personal autorizado
+            </p>
+          </Card>
+          
+          <div className="mt-12 text-center">
+             <div className="p-4 bg-white/5 border border-white/10 rounded-2xl inline-block">
+                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">
+                  Acceso de prueba: <span className="text-primary">1111</span> (Admin) • <span className="text-secondary">2222</span> (Driver) • <span className="text-accent">3333</span> (Almacén)
+                </p>
+             </div>
           </div>
         </div>
       </main>
