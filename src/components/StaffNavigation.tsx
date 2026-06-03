@@ -13,14 +13,27 @@ import {
   ShieldCheck,
   Bell,
   Home,
+  Menu,
+  X,
+  Zap,
   ChevronRight
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { 
+  Sheet, 
+  SheetContent, 
+  SheetHeader, 
+  SheetTitle, 
+  SheetTrigger,
+  SheetClose
+} from '@/components/ui/sheet';
+import { useState } from 'react';
 
 export function StaffNavigation() {
   const { role, isLoggedIn, logout } = useUserRole();
   const router = useRouter();
   const pathname = usePathname();
+  const [isOpen, setIsOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -30,82 +43,104 @@ export function StaffNavigation() {
   if (!isLoggedIn) return null;
 
   const navItems = [
-    { name: 'Dashboard', href: '/admin', icon: LayoutDashboard, roles: ['admin'] },
-    { name: 'Entregas', href: '/driver', icon: Truck, roles: ['driver', 'admin'] },
-    { name: 'Almacén', href: '/warehouse', icon: Box, roles: ['warehouse', 'admin'] },
+    { name: 'Dashboard', href: '/admin', icon: LayoutDashboard, roles: ['admin'], desc: 'Métricas y control total' },
+    { name: 'Entregas', href: '/driver', icon: Truck, roles: ['driver', 'admin'], desc: 'Rutas y despachos activos' },
+    { name: 'Almacén', href: '/warehouse', icon: Box, roles: ['warehouse', 'admin'], desc: 'Gestión de stock y empaque' },
   ];
 
   return (
-    <nav className="sticky top-0 z-50 w-full border-b border-white/10 glass-morphism">
-      <div className="container mx-auto flex h-24 items-center justify-between px-6">
-        <div className="flex items-center gap-10">
-          <Link href={role === 'admin' ? '/admin' : `/${role}`} className="flex items-center gap-3 group">
-            <div className="h-12 w-12 bg-secondary/20 rounded-2xl flex items-center justify-center group-hover:neon-glow-secondary transition-all">
-              <ShieldCheck className="h-7 w-7 text-secondary" />
-            </div>
-            <div className="flex flex-col -space-y-1">
-              <span className="text-xl font-black tracking-tighter text-white uppercase italic">
-                PORTAL<span className="text-secondary">STAFF</span>
-              </span>
-              <span className="text-[10px] font-black text-gray-500 tracking-[0.3em] uppercase">Control Maestro</span>
-            </div>
-          </Link>
-          
-          <div className="h-10 w-[1px] bg-white/10 hidden lg:block" />
+    <div className="sticky top-0 z-50 w-full border-b border-white/10 glass-morphism">
+      <div className="container mx-auto flex h-20 items-center justify-between px-6">
+        
+        {/* Lado Izquierdo: Trigger del Slide Board */}
+        <div className="flex items-center gap-6">
+          <Sheet open={isOpen} onOpenChange={setIsOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" className="h-12 w-12 rounded-2xl bg-secondary/10 text-secondary hover:bg-secondary/20 border border-secondary/20 neon-glow-secondary group">
+                <Menu className="h-6 w-6 group-hover:rotate-90 transition-transform" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="bg-card/95 border-r border-white/10 text-white glass-morphism w-[350px] p-0">
+              <div className="flex flex-col h-full">
+                <SheetHeader className="p-8 border-b border-white/5">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="h-12 w-12 bg-secondary/20 rounded-2xl flex items-center justify-center neon-glow-secondary">
+                      <ShieldCheck className="h-7 w-7 text-secondary" />
+                    </div>
+                    <SheetTitle className="text-2xl font-black italic tracking-tighter text-white">
+                      COMMAND <span className="text-secondary">CENTER</span>
+                    </SheetTitle>
+                  </div>
+                  <Badge variant="outline" className="w-fit border-secondary text-secondary font-black px-4 py-1">
+                    SESIÓN: {role.toUpperCase()}
+                  </Badge>
+                </SheetHeader>
 
-          <div className="hidden md:flex items-center gap-3">
-            {navItems.filter(item => item.roles.includes(role)).map((item) => (
-              <Link key={item.href} href={item.href}>
-                <Button 
-                  variant="ghost" 
-                  className={`flex gap-3 font-black italic tracking-widest uppercase transition-all rounded-full h-12 px-6 ${
-                    pathname === item.href 
-                    ? 'bg-secondary/10 text-secondary border border-secondary/30' 
-                    : 'text-gray-400 hover:text-white hover:bg-white/5'
-                  }`}
-                >
-                  <item.icon className="h-4 w-4" />
-                  {item.name}
-                </Button>
-              </Link>
-            ))}
-          </div>
+                <div className="flex-1 p-6 space-y-4">
+                  <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.3em] px-2 mb-4">Navegación Operativa</p>
+                  
+                  {navItems.filter(item => item.roles.includes(role)).map((item) => (
+                    <Link key={item.href} href={item.href} onClick={() => setIsOpen(false)}>
+                      <div className={`flex items-center gap-4 p-5 rounded-[1.5rem] border transition-all group ${
+                        pathname === item.href 
+                        ? 'bg-secondary/10 border-secondary/40 text-secondary' 
+                        : 'bg-white/5 border-transparent hover:border-white/20 text-gray-400 hover:text-white'
+                      }`}>
+                        <item.icon className={`h-6 w-6 ${pathname === item.href ? 'neon-glow-secondary' : ''}`} />
+                        <div className="flex-1">
+                          <p className="font-black italic text-lg tracking-tight uppercase leading-none">{item.name}</p>
+                          <p className="text-[10px] font-bold text-gray-500 uppercase mt-1 tracking-wider">{item.desc}</p>
+                        </div>
+                        <ChevronRight className={`h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity ${pathname === item.href ? 'opacity-100' : ''}`} />
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+
+                <div className="p-8 border-t border-white/5 space-y-4">
+                  <Link href="/" onClick={() => setIsOpen(false)}>
+                    <Button variant="ghost" className="w-full h-14 rounded-2xl text-gray-400 hover:text-white hover:bg-white/5 justify-start gap-4 font-bold">
+                      <Home className="h-5 w-5" /> VISTA PÚBLICA
+                    </Button>
+                  </Link>
+                  <Button 
+                    variant="ghost" 
+                    onClick={handleLogout} 
+                    className="w-full h-14 rounded-2xl text-destructive hover:bg-destructive/10 justify-start gap-4 font-black italic"
+                  >
+                    <LogOut className="h-5 w-5" /> CERRAR SESIÓN
+                  </Button>
+                </div>
+              </div>
+            </SheetContent>
+          </Sheet>
+
+          <Link href={role === 'admin' ? '/admin' : `/${role}`} className="flex items-center gap-3">
+             <span className="text-xl font-black tracking-tighter text-white uppercase italic">
+                PORTAL<span className="text-secondary">STAFF</span>
+             </span>
+          </Link>
         </div>
 
+        {/* Lado Derecho: Info Rápida */}
         <div className="flex items-center gap-6">
-          <div className="hidden xl:flex items-center gap-3 mr-4">
-             <Link href="/">
-               <Button variant="ghost" className="text-gray-500 hover:text-white font-bold h-10">
-                 <Home className="mr-2 h-4 w-4" /> VER TIENDA
-               </Button>
-             </Link>
-             <div className="h-6 w-[1px] bg-white/10" />
-             <div className="flex flex-col items-end">
-                <Badge variant="outline" className="border-secondary text-secondary font-black px-3 py-0.5 text-[10px] mb-0.5">
-                  MODO: {role.toUpperCase()}
-                </Badge>
-                <span className="text-[10px] font-bold text-gray-600 uppercase tracking-tighter">Sesión Activa</span>
-             </div>
+          <div className="hidden lg:flex flex-col items-end -space-y-1">
+             <span className="text-[10px] font-black text-secondary tracking-widest uppercase">Sistema Activo</span>
+             <span className="text-xs font-bold text-gray-500 uppercase">{role}</span>
           </div>
 
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" className="h-12 w-12 hover:bg-white/5 relative group">
-              <Bell className="h-6 w-6 text-gray-400 group-hover:text-white transition-colors" />
-              <span className="absolute top-3 right-3 h-2 w-2 bg-secondary rounded-full animate-pulse shadow-[0_0_10px_rgba(0,255,255,0.8)]" />
-            </Button>
+          <div className="h-8 w-[1px] bg-white/10" />
 
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={handleLogout} 
-              className="h-12 w-12 text-destructive hover:bg-destructive/10 rounded-xl border border-transparent hover:border-destructive/20"
-              title="Cerrar Sesión Staff"
-            >
-              <LogOut className="h-6 w-6" />
-            </Button>
+          <Button variant="ghost" size="icon" className="h-12 w-12 hover:bg-white/5 relative group">
+            <Bell className="h-6 w-6 text-gray-400 group-hover:text-white transition-colors" />
+            <span className="absolute top-3 right-3 h-2 w-2 bg-secondary rounded-full animate-pulse shadow-[0_0_10px_rgba(0,255,255,0.8)]" />
+          </Button>
+
+          <div className="h-10 w-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
+            <Zap className="h-5 w-5 text-primary animate-pulse" />
           </div>
         </div>
       </div>
-    </nav>
+    </div>
   );
 }
