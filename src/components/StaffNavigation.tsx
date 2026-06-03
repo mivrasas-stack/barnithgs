@@ -1,8 +1,7 @@
-
 "use client";
 
 import Link from 'next/link';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useUserRole } from '@/lib/store';
 import { Button } from '@/components/ui/button';
 import { 
@@ -14,9 +13,11 @@ import {
   Bell,
   Home,
   Menu,
-  X,
   Zap,
-  ChevronRight
+  ChevronRight,
+  Package,
+  Users,
+  History
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { 
@@ -24,8 +25,7 @@ import {
   SheetContent, 
   SheetHeader, 
   SheetTitle, 
-  SheetTrigger,
-  SheetClose
+  SheetTrigger
 } from '@/components/ui/sheet';
 import { useState } from 'react';
 
@@ -33,6 +33,8 @@ export function StaffNavigation() {
   const { role, isLoggedIn, logout } = useUserRole();
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const activeTab = searchParams.get('tab') || 'dashboard';
   const [isOpen, setIsOpen] = useState(false);
 
   const handleLogout = () => {
@@ -42,17 +44,23 @@ export function StaffNavigation() {
 
   if (!isLoggedIn) return null;
 
-  const navItems = [
-    { name: 'Dashboard', href: '/admin', icon: LayoutDashboard, roles: ['admin'], desc: 'Métricas y control total' },
-    { name: 'Entregas', href: '/driver', icon: Truck, roles: ['driver', 'admin'], desc: 'Rutas y despachos activos' },
-    { name: 'Almacén', href: '/warehouse', icon: Box, roles: ['warehouse', 'admin'], desc: 'Gestión de stock y empaque' },
+  const adminSubItems = [
+    { name: 'Dashboard', tab: 'dashboard', icon: LayoutDashboard, desc: 'Métricas en tiempo real' },
+    { name: 'Inventario', tab: 'inventory', icon: Box, desc: 'Stock y existencias' },
+    { name: 'Catálogo', tab: 'catalog', icon: Package, desc: 'Gestión de tienda' },
+    { name: 'Personal', tab: 'staff', icon: Users, desc: 'Gestión de equipo' },
+    { name: 'Historial', tab: 'history', icon: History, desc: 'Registro de ventas' },
+  ];
+
+  const mainNavItems = [
+    { name: 'Entregas', href: '/driver', icon: Truck, roles: ['driver', 'admin'], desc: 'Rutas activas' },
+    { name: 'Almacén', href: '/warehouse', icon: Box, roles: ['warehouse', 'admin'], desc: 'Gestión de empaque' },
   ];
 
   return (
     <div className="sticky top-0 z-50 w-full border-b border-white/10 glass-morphism">
       <div className="container mx-auto flex h-20 items-center justify-between px-6">
         
-        {/* Lado Izquierdo: Trigger del Slide Board */}
         <div className="flex items-center gap-6">
           <Sheet open={isOpen} onOpenChange={setIsOpen}>
             <SheetTrigger asChild>
@@ -60,8 +68,8 @@ export function StaffNavigation() {
                 <Menu className="h-6 w-6 group-hover:rotate-90 transition-transform" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="bg-card/95 border-r border-white/10 text-white glass-morphism w-[350px] p-0">
-              <div className="flex flex-col h-full">
+            <SheetContent side="left" className="bg-card/95 border-r border-white/10 text-white glass-morphism w-[350px] p-0 overflow-y-auto no-scrollbar">
+              <div className="flex flex-col min-h-full">
                 <SheetHeader className="p-8 border-b border-white/5">
                   <div className="flex items-center gap-3 mb-6">
                     <div className="h-12 w-12 bg-secondary/20 rounded-2xl flex items-center justify-center neon-glow-secondary">
@@ -76,25 +84,50 @@ export function StaffNavigation() {
                   </Badge>
                 </SheetHeader>
 
-                <div className="flex-1 p-6 space-y-4">
-                  <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.3em] px-2 mb-4">Navegación Operativa</p>
-                  
-                  {navItems.filter(item => item.roles.includes(role)).map((item) => (
-                    <Link key={item.href} href={item.href} onClick={() => setIsOpen(false)}>
-                      <div className={`flex items-center gap-4 p-5 rounded-[1.5rem] border transition-all group ${
-                        pathname === item.href 
-                        ? 'bg-secondary/10 border-secondary/40 text-secondary' 
-                        : 'bg-white/5 border-transparent hover:border-white/20 text-gray-400 hover:text-white'
-                      }`}>
-                        <item.icon className={`h-6 w-6 ${pathname === item.href ? 'neon-glow-secondary' : ''}`} />
-                        <div className="flex-1">
-                          <p className="font-black italic text-lg tracking-tight uppercase leading-none">{item.name}</p>
-                          <p className="text-[10px] font-bold text-gray-500 uppercase mt-1 tracking-wider">{item.desc}</p>
+                <div className="flex-1 p-6 space-y-8">
+                  {/* SECCIÓN ADMINISTRATIVA (Solo si es Admin) */}
+                  {role === 'admin' && (
+                    <div className="space-y-4">
+                      <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.3em] px-2">Gestión Administrativa</p>
+                      {adminSubItems.map((item) => (
+                        <Link key={item.tab} href={`/admin?tab=${item.tab}`} onClick={() => setIsOpen(false)}>
+                          <div className={`flex items-center gap-4 p-5 rounded-[1.5rem] border transition-all group ${
+                            pathname === '/admin' && activeTab === item.tab
+                            ? 'bg-primary/10 border-primary/40 text-primary' 
+                            : 'bg-white/5 border-transparent hover:border-white/20 text-gray-400 hover:text-white'
+                          }`}>
+                            <item.icon className={`h-6 w-6 ${pathname === '/admin' && activeTab === item.tab ? 'neon-glow-primary' : ''}`} />
+                            <div className="flex-1">
+                              <p className="font-black italic text-lg tracking-tight uppercase leading-none">{item.name}</p>
+                              <p className="text-[10px] font-bold text-gray-500 uppercase mt-1 tracking-wider">{item.desc}</p>
+                            </div>
+                            <ChevronRight className={`h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity ${pathname === '/admin' && activeTab === item.tab ? 'opacity-100' : ''}`} />
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* SECCIÓN OPERATIVA */}
+                  <div className="space-y-4">
+                    <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.3em] px-2">Operaciones en Campo</p>
+                    {mainNavItems.filter(item => item.roles.includes(role)).map((item) => (
+                      <Link key={item.href} href={item.href} onClick={() => setIsOpen(false)}>
+                        <div className={`flex items-center gap-4 p-5 rounded-[1.5rem] border transition-all group ${
+                          pathname === item.href 
+                          ? 'bg-secondary/10 border-secondary/40 text-secondary' 
+                          : 'bg-white/5 border-transparent hover:border-white/20 text-gray-400 hover:text-white'
+                        }`}>
+                          <item.icon className={`h-6 w-6 ${pathname === item.href ? 'neon-glow-secondary' : ''}`} />
+                          <div className="flex-1">
+                            <p className="font-black italic text-lg tracking-tight uppercase leading-none">{item.name}</p>
+                            <p className="text-[10px] font-bold text-gray-500 uppercase mt-1 tracking-wider">{item.desc}</p>
+                          </div>
+                          <ChevronRight className={`h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity ${pathname === item.href ? 'opacity-100' : ''}`} />
                         </div>
-                        <ChevronRight className={`h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity ${pathname === item.href ? 'opacity-100' : ''}`} />
-                      </div>
-                    </Link>
-                  ))}
+                      </Link>
+                    ))}
+                  </div>
                 </div>
 
                 <div className="p-8 border-t border-white/5 space-y-4">
@@ -122,7 +155,6 @@ export function StaffNavigation() {
           </Link>
         </div>
 
-        {/* Lado Derecho: Info Rápida */}
         <div className="flex items-center gap-6">
           <div className="hidden lg:flex flex-col items-end -space-y-1">
              <span className="text-[10px] font-black text-secondary tracking-widest uppercase">Sistema Activo</span>

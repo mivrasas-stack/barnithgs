@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useUserRole } from '@/lib/store';
 import { StaffNavigation } from '@/components/StaffNavigation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -21,7 +21,6 @@ import {
   XAxis, 
   YAxis, 
   CartesianGrid, 
-  ChartTooltip, 
   ResponsiveContainer, 
   Cell 
 } from 'recharts';
@@ -31,10 +30,7 @@ import {
   Users, 
   AlertTriangle, 
   TrendingUp, 
-  Zap, 
   Loader2, 
-  Package, 
-  History, 
   Plus,
   Truck,
   Box,
@@ -42,7 +38,8 @@ import {
   Trash2,
   ShieldCheck,
   UserPlus,
-  CreditCard
+  CreditCard,
+  History
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -69,12 +66,12 @@ const MOCK_STAFF = [
   { id: 'S4', name: 'Luis Martínez', role: 'driver', status: 'Offline', lastActive: '2h', cedula: '1077889900' },
 ];
 
-export default function AdminPage() {
+function AdminContent() {
   const { isLoggedIn, role, isInitialized } = useUserRole();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState('dashboard');
-  const [inventory, setInventory] = useState(INITIAL_INVENTORY);
-  const [editingItem, setEditingItem] = useState<any>(null);
+  const searchParams = useSearchParams();
+  const activeTab = searchParams.get('tab') || 'dashboard';
+  const [inventory] = useState(INITIAL_INVENTORY);
 
   useEffect(() => {
     if (isInitialized && (!isLoggedIn || role !== 'admin')) {
@@ -98,7 +95,6 @@ export default function AdminPage() {
       title: "¡PRODUCTO ACTUALIZADO!",
       description: "Los cambios han sido aplicados al catálogo en vivo.",
     });
-    setEditingItem(null);
   };
 
   const handleSaveStaff = (e: React.FormEvent) => {
@@ -116,9 +112,8 @@ export default function AdminPage() {
       <main className="container mx-auto px-4 py-12 space-y-12 animate-in fade-in duration-700">
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8">
           <div>
-            <h1 className="text-5xl font-black font-headline italic tracking-tighter flex items-center gap-4">
-              <LayoutDashboard className="text-primary h-12 w-12 drop-shadow-[0_0_15px_rgba(255,0,122,0.8)]" /> 
-              COMANDO <span className="text-primary neon-text-primary">CENTRAL</span>
+            <h1 className="text-5xl font-black font-headline italic tracking-tighter flex items-center gap-4 uppercase">
+              <span className="text-primary neon-text-primary">{activeTab}</span>
             </h1>
             <p className="text-gray-400 font-medium mt-2">Gestión integral de la infraestructura PartyFlow.</p>
           </div>
@@ -186,25 +181,7 @@ export default function AdminPage() {
           </div>
         </div>
 
-        <Tabs defaultValue="dashboard" className="w-full space-y-8" onValueChange={setActiveTab}>
-          <TabsList className="bg-white/5 border border-white/10 p-1 h-16 rounded-full w-fit mx-auto lg:mx-0 overflow-x-auto no-scrollbar">
-            <TabsTrigger value="dashboard" className="rounded-full px-8 font-black italic tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white transition-all">
-              DASHBOARD
-            </TabsTrigger>
-            <TabsTrigger value="inventory" className="rounded-full px-8 font-black italic tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white transition-all">
-              INVENTARIO
-            </TabsTrigger>
-            <TabsTrigger value="catalog" className="rounded-full px-8 font-black italic tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white transition-all">
-              CATÁLOGO
-            </TabsTrigger>
-            <TabsTrigger value="staff" className="rounded-full px-8 font-black italic tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white transition-all">
-              PERSONAL
-            </TabsTrigger>
-            <TabsTrigger value="history" className="rounded-full px-8 font-black italic tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white transition-all">
-              HISTORIAL
-            </TabsTrigger>
-          </TabsList>
-
+        <Tabs value={activeTab} className="w-full space-y-8">
           <TabsContent value="dashboard" className="space-y-12">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                {[
@@ -263,7 +240,9 @@ export default function AdminPage() {
                             {item.stock === 0 ? 'SIN STOCK' : `${item.stock} UNIDADES`}
                           </p>
                         </div>
-                        <Button size="sm" variant="outline" className="border-accent/50 text-accent hover:bg-accent/10 rounded-xl" onClick={() => setActiveTab('inventory')}>EDITAR</Button>
+                        <Link href="/admin?tab=inventory">
+                          <Button size="sm" variant="outline" className="border-accent/50 text-accent hover:bg-accent/10 rounded-xl">EDITAR</Button>
+                        </Link>
                      </div>
                    ))}
                 </CardContent>
@@ -318,7 +297,7 @@ export default function AdminPage() {
                 {inventory.map((item, idx) => (
                    <Card key={idx} className="bg-white/5 border-white/10 overflow-hidden group hover:border-primary/50 transition-all rounded-[2rem]">
                       <div className="h-40 relative bg-black flex items-center justify-center overflow-hidden">
-                         <img src={`https://picsum.photos/seed/catalog-${idx}/300/200`} className="w-full h-full object-cover opacity-50 group-hover:scale-110 transition-transform grayscale group-hover:grayscale-0" />
+                         <img src={`https://picsum.photos/seed/catalog-${idx}/300/200`} className="w-full h-full object-cover opacity-50 group-hover:scale-110 transition-transform grayscale group-hover:grayscale-0" alt={item.name} />
                          <div className="absolute inset-0 bg-gradient-to-t from-black to-transparent" />
                          <Badge className="absolute top-4 right-4 bg-black/60 border-white/10 font-black">{item.category}</Badge>
                       </div>
@@ -531,5 +510,13 @@ export default function AdminPage() {
         </Tabs>
       </main>
     </div>
+  );
+}
+
+export default function AdminPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-black flex items-center justify-center"><Loader2 className="h-12 w-12 text-primary animate-spin" /></div>}>
+      <AdminContent />
+    </Suspense>
   );
 }
