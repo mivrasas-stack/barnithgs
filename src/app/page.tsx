@@ -53,9 +53,11 @@ export default function Home() {
                       PEDIR AHORA <ChevronRight className="ml-2 h-6 w-6" />
                     </Button>
                   </Link>
-                  <Button size="lg" variant="outline" className="h-16 px-10 text-xl font-bold border-secondary text-secondary hover:bg-secondary/10 rounded-full border-2 transition-all">
-                    VER COMBOS
-                  </Button>
+                  <Link href="/combos">
+                    <Button size="lg" variant="outline" className="h-16 px-10 text-xl font-bold border-secondary text-secondary hover:bg-secondary/10 rounded-full border-2 transition-all">
+                      VER COMBOS
+                    </Button>
+                  </Link>
                 </div>
               </div>
             </section>
@@ -67,7 +69,7 @@ export default function Home() {
                 { icon: Clock, title: "Atención 24/7", desc: "La fiesta no duerme, nosotros tampoco.", color: "text-primary" },
                 { icon: ShieldCheck, title: "100% Original", desc: "Solo licores certificados y de alta calidad.", color: "text-accent" }
               ].map((f, i) => (
-                <div key={i} className="card-neon-border p-10 rounded-[2rem] space-y-6 group cursor-default">
+                <div key={i} className="card-neon-border p-10 rounded-[2rem] space-y-6 group cursor-default" data-ai-hint="nightclub feature">
                   <div className={`h-16 w-16 rounded-2xl bg-white/5 flex items-center justify-center ${f.color} group-hover:scale-110 transition-transform duration-300`}>
                     <f.icon className="h-8 w-8" />
                   </div>
@@ -102,7 +104,7 @@ export default function Home() {
                     </Button>
                   </div>
                   <div className="relative h-[400px] rounded-[2.5rem] overflow-hidden border-8 border-black shadow-[0_0_50px_rgba(0,255,255,0.2)]">
-                     <img src="https://picsum.photos/seed/dark-map/800/600" className="w-full h-full object-cover grayscale brightness-50 contrast-125" />
+                     <img src="https://picsum.photos/seed/dark-map/800/600" className="w-full h-full object-cover grayscale brightness-50 contrast-125" alt="Live tracking map" />
                      <div className="absolute inset-0 flex items-center justify-center">
                         <div className="relative">
                           <div className="h-12 w-12 bg-primary rounded-full animate-ping opacity-40" />
