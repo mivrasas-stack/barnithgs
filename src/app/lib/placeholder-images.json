@@ -1,0 +1,47 @@
+
+{
+  "placeholderImages": [
+    {
+      "id": "hero-party",
+      "description": "Friends enjoying a night party with drinks",
+      "imageUrl": "https://picsum.photos/seed/party1/1200/600",
+      "imageHint": "party nightlife"
+    },
+    {
+      "id": "whiskey-bottle",
+      "description": "Premium whiskey bottle",
+      "imageUrl": "https://picsum.photos/seed/whiskey/400/500",
+      "imageHint": "whiskey bottle"
+    },
+    {
+      "id": "gin-tonic",
+      "description": "Gin and tonic with lime",
+      "imageUrl": "https://picsum.photos/seed/gin/400/500",
+      "imageHint": "cocktail gin"
+    },
+    {
+      "id": "beer-cold",
+      "description": "Cold beer bottle",
+      "imageUrl": "https://picsum.photos/seed/beer/400/500",
+      "imageHint": "beer bottle"
+    },
+    {
+      "id": "wine-red",
+      "description": "Elegant red wine bottle",
+      "imageUrl": "https://picsum.photos/seed/wine/400/500",
+      "imageHint": "wine bottle"
+    },
+    {
+      "id": "vodka-bottle",
+      "description": "Crystal clear vodka bottle",
+      "imageUrl": "https://picsum.photos/seed/vodka/400/500",
+      "imageHint": "vodka bottle"
+    },
+    {
+      "id": "champagne-celebration",
+      "description": "Champagne for celebration",
+      "imageUrl": "https://picsum.photos/seed/champ/400/500",
+      "imageHint": "champagne bottle"
+    }
+  ]
+}
