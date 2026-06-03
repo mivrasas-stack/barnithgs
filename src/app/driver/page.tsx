@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { MapPin, Truck, Bell, Navigation as NavIcon, CheckCircle2, Zap, Radio, Loader2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { formatCurrency } from '@/lib/utils';
 
 export default function DriverPage() {
   const { isLoggedIn, role, isInitialized } = useUserRole();
@@ -44,7 +45,7 @@ export default function DriverPage() {
       pickup: 'Almacén PartyFlow Centro',
       delivery: 'Calle de la Fiesta 777',
       items: '2x Vodka Premium 1L, 3x Jugo Arándano, 1x Bolsa Hielo',
-      total: '$98.50'
+      total: 245000
     };
     setActiveOrder(order);
     toast({ title: "¡NUEVO PEDIDO ASIGNADO!", description: "Recogida urgente en Almacén Centro" });
@@ -134,6 +135,10 @@ export default function DriverPage() {
                       <div className="p-8 rounded-[2rem] bg-white/5 border border-white/5 space-y-4">
                          <p className="text-xs text-gray-400 uppercase font-black tracking-widest">Lo que llevas en la maleta</p>
                          <p className="text-lg font-medium text-gray-200">{activeOrder.items}</p>
+                      </div>
+                      <div className="flex justify-between items-center p-6 bg-primary/5 rounded-2xl border border-primary/10">
+                         <span className="font-black italic text-primary uppercase tracking-widest">Valor a Cobrar:</span>
+                         <span className="text-3xl font-black text-white">{formatCurrency(activeOrder.total)}</span>
                       </div>
                    </div>
                    <div className="h-[400px] rounded-[2.5rem] overflow-hidden border-4 border-white/5 relative group">

@@ -166,11 +166,11 @@ function AdminContent() {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-[10px] font-black uppercase text-gray-500">Costo Adquisición</Label>
+                    <Label className="text-[10px] font-black uppercase text-gray-500">Costo Adquisición (COP)</Label>
                     <Input type="number" className="bg-white/5 border-white/10 h-14" placeholder="0" />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-[10px] font-black uppercase text-gray-500">Precio Venta</Label>
+                    <Label className="text-[10px] font-black uppercase text-gray-500">Precio Venta (COP)</Label>
                     <Input type="number" className="bg-white/5 border-white/10 h-14" placeholder="0" />
                   </div>
                   <div className="space-y-2">
@@ -310,7 +310,31 @@ function AdminContent() {
                         </Badge>
                       </TableCell>
                       <TableCell className="p-8 text-right space-x-2">
-                        <Button variant="ghost" size="icon" className="h-12 w-12 rounded-xl text-gray-500 hover:text-white"><Edit3 className="h-5 w-5" /></Button>
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-12 w-12 rounded-xl text-gray-500 hover:text-white"><Edit3 className="h-5 w-5" /></Button>
+                          </DialogTrigger>
+                          <DialogContent className="bg-card border-white/10 text-white rounded-[2rem] p-10 max-w-lg">
+                            <DialogHeader>
+                              <DialogTitle className="text-2xl font-black italic text-secondary uppercase">EDITAR EXISTENCIAS: {item.name}</DialogTitle>
+                            </DialogHeader>
+                            <div className="space-y-6 mt-6">
+                              <div className="space-y-2">
+                                <Label className="text-[10px] font-black uppercase text-gray-500">Nombre del Producto</Label>
+                                <Input className="bg-white/5 border-white/10 h-14" defaultValue={item.name} />
+                              </div>
+                              <div className="space-y-2">
+                                <Label className="text-[10px] font-black uppercase text-gray-500">Precio (COP)</Label>
+                                <Input type="number" className="bg-white/5 border-white/10 h-14" defaultValue={item.price} />
+                              </div>
+                              <div className="space-y-2">
+                                <Label className="text-[10px] font-black uppercase text-gray-500">Stock Actual</Label>
+                                <Input type="number" className="bg-white/5 border-white/10 h-14" defaultValue={item.stock} />
+                              </div>
+                            </div>
+                            <Button className="w-full h-16 bg-secondary text-black font-black italic text-xl mt-8 rounded-xl uppercase neon-glow-secondary">CONFIRMAR ACTUALIZACIÓN</Button>
+                          </DialogContent>
+                        </Dialog>
                         <Button variant="ghost" size="icon" className="h-12 w-12 rounded-xl text-gray-500 hover:text-destructive"><Trash2 className="h-5 w-5" /></Button>
                       </TableCell>
                     </TableRow>
@@ -346,7 +370,10 @@ function AdminContent() {
                       </div>
                       <div className="flex justify-between items-center pt-2 border-t border-white/5">
                         <span className="text-xs font-black text-gray-600">{order.driver}</span>
-                        <span className="text-sm font-black italic">{order.time}</span>
+                        <div className="text-right">
+                          <p className="text-[10px] font-black text-gray-500 uppercase">Total</p>
+                          <span className="text-sm font-black italic text-primary">{formatCurrency(order.total)}</span>
+                        </div>
                       </div>
                     </div>
                   ))}
