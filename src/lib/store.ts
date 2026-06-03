@@ -50,6 +50,12 @@ export function useCart() {
 
 export type Role = 'client' | 'admin' | 'driver' | 'warehouse';
 
+const MOCK_CREDENTIALS: Record<string, string> = {
+  admin: '1111',
+  driver: '2222',
+  warehouse: '3333',
+};
+
 export function useUserRole() {
   const [role, setRole] = useState<Role>('client');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -66,12 +72,15 @@ export function useUserRole() {
     localStorage.setItem('partyflow_role', newRole);
   };
 
-  const login = (digits: string) => {
-    // Simulación de validación: En un app real aquí verificaríamos contra una base de datos
-    // Por ahora, cualquier 4 dígitos permiten el acceso según el rol guardado
-    setIsLoggedIn(true);
-    localStorage.setItem('partyflow_logged_in', 'true');
-    return true;
+  const login = (selectedRole: Role, pin: string) => {
+    if (MOCK_CREDENTIALS[selectedRole] === pin) {
+      setRole(selectedRole);
+      setIsLoggedIn(true);
+      localStorage.setItem('partyflow_logged_in', 'true');
+      localStorage.setItem('partyflow_role', selectedRole);
+      return true;
+    }
+    return false;
   };
 
   const logout = () => {
@@ -81,5 +90,5 @@ export function useUserRole() {
     localStorage.setItem('partyflow_role', 'client');
   };
 
-  return { role, changeRole, isLoggedIn, login, logout };
+  return { role, changeRole, isLoggedIn, login, logout, mockCredentials: MOCK_CREDENTIALS };
 }

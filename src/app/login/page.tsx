@@ -6,29 +6,44 @@ import { useRouter } from 'next/navigation';
 import { useUserRole, Role } from '@/lib/store';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { ShieldCheck, Lock, User, Truck, Box, LayoutDashboard, ChevronRight } from 'lucide-react';
+import { ShieldCheck, Lock, Truck, Box, LayoutDashboard, ChevronRight, Info } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { Navigation } from '@/components/Navigation';
+import { Badge } from '@/components/ui/badge';
 
 export default function LoginPage() {
   const [digits, setDigits] = useState('');
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
   const router = useRouter();
-  const { login, changeRole } = useUserRole();
+  const { login } = useUserRole();
 
   const handleLogin = () => {
     if (!selectedRole) {
-      toast({ variant: "destructive", title: "ROL NO SELECCIONADO", description: "Elige tu puesto de trabajo primero." });
+      toast({ 
+        variant: "destructive", 
+        title: "ROL NO SELECCIONADO", 
+        description: "Elige tu puesto de trabajo primero." 
+      });
       return;
     }
-    if (digits.length === 4) {
-      changeRole(selectedRole);
-      login(digits);
+
+    if (digits.length !== 4) {
+      toast({
+        variant: "destructive",
+        title: "CLAVE INCOMPLETA",
+        description: "Debes ingresar 4 dígitos.",
+      });
+      return;
+    }
+
+    const success = login(selectedRole, digits);
+
+    if (success) {
       toast({
         title: "¡ACCESO CONCEDIDO!",
         description: `Bienvenido al sistema Staff, ${selectedRole.toUpperCase()}.`,
       });
-      // Redirigir según el rol seleccionado
+      
       if (selectedRole === 'admin') router.push('/admin');
       else if (selectedRole === 'driver') router.push('/driver');
       else if (selectedRole === 'warehouse') router.push('/warehouse');
@@ -37,8 +52,9 @@ export default function LoginPage() {
       toast({
         variant: "destructive",
         title: "ERROR DE ACCESO",
-        description: "Debes ingresar los últimos 4 dígitos de tu ID.",
+        description: "Clave incorrecta para el rol seleccionado.",
       });
+      setDigits('');
     }
   };
 
@@ -49,9 +65,9 @@ export default function LoginPage() {
   const clear = () => setDigits('');
 
   const roleConfigs = [
-    { id: 'admin' as Role, name: 'ADMIN', icon: LayoutDashboard },
-    { id: 'driver' as Role, name: 'DRIVER', icon: Truck },
-    { id: 'warehouse' as Role, name: 'ALMACÉN', icon: Box },
+    { id: 'admin' as Role, name: 'ADMIN', icon: LayoutDashboard, hint: 'Pin: 1111' },
+    { id: 'driver' as Role, name: 'DRIVER', icon: Truck, hint: 'Pin: 2222' },
+    { id: 'warehouse' as Role, name: 'ALMACÉN', icon: Box, hint: 'Pin: 3333' },
   ];
 
   return (
@@ -76,30 +92,44 @@ export default function LoginPage() {
 
             <div className="space-y-4">
               {roleConfigs.map((role) => (
-                <button
-                  key={role.id}
-                  onClick={() => setSelectedRole(role.id)}
-                  className={`w-full group p-6 rounded-[2rem] border-2 flex items-center justify-between transition-all duration-300 ${
-                    selectedRole === role.id 
-                    ? 'bg-secondary/10 border-secondary neon-glow-secondary' 
-                    : 'bg-white/5 border-white/5 hover:border-white/20'
-                  }`}
-                >
-                  <div className="flex items-center gap-5">
-                    <div className={`h-12 w-12 rounded-xl flex items-center justify-center transition-all ${
-                      selectedRole === role.id ? 'bg-secondary text-black' : 'bg-white/10 text-gray-400 group-hover:text-white'
-                    }`}>
-                      <role.icon className="h-6 w-6" />
+                <div key={role.id} className="relative">
+                  <button
+                    onClick={() => setSelectedRole(role.id)}
+                    className={`w-full group p-6 rounded-[2rem] border-2 flex items-center justify-between transition-all duration-300 ${
+                      selectedRole === role.id 
+                      ? 'bg-secondary/10 border-secondary neon-glow-secondary' 
+                      : 'bg-white/5 border-white/5 hover:border-white/20'
+                    }`}
+                  >
+                    <div className="flex items-center gap-5">
+                      <div className={`h-12 w-12 rounded-xl flex items-center justify-center transition-all ${
+                        selectedRole === role.id ? 'bg-secondary text-black' : 'bg-white/10 text-gray-400 group-hover:text-white'
+                      }`}>
+                        <role.icon className="h-6 w-6" />
+                      </div>
+                      <span className={`text-xl font-black italic tracking-widest transition-all ${
+                        selectedRole === role.id ? 'text-white' : 'text-gray-500'
+                      }`}>
+                        {role.name}
+                      </span>
                     </div>
-                    <span className={`text-xl font-black italic tracking-widest transition-all ${
-                      selectedRole === role.id ? 'text-white' : 'text-gray-500'
-                    }`}>
-                      {role.name}
-                    </span>
+                    {selectedRole === role.id && <ChevronRight className="h-6 w-6 text-secondary" />}
+                  </button>
+                  {/* Hint para pruebas */}
+                  <div className="absolute -top-2 -right-2">
+                    <Badge variant="outline" className="bg-black text-[10px] border-white/10 text-gray-500">
+                      {role.hint}
+                    </Badge>
                   </div>
-                  {selectedRole === role.id && <ChevronRight className="h-6 w-6 text-secondary" />}
-                </button>
+                </div>
               ))}
+            </div>
+
+            <div className="p-6 bg-white/5 rounded-2xl border border-white/10 flex items-start gap-4">
+              <Info className="h-5 w-5 text-secondary mt-1" />
+              <p className="text-sm text-gray-400">
+                <span className="text-secondary font-bold">Nota de prueba:</span> Utiliza las claves indicadas arriba de cada rol para acceder.
+              </p>
             </div>
           </div>
 
