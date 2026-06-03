@@ -6,91 +6,112 @@ import { AgeGate } from '@/components/AgeGate';
 import { MoodRecommender } from '@/components/MoodRecommender';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ChevronRight, Clock, MapPin, ShieldCheck, Zap, Beer } from 'lucide-react';
+import { ChevronRight, Clock, MapPin, ShieldCheck, Zap, Beer, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 
 export default function Home() {
   const [isVerified, setIsVerified] = useState(false);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background selection:bg-primary selection:text-white">
       <AgeGate onVerified={() => setIsVerified(true)} />
       
       {isVerified && (
-        <>
+        <div className="animate-in fade-in duration-1000">
           <Navigation />
           
-          <main className="container mx-auto px-4 py-12 space-y-24">
-            {/* Hero Section */}
-            <section className="relative h-[500px] w-full rounded-3xl overflow-hidden border border-primary/20">
+          <main className="container mx-auto px-4 py-12 space-y-32">
+            {/* Sección Hero con Estilo Neón */}
+            <section className="relative min-h-[600px] w-full rounded-[2rem] overflow-hidden border border-white/10 group">
               <img 
-                src="https://picsum.photos/seed/party-hero/1200/600" 
-                alt="PartyFlow" 
-                className="w-full h-full object-cover"
+                src="https://picsum.photos/seed/party-night/1200/600" 
+                alt="Fiesta PartyFlow" 
+                className="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform duration-700"
               />
-              <div className="absolute inset-0 bg-gradient-to-r from-background via-background/40 to-transparent" />
-              <div className="absolute inset-y-0 left-0 flex flex-col justify-center px-8 md:px-16 max-w-2xl space-y-6">
-                <Badge className="w-fit bg-accent text-accent-foreground font-bold px-4 py-1">ABIERTO 24/7</Badge>
-                <h1 className="text-5xl md:text-7xl font-bold font-headline tracking-tighter text-foreground leading-tight">
-                  La Fiesta <br /> <span className="text-primary italic">No Se Detiene.</span>
+              <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-r from-black to-transparent" />
+              
+              <div className="relative h-full flex flex-col justify-center px-8 md:px-20 py-20 max-w-3xl space-y-8">
+                <Badge className="w-fit bg-primary neon-glow-primary text-white font-bold px-6 py-2 text-sm animate-pulse">
+                  <Sparkles className="mr-2 h-4 w-4" /> ABIERTO LAS 24 HORAS
+                </Badge>
+                
+                <h1 className="text-6xl md:text-8xl font-black font-headline tracking-tighter leading-none italic">
+                  LA FIESTA <br /> 
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary neon-text-primary">
+                    NO TIENE FIN.
+                  </span>
                 </h1>
-                <p className="text-lg text-muted-foreground max-w-md">
-                  Cerveza helada, licores premium y combos completos entregados en menos de 20 minutos. Donde sea. Cuando sea.
+                
+                <p className="text-xl text-gray-300 max-w-lg leading-relaxed font-medium">
+                  Cerveza bajo cero, licores de lujo y combos explosivos entregados en la puerta de tu rumba en <span className="text-secondary font-bold">15 minutos</span>.
                 </p>
-                <div className="flex flex-wrap gap-4">
+                
+                <div className="flex flex-wrap gap-6 pt-4">
                   <Link href="/catalog">
-                    <Button size="lg" className="h-14 px-8 text-lg bg-primary neon-glow-primary">
-                      Pedir Ahora <ChevronRight className="ml-2 h-5 w-5" />
+                    <Button size="lg" className="h-16 px-10 text-xl font-bold bg-primary hover:bg-primary/90 neon-glow-primary rounded-full transition-all hover:scale-105">
+                      PEDIR AHORA <ChevronRight className="ml-2 h-6 w-6" />
                     </Button>
                   </Link>
-                  <Button size="lg" variant="outline" className="h-14 px-8 text-lg border-secondary text-secondary hover:bg-secondary/10">
-                    Ver Combos
+                  <Button size="lg" variant="outline" className="h-16 px-10 text-xl font-bold border-secondary text-secondary hover:bg-secondary/10 rounded-full border-2 transition-all">
+                    VER COMBOS
                   </Button>
                 </div>
               </div>
             </section>
 
-            {/* Features */}
-            <section className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {/* Características con Brillo */}
+            <section className="grid grid-cols-1 md:grid-cols-3 gap-10">
               {[
-                { icon: Zap, title: "Ultra Rápido", desc: "Entrega en menos de 20 minutos garantizada." },
-                { icon: Clock, title: "Servicio 24/7", desc: "Estamos despiertos cuando la fiesta lo está." },
-                { icon: ShieldCheck, title: "Calidad Verificada", desc: "Distribuidor oficial de las mejores marcas del mundo." }
+                { icon: Zap, title: "Envío Flash", desc: "Llegamos antes de que se caliente la pista.", color: "text-secondary" },
+                { icon: Clock, title: "Atención 24/7", desc: "La fiesta no duerme, nosotros tampoco.", color: "text-primary" },
+                { icon: ShieldCheck, title: "100% Original", desc: "Solo licores certificados y de alta calidad.", color: "text-accent" }
               ].map((f, i) => (
-                <div key={i} className="p-8 rounded-2xl bg-card border border-border/50 space-y-4 hover:border-primary/50 transition-colors group">
-                  <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
-                    <f.icon className="h-6 w-6" />
+                <div key={i} className="card-neon-border p-10 rounded-[2rem] space-y-6 group cursor-default">
+                  <div className={`h-16 w-16 rounded-2xl bg-white/5 flex items-center justify-center ${f.color} group-hover:scale-110 transition-transform duration-300`}>
+                    <f.icon className="h-8 w-8" />
                   </div>
-                  <h3 className="text-xl font-bold font-headline">{f.title}</h3>
-                  <p className="text-muted-foreground">{f.desc}</p>
+                  <h3 className="text-2xl font-black font-headline tracking-tight">{f.title}</h3>
+                  <p className="text-gray-400 text-lg leading-snug">{f.desc}</p>
                 </div>
               ))}
             </section>
 
-            {/* AI Mood Recommender */}
-            <section id="moods" className="py-12 border-t border-border/50">
+            {/* Recomendador IA */}
+            <section id="moods" className="py-20 relative">
+              <div className="absolute inset-0 bg-primary/5 blur-[120px] rounded-full" />
               <MoodRecommender />
             </section>
 
             {/* Live Tracking Preview */}
-            <section className="bg-card/50 rounded-3xl p-8 md:p-16 border border-secondary/20 relative overflow-hidden">
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-                  <div className="space-y-6">
-                    <div className="flex items-center gap-2 text-secondary font-bold">
-                       <MapPin className="h-5 w-5" /> SEGUIMIENTO EN VIVO
+            <section className="bg-white/5 rounded-[3rem] p-12 md:p-20 border border-white/10 relative overflow-hidden">
+               <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+                  <div className="space-y-8 relative z-10">
+                    <div className="flex items-center gap-2 text-secondary font-black tracking-widest text-sm">
+                       <MapPin className="h-5 w-5 animate-bounce" /> RASTREO SATELITAL EN VIVO
                     </div>
-                    <h2 className="text-4xl font-bold font-headline">Mira tus bebidas <span className="text-secondary">llegar</span> en tiempo real.</h2>
-                    <p className="text-muted-foreground">
-                      No más dudas. Sigue a nuestros héroes de entrega en un mapa interactivo desde el almacén hasta tu puerta.
+                    <h2 className="text-5xl md:text-6xl font-black font-headline leading-[0.9] tracking-tighter">
+                      SIGUE TUS TRAGOS <br /> 
+                      <span className="text-secondary neon-text-secondary">EN EL RADAR.</span>
+                    </h2>
+                    <p className="text-xl text-gray-400 font-medium">
+                      No desesperes. Mira el recorrido de tu pedido en tiempo real desde que sale de nuestra cava hasta que toca tu puerta.
                     </p>
-                    <Button className="bg-secondary text-secondary-foreground">Pruébalo ahora</Button>
+                    <Button size="lg" className="bg-secondary text-black font-bold h-14 px-8 rounded-full neon-glow-secondary">
+                      VER MI PEDIDO
+                    </Button>
                   </div>
-                  <div className="relative h-64 md:h-80 rounded-2xl overflow-hidden border-4 border-background shadow-2xl">
-                     <img src="https://picsum.photos/seed/map/600/400" className="w-full h-full object-cover grayscale brightness-50" />
+                  <div className="relative h-[400px] rounded-[2.5rem] overflow-hidden border-8 border-black shadow-[0_0_50px_rgba(0,255,255,0.2)]">
+                     <img src="https://picsum.photos/seed/dark-map/800/600" className="w-full h-full object-cover grayscale brightness-50 contrast-125" />
                      <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="h-4 w-4 bg-primary rounded-full animate-ping" />
-                        <div className="absolute mt-10 bg-background/90 px-4 py-2 rounded-lg border border-primary/20 text-xs font-bold">
-                           ¡El repartidor está a 2 min!
+                        <div className="relative">
+                          <div className="h-12 w-12 bg-primary rounded-full animate-ping opacity-40" />
+                          <div className="absolute inset-0 h-12 w-12 bg-primary rounded-full flex items-center justify-center neon-glow-primary">
+                             <Zap className="text-white h-6 w-6" />
+                          </div>
+                        </div>
+                        <div className="absolute mt-24 glass-morphism px-6 py-3 rounded-2xl border border-primary/40 text-sm font-black tracking-tight">
+                           ¡TU REPARTIDOR ESTÁ A 2 MINUTOS!
                         </div>
                      </div>
                   </div>
@@ -98,44 +119,48 @@ export default function Home() {
             </section>
           </main>
 
-          <footer className="border-t border-border/50 py-12 mt-24 bg-card/20">
-            <div className="container mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-12">
-               <div className="space-y-4">
+          <footer className="border-t border-white/10 py-20 mt-32 bg-black">
+            <div className="container mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-16">
+               <div className="space-y-6">
                   <div className="flex items-center gap-2">
-                    <Beer className="h-6 w-6 text-primary" />
-                    <span className="text-xl font-bold font-headline">PartyFlow</span>
+                    <Beer className="h-10 w-10 text-primary" />
+                    <span className="text-3xl font-black font-headline tracking-tighter">
+                      Party<span className="text-primary">Flow</span>
+                    </span>
                   </div>
-                  <p className="text-sm text-muted-foreground">
-                    Disfruta con responsabilidad. Nuestra misión es asegurar que tus celebraciones nunca se queden secas.
+                  <p className="text-gray-500 font-medium leading-relaxed">
+                    El alma de la fiesta entregada en tiempo récord. Disfruta con responsabilidad. Prohibido el expendio de bebidas embriagantes a menores de edad.
                   </p>
                </div>
                <div>
-                  <h4 className="font-bold mb-4">Enlaces Rápidos</h4>
-                  <ul className="space-y-2 text-sm text-muted-foreground">
-                    <li><Link href="/catalog" className="hover:text-primary">Catálogo</Link></li>
-                    <li><Link href="/moods" className="hover:text-primary">Vibra</Link></li>
-                    <li><Link href="/combos" className="hover:text-primary">Combos</Link></li>
+                  <h4 className="font-black text-xl mb-6 tracking-tight">EXPLORA</h4>
+                  <ul className="space-y-4 text-gray-400 font-medium">
+                    <li><Link href="/catalog" className="hover:text-primary transition-colors">Cava Digital</Link></li>
+                    <li><Link href="/moods" className="hover:text-primary transition-colors">Vibra Party</Link></li>
+                    <li><Link href="/combos" className="hover:text-primary transition-colors">Combos VIP</Link></li>
                   </ul>
                </div>
                <div>
-                  <h4 className="font-bold mb-4">Soporte</h4>
-                  <ul className="space-y-2 text-sm text-muted-foreground">
-                    <li><Link href="/faq" className="hover:text-primary">Preguntas Frecuentes</Link></li>
-                    <li><Link href="/contact" className="hover:text-primary">Contáctanos</Link></li>
-                    <li><Link href="/terms" className="hover:text-primary">Términos de Servicio</Link></li>
+                  <h4 className="font-black text-xl mb-6 tracking-tight">SOPORTE</h4>
+                  <ul className="space-y-4 text-gray-400 font-medium">
+                    <li><Link href="/faq" className="hover:text-primary transition-colors">Ayuda</Link></li>
+                    <li><Link href="/contact" className="hover:text-primary transition-colors">Contacto 24/7</Link></li>
+                    <li><Link href="/terms" className="hover:text-primary transition-colors">Términos</Link></li>
                   </ul>
                </div>
                <div>
-                  <h4 className="font-bold mb-4">Sigue la Fiesta</h4>
+                  <h4 className="font-black text-xl mb-6 tracking-tight">RUMBA SOCIAL</h4>
                   <div className="flex gap-4">
-                     <div className="h-10 w-10 rounded-full bg-border/50 flex items-center justify-center hover:bg-primary/20 cursor-pointer">IG</div>
-                     <div className="h-10 w-10 rounded-full bg-border/50 flex items-center justify-center hover:bg-primary/20 cursor-pointer">FB</div>
-                     <div className="h-10 w-10 rounded-full bg-border/50 flex items-center justify-center hover:bg-primary/20 cursor-pointer">TW</div>
+                     {['IG', 'FB', 'TK'].map(social => (
+                       <div key={social} className="h-14 w-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center font-black hover:border-primary hover:text-primary cursor-pointer transition-all">
+                         {social}
+                       </div>
+                     ))}
                   </div>
                </div>
             </div>
           </footer>
-        </>
+        </div>
       )}
     </div>
   );
