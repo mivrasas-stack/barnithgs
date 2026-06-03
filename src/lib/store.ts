@@ -59,12 +59,14 @@ const MOCK_CREDENTIALS: Record<string, string> = {
 export function useUserRole() {
   const [role, setRole] = useState<Role>('client');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
     const savedRole = localStorage.getItem('partyflow_role') as Role;
     const authStatus = localStorage.getItem('partyflow_logged_in') === 'true';
     if (savedRole) setRole(savedRole);
     setIsLoggedIn(authStatus);
+    setIsInitialized(true);
   }, []);
 
   const changeRole = (newRole: Role) => {
@@ -90,5 +92,5 @@ export function useUserRole() {
     localStorage.setItem('partyflow_role', 'client');
   };
 
-  return { role, changeRole, isLoggedIn, login, logout, mockCredentials: MOCK_CREDENTIALS };
+  return { role, changeRole, isLoggedIn, isInitialized, login, logout, mockCredentials: MOCK_CREDENTIALS };
 }

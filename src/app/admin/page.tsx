@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as ChartTooltip, ResponsiveContainer, Cell } from 'recharts';
-import { LayoutDashboard, ShoppingCart, Users, AlertTriangle, TrendingUp, Zap } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, Users, AlertTriangle, TrendingUp, Zap, Loader2 } from 'lucide-react';
 
 const MOCK_ORDERS = [
   { id: 'ORD001', customer: 'Juan Perez', items: 'Vodka + Mezcladores', status: 'Pendiente', total: '$54.00' },
@@ -26,14 +26,22 @@ const MOCK_STATS = [
 ];
 
 export default function AdminPage() {
-  const { isLoggedIn, role } = useUserRole();
+  const { isLoggedIn, role, isInitialized } = useUserRole();
   const router = useRouter();
 
   useEffect(() => {
-    if (!isLoggedIn || role !== 'admin') {
+    if (isInitialized && (!isLoggedIn || role !== 'admin')) {
       router.push('/login');
     }
-  }, [isLoggedIn, role, router]);
+  }, [isLoggedIn, role, router, isInitialized]);
+
+  if (!isInitialized) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <Loader2 className="h-12 w-12 text-primary animate-spin" />
+      </div>
+    );
+  }
 
   if (!isLoggedIn || role !== 'admin') return null;
 

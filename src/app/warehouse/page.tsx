@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
-import { Box, Package, ClipboardCheck } from 'lucide-react';
+import { Box, Package, ClipboardCheck, Loader2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
 const INITIAL_PACKING_ORDERS = [
@@ -36,15 +36,23 @@ const INITIAL_PACKING_ORDERS = [
 ];
 
 export default function WarehousePage() {
-  const { isLoggedIn, role } = useUserRole();
+  const { isLoggedIn, role, isInitialized } = useUserRole();
   const router = useRouter();
   const [orders, setOrders] = useState(INITIAL_PACKING_ORDERS);
 
   useEffect(() => {
-    if (!isLoggedIn || role !== 'warehouse') {
+    if (isInitialized && (!isLoggedIn || role !== 'warehouse')) {
       router.push('/login');
     }
-  }, [isLoggedIn, role, router]);
+  }, [isLoggedIn, role, router, isInitialized]);
+
+  if (!isInitialized) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <Loader2 className="h-12 w-12 text-secondary animate-spin" />
+      </div>
+    );
+  }
 
   if (!isLoggedIn || role !== 'warehouse') return null;
 

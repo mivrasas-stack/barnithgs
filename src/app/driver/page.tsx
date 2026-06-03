@@ -9,20 +9,28 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, Truck, Bell, Navigation as NavIcon, CheckCircle2, Zap, Radio } from 'lucide-react';
+import { MapPin, Truck, Bell, Navigation as NavIcon, CheckCircle2, Zap, Radio, Loader2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
 export default function DriverPage() {
-  const { isLoggedIn, role } = useUserRole();
+  const { isLoggedIn, role, isInitialized } = useUserRole();
   const router = useRouter();
   const [isOnline, setIsOnline] = useState(false);
   const [activeOrder, setActiveOrder] = useState<any>(null);
 
   useEffect(() => {
-    if (!isLoggedIn || role !== 'driver') {
+    if (isInitialized && (!isLoggedIn || role !== 'driver')) {
       router.push('/login');
     }
-  }, [isLoggedIn, role, router]);
+  }, [isLoggedIn, role, router, isInitialized]);
+
+  if (!isInitialized) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <Loader2 className="h-12 w-12 text-secondary animate-spin" />
+      </div>
+    );
+  }
 
   if (!isLoggedIn || role !== 'driver') return null;
 
