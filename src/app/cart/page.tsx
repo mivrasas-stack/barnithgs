@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useCart } from '@/lib/store';
 import { Trash2, ShoppingBag, ArrowRight, Zap, Minus, Plus } from 'lucide-react';
+import { formatCurrency } from '@/lib/utils';
 import Link from 'next/link';
 import { toast } from '@/hooks/use-toast';
 
@@ -54,7 +55,7 @@ export default function CartPage() {
                    </div>
                    <div className="flex-1 space-y-2">
                       <h3 className="text-xl font-black italic">{item.name}</h3>
-                      <p className="text-secondary font-black text-2xl">${item.price}.00</p>
+                      <p className="text-secondary font-black text-2xl">{formatCurrency(item.price)}</p>
                    </div>
                    <div className="flex flex-col items-end gap-4">
                       <Button 
@@ -84,7 +85,7 @@ export default function CartPage() {
                   <div className="space-y-4">
                      <div className="flex justify-between text-gray-400 font-bold uppercase text-xs tracking-widest">
                         <span>Subtotal</span>
-                        <span>${total}.00</span>
+                        <span>{formatCurrency(total)}</span>
                      </div>
                      <div className="flex justify-between text-secondary font-black uppercase text-xs tracking-widest">
                         <span>Envío Flash (15 min)</span>
@@ -93,7 +94,7 @@ export default function CartPage() {
                      <div className="h-[1px] bg-white/10 w-full" />
                      <div className="flex justify-between items-end">
                         <span className="text-xl font-black italic">TOTAL</span>
-                        <span className="text-4xl font-black text-primary neon-text-primary italic">${total}.00</span>
+                        <span className="text-4xl font-black text-primary neon-text-primary italic">{formatCurrency(total)}</span>
                      </div>
                   </div>
 

@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState } from 'react';
@@ -10,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { formatCurrency } from '@/lib/utils';
 import { 
   BarChart, 
   Bar, 
@@ -48,17 +48,17 @@ const MOCK_STATS = [
 ];
 
 const MOCK_INVENTORY = [
-  { id: '1', name: 'Johnnie Walker Black', stock: 12, category: 'Whisky', price: '$45' },
-  { id: '2', name: 'Don Julio 70', stock: 5, category: 'Tequila', price: '$85' },
-  { id: '3', name: 'Grey Goose 750ml', stock: 2, category: 'Vodka', price: '$55' },
-  { id: '4', name: 'Heineken 6-Pack', stock: 45, category: 'Cerveza', price: '$12' },
-  { id: '5', name: 'Hielo (Bolsa 5kg)', stock: 0, category: 'Complementos', price: '$5' },
+  { id: '1', name: 'Johnnie Walker Black', stock: 12, category: 'Whisky', price: 45.00 },
+  { id: '2', name: 'Don Julio 70', stock: 5, category: 'Tequila', price: 85.00 },
+  { id: '3', name: 'Grey Goose 750ml', stock: 2, category: 'Vodka', price: 55.00 },
+  { id: '4', name: 'Heineken 6-Pack', stock: 45, category: 'Cerveza', price: 12.00 },
+  { id: '5', name: 'Hielo (Bolsa 5kg)', stock: 0, category: 'Complementos', price: 5.00 },
 ];
 
 const MOCK_HISTORY = [
-  { id: 'ORD-882', user: 'Carlos M.', total: '$120.00', date: 'Hoy, 01:22 AM', status: 'Completado' },
-  { id: 'ORD-881', user: 'Ana R.', total: '$35.50', date: 'Hoy, 01:15 AM', status: 'Entregado' },
-  { id: 'ORD-880', user: 'Juan P.', total: '$85.00', date: 'Ayer, 11:45 PM', status: 'Completado' },
+  { id: 'ORD-882', user: 'Carlos M.', total: 120.00, date: 'Hoy, 01:22 AM', status: 'Completado' },
+  { id: 'ORD-881', user: 'Ana R.', total: 35.50, date: 'Hoy, 01:15 AM', status: 'Entregado' },
+  { id: 'ORD-880', user: 'Juan P.', total: 85.00, date: 'Ayer, 11:45 PM', status: 'Completado' },
 ];
 
 export default function AdminPage() {
@@ -135,7 +135,7 @@ export default function AdminPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                {[
                  { title: 'Pedidos Activos', value: '24', icon: ShoppingCart, color: 'text-secondary', bg: 'bg-secondary/10' },
-                 { title: 'Ventas de Hoy', value: '$2,450', icon: TrendingUp, color: 'text-primary', bg: 'bg-primary/10' },
+                 { title: 'Ventas de Hoy', value: formatCurrency(2450), icon: TrendingUp, color: 'text-primary', bg: 'bg-primary/10' },
                  { title: 'Alertas Stock', value: '3 Items', icon: AlertTriangle, color: 'text-accent', bg: 'bg-accent/10' },
                  { title: 'Drivers Online', value: '8', icon: Users, color: 'text-blue-400', bg: 'bg-blue-400/10' }
                ].map((stat, i) => (
@@ -203,7 +203,7 @@ export default function AdminPage() {
 
           <TabsContent value="inventory" className="animate-in fade-in slide-in-from-bottom-4">
              <Card className="bg-card/40 border-white/10 glass-morphism overflow-hidden">
-                <CardHeader className="p-8 border-b border-white/5 flex flex-row items-center justify-between">
+                <CardHeader className="p-8 border-b border-white/5 border-white/5 flex flex-row items-center justify-between">
                    <div>
                       <CardTitle className="text-3xl font-black italic">CONTROL DE EXISTENCIAS</CardTitle>
                       <CardDescription className="text-gray-400">Monitoreo y reposición de bodega.</CardDescription>
@@ -226,7 +226,7 @@ export default function AdminPage() {
                           <TableRow key={item.id} className="border-white/5 hover:bg-white/5 transition-colors">
                             <TableCell className="p-6 font-bold text-lg">{item.name}</TableCell>
                             <TableCell className="p-6 font-medium text-gray-400">{item.category}</TableCell>
-                            <TableCell className="p-6 font-black text-secondary">{item.price}</TableCell>
+                            <TableCell className="p-6 font-black text-secondary">{formatCurrency(item.price)}</TableCell>
                             <TableCell className="p-6">
                                <Badge className={`${item.stock < 10 ? 'bg-accent/20 text-accent border-accent/20' : 'bg-green-500/20 text-green-400 border-green-500/20'} font-black rounded-lg px-4`}>
                                  {item.stock} UNID.
@@ -266,7 +266,7 @@ export default function AdminPage() {
                           <TableRow key={order.id} className="border-white/5 hover:bg-white/5">
                             <TableCell className="p-6 font-black text-primary italic">{order.id}</TableCell>
                             <TableCell className="p-6 font-bold">{order.user}</TableCell>
-                            <TableCell className="p-6 font-black text-secondary">{order.total}</TableCell>
+                            <TableCell className="p-6 font-black text-secondary">{formatCurrency(order.total)}</TableCell>
                             <TableCell className="p-6 text-gray-400">{order.date}</TableCell>
                             <TableCell className="p-6">
                                <Badge className="bg-white/10 text-white font-black rounded-lg px-4">{order.status}</Badge>
@@ -299,7 +299,7 @@ export default function AdminPage() {
                       <CardContent className="p-6 space-y-4">
                          <div className="flex justify-between items-start">
                             <h3 className="font-black italic text-lg">{item.name}</h3>
-                            <span className="text-secondary font-black">{item.price}</span>
+                            <span className="text-secondary font-black">{formatCurrency(item.price)}</span>
                          </div>
                          <div className="flex gap-2">
                             <Button size="sm" variant="outline" className="flex-1 border-white/10 hover:bg-white/10 h-10 font-bold">OCULTAR</Button>

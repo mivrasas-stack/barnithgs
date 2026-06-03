@@ -8,6 +8,7 @@ import { Loader2, Sparkles, Wine, Beer, Martini, Zap, ShoppingCart } from 'lucid
 import { useCart, Product } from '@/lib/store';
 import { toast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
+import { formatCurrency } from '@/lib/utils';
 
 const MOODS = [
   { id: 'pre-copeo', label: 'PRE-COPEO', icon: Martini, color: 'text-secondary', glow: 'neon-glow-secondary' },
@@ -34,15 +35,16 @@ export function MoodRecommender() {
   };
 
   const handleAddToCart = (name: string, category: string) => {
+    const price = Math.floor(Math.random() * 50) + 20;
     const mockProduct: Product = {
       id: Math.random().toString(36).substr(2, 9),
       name,
       category,
-      price: Math.floor(Math.random() * 50) + 20,
+      price,
       image: "https://picsum.photos/seed/liquor/400/500"
     };
     addToCart(mockProduct);
-    toast({ title: `¡${name} añadido al carrito!` });
+    toast({ title: `¡${name} (${formatCurrency(price)}) añadido al carrito!` });
   };
 
   return (

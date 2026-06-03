@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Navigation } from '@/components/Navigation';
@@ -6,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useCart, Product } from '@/lib/store';
+import { formatCurrency } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
 import { Flame, Zap, ShoppingCart } from 'lucide-react';
 
@@ -63,7 +63,7 @@ export default function CombosPage() {
               <CardContent className="p-8 space-y-6">
                 <div>
                   <h3 className="text-2xl font-black italic tracking-tight mb-1">{combo.name}</h3>
-                  <p className="text-3xl font-black text-secondary neon-text-secondary">${combo.price}.00</p>
+                  <p className="text-3xl font-black text-secondary neon-text-secondary">{formatCurrency(combo.price)}</p>
                 </div>
                 
                 <Button 

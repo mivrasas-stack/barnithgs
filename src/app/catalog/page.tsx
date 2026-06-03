@@ -9,6 +9,7 @@ import { useCart, Product } from '@/lib/store';
 import { toast } from '@/hooks/use-toast';
 import { ShoppingCart, Search, Filter, Zap, Flame, Beer as BeerIcon } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { formatCurrency } from '@/lib/utils';
 
 const PRODUCTS: Product[] = [
   { id: '1', name: 'Johnnie Walker Black', price: 45, category: 'Whisky', image: 'https://picsum.photos/seed/whiskey1/400/500' },
@@ -109,7 +110,7 @@ export default function CatalogPage() {
               <CardContent className="p-8 space-y-6">
                 <div>
                   <h3 className="text-2xl font-black italic tracking-tight mb-1">{product.name}</h3>
-                  <p className="text-3xl font-black text-secondary neon-text-secondary">${product.price}.00</p>
+                  <p className="text-3xl font-black text-secondary neon-text-secondary">{formatCurrency(product.price)}</p>
                 </div>
                 
                 <Button 
