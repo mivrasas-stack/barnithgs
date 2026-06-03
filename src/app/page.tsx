@@ -6,7 +6,8 @@ import { Navigation } from '@/components/Navigation';
 import { AgeGate } from '@/components/AgeGate';
 import { MoodRecommender } from '@/components/MoodRecommender';
 import { Button } from '@/components/ui/button';
-import { ChevronRight, Clock, MapPin, ShieldCheck, Zap } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { ChevronRight, Clock, MapPin, ShieldCheck, Zap, Beer } from 'lucide-react';
 import Link from 'next/link';
 
 export default function Home() {
@@ -113,8 +114,8 @@ export default function Home() {
                   <h4 className="font-bold mb-4">Quick Links</h4>
                   <ul className="space-y-2 text-sm text-muted-foreground">
                     <li><Link href="/catalog" className="hover:text-primary">Catalog</Link></li>
+                    <li><Link href="/moods" className="hover:text-primary">Moods</Link></li>
                     <li><Link href="/combos" className="hover:text-primary">Combos</Link></li>
-                    <li><Link href="/tracking" className="hover:text-primary">Track Order</Link></li>
                   </ul>
                </div>
                <div>
@@ -128,7 +129,6 @@ export default function Home() {
                <div>
                   <h4 className="font-bold mb-4">Follow the Party</h4>
                   <div className="flex gap-4">
-                     {/* Placeholder social icons */}
                      <div className="h-10 w-10 rounded-full bg-border/50 flex items-center justify-center hover:bg-primary/20 cursor-pointer">IG</div>
                      <div className="h-10 w-10 rounded-full bg-border/50 flex items-center justify-center hover:bg-primary/20 cursor-pointer">FB</div>
                      <div className="h-10 w-10 rounded-full bg-border/50 flex items-center justify-center hover:bg-primary/20 cursor-pointer">TW</div>
