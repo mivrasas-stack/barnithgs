@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from 'react';
@@ -14,21 +13,21 @@ const INITIAL_PACKING_ORDERS = [
   { 
     id: 'W-992', 
     customer: 'Alex Miller', 
-    time: '4 mins ago',
+    time: 'hace 4 mins',
     items: [
       { name: 'Johnnie Walker Black Label 750ml', packed: false },
-      { name: 'Bag of Premium Ice 5kg', packed: false },
+      { name: 'Bolsa de Hielo Premium 5kg', packed: false },
       { name: 'Coca-Cola 2L', packed: false },
-      { name: 'Disposable Cups (20pk)', packed: false }
+      { name: 'Vasos Desechables (20pk)', packed: false }
     ]
   },
   { 
     id: 'W-993', 
     customer: 'Sarah Connor', 
-    time: '2 mins ago',
+    time: 'hace 2 mins',
     items: [
       { name: 'Corona Extra 12-Pack', packed: false },
-      { name: 'Limes (Net)', packed: false }
+      { name: 'Limones (Malla)', packed: false }
     ]
   }
 ];
@@ -53,10 +52,10 @@ export default function WarehousePage() {
   const dispatchOrder = (orderId: string) => {
     const order = orders.find(o => o.id === orderId);
     if (order?.items.some(i => !i.packed)) {
-      toast({ title: "Checklist incomplete!", description: "Please pack all items before dispatching.", variant: "destructive" });
+      toast({ title: "¡Checklist incompleta!", description: "Por favor, empaqueta todos los items antes de despachar.", variant: "destructive" });
       return;
     }
-    toast({ title: `Order ${orderId} Ready!`, description: "A driver has been notified for pickup." });
+    toast({ title: `¡Pedido ${orderId} Listo!`, description: "Se ha notificado a un repartidor para la recogida." });
     setOrders(prev => prev.filter(o => o.id !== orderId));
   };
 
@@ -67,13 +66,13 @@ export default function WarehousePage() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold font-headline flex items-center gap-2">
-              <Box className="text-secondary" /> Dispatch & Packaging
+              <Box className="text-secondary" /> Despacho y Empaquetado
             </h1>
-            <p className="text-muted-foreground">Ensure every party is perfect. Double-check all items.</p>
+            <p className="text-muted-foreground">Asegura que cada fiesta sea perfecta. Revisa todos los artículos.</p>
           </div>
           <div className="flex gap-2">
-             <Button variant="outline" className="gap-2"><History className="h-4 w-4" /> Recent</Button>
-             <Button variant="secondary" className="gap-2"><Clock className="h-4 w-4" /> Queue (12)</Button>
+             <Button variant="outline" className="gap-2"><History className="h-4 w-4" /> Recientes</Button>
+             <Button variant="secondary" className="gap-2"><Clock className="h-4 w-4" /> Cola (12)</Button>
           </div>
         </div>
 
@@ -85,12 +84,12 @@ export default function WarehousePage() {
                    <CardTitle className="text-xl">#{order.id}</CardTitle>
                    <p className="text-xs text-muted-foreground">{order.customer} • {order.time}</p>
                 </div>
-                <Badge variant="outline" className="border-secondary text-secondary">In Progress</Badge>
+                <Badge variant="outline" className="border-secondary text-secondary">En Progreso</Badge>
               </CardHeader>
               <CardContent className="pt-6 space-y-6">
                  <div className="space-y-4">
                     <p className="text-sm font-bold flex items-center gap-2">
-                       <ClipboardCheck className="h-4 w-4 text-secondary" /> PACKING CHECKLIST
+                       <ClipboardCheck className="h-4 w-4 text-secondary" /> CHECKLIST DE EMPAQUE
                     </p>
                     <div className="space-y-3">
                        {order.items.map((item, idx) => (
@@ -116,7 +115,7 @@ export default function WarehousePage() {
                     className="w-full bg-secondary text-secondary-foreground neon-glow-secondary" 
                     onClick={() => dispatchOrder(order.id)}
                  >
-                    <Package className="mr-2 h-4 w-4" /> Ready for Pickup
+                    <Package className="mr-2 h-4 w-4" /> Listo para Recogida
                  </Button>
               </CardContent>
             </Card>
@@ -128,8 +127,8 @@ export default function WarehousePage() {
                   <Box className="h-10 w-10" />
                </div>
                <div>
-                  <h3 className="text-xl font-bold">Queue Empty</h3>
-                  <p className="text-muted-foreground">All orders are packed and dispatched. Great job!</p>
+                  <h3 className="text-xl font-bold">Cola Vacía</h3>
+                  <p className="text-muted-foreground">Todos los pedidos han sido empaquetados y despachados. ¡Buen trabajo!</p>
                </div>
             </div>
           )}

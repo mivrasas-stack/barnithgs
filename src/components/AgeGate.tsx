@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -36,21 +35,21 @@ export function AgeGate({ onVerified }: { onVerified: () => void }) {
             <Beer className="h-8 w-8 text-primary" />
           </div>
           <CardTitle className="text-3xl font-bold tracking-tight text-primary font-headline">PartyFlow</CardTitle>
-          <p className="mt-2 text-muted-foreground">You must be of legal drinking age to enter.</p>
+          <p className="mt-2 text-muted-foreground">Debes tener la edad legal para beber para entrar.</p>
         </CardHeader>
         <CardContent className="space-y-4">
           <Button 
             className="w-full h-12 text-lg font-semibold neon-glow-primary" 
             onClick={handleVerify}
           >
-            I am 18+ years old
+            Soy mayor de 18 años
           </Button>
           <Button 
             variant="ghost" 
             className="w-full text-muted-foreground hover:text-foreground"
             onClick={() => window.location.href = 'https://google.com'}
           >
-            Exit
+            Salir
           </Button>
         </CardContent>
       </Card>

@@ -1,10 +1,10 @@
 'use server';
 /**
- * @fileOverview An AI agent that provides liquor and combo recommendations based on a user's mood or occasion.
+ * @fileOverview Un agente de IA que proporciona recomendaciones de licores y combos basadas en el estado de ánimo o la ocasión del usuario.
  *
- * - recommendByMood - A function that handles the recommendation process.
- * - AiMoodBasedRecommendationInput - The input type for the recommendByMood function.
- * - AiMoodBasedRecommendationOutput - The return type for the recommendByMood function.
+ * - recommendByMood - Una función que maneja el proceso de recomendación.
+ * - AiMoodBasedRecommendationInput - El tipo de entrada para la función recommendByMood.
+ * - AiMoodBasedRecommendationOutput - El tipo de retorno para la función recommendByMood.
  */
 
 import { ai } from '@/ai/genkit';
@@ -14,7 +14,7 @@ const AiMoodBasedRecommendationInputSchema = z.object({
   mood: z
     .string()
     .describe(
-      "The user's current mood or the occasion for which they need recommendations (e.g., 'Pre-copeo', 'Se acabó el trago (Urgente)', 'Cena Romántica', 'After Party')."
+      "El estado de ánimo actual del usuario o la ocasión para la cual necesitan recomendaciones (ej., 'Pre-copeo', 'Se acabó el trago (Urgente)', 'Cena Romántica', 'After Party')."
     ),
 });
 export type AiMoodBasedRecommendationInput = z.infer<
@@ -26,21 +26,21 @@ const AiMoodBasedRecommendationOutputSchema = z.object({
     liquors: z
       .array(
         z.object({
-          name: z.string().describe('The name of the liquor.'),
-          description: z.string().describe('A brief description of the liquor.'),
-          category: z.string().describe('The category of the liquor (e.g., Rum, Vodka, Beer).'),
+          name: z.string().describe('El nombre del licor.'),
+          description: z.string().describe('Una breve descripción del licor en español.'),
+          category: z.string().describe('La categoría del licor (ej., Ron, Vodka, Cerveza).'),
         })
       )
-      .describe('A list of recommended liquor products.'),
+      .describe('Una lista de productos de licor recomendados.'),
     combos: z
       .array(
         z.object({
-          name: z.string().describe('The name of the combo.'),
-          description: z.string().describe('A brief description of the combo.'),
-          items: z.array(z.string()).describe('List of items included in the combo.'),
+          name: z.string().describe('El nombre del combo.'),
+          description: z.string().describe('Una breve descripción del combo en español.'),
+          items: z.array(z.string()).describe('Lista de artículos incluidos en el combo.'),
         })
       )
-      .describe('A list of recommended liquor combos.'),
+      .describe('Una lista de combos de licor recomendados.'),
   }),
 });
 export type AiMoodBasedRecommendationOutput = z.infer<
@@ -57,17 +57,19 @@ const prompt = ai.definePrompt({
   name: 'aiMoodBasedRecommendationPrompt',
   input: { schema: AiMoodBasedRecommendationInputSchema },
   output: { schema: AiMoodBasedRecommendationOutputSchema },
-  prompt: `You are an expert sommelier and party planner for PartyFlow, a 24/7 liquor delivery service. Your goal is to provide personalized liquor and combo recommendations based on the user's mood or occasion.
+  prompt: `Eres un sommelier experto y planificador de fiestas para PartyFlow, un servicio de entrega de licores 24/7. Tu objetivo es proporcionar recomendaciones personalizadas de licores y combos basadas en el estado de ánimo u ocasión del usuario.
 
-Consider the following moods/occasions:
-- Pre-copeo: Light drinks, mixers, beers.
-- Se acabó el trago (Urgente): Popular, quick-to-deliver spirits and beers.
-- Cena Romántica: Wine, champagne, fine spirits.
-- After Party: Energy drinks, shots, strong cocktails ingredients.
+RESPONDE SIEMPRE EN ESPAÑOL.
 
-Based on the user's input, provide a list of 3-5 liquor recommendations and 1-2 combo recommendations. Ensure the recommendations are relevant to the mood and describe why they are a good fit.
+Considera los siguientes estados de ánimo/ocasiones:
+- Pre-copeo: Bebidas ligeras, mezcladores, cervezas.
+- Se acabó el trago (Urgente): Destilados populares y rápidos de entregar, cervezas.
+- Cena Romántica: Vino, champagne, destilados finos.
+- After Party: Bebidas energéticas, shots, ingredientes para cócteles fuertes.
 
-User's Mood/Occasion: {{{mood}}}`,
+Basado en la entrada del usuario, proporciona una lista de 3-5 recomendaciones de licores y 1-2 recomendaciones de combos. Asegúrate de que las recomendaciones sean relevantes para el estado de ánimo y describe por qué encajan bien.
+
+Estado de Ánimo/Ocasión del Usuario: {{{mood}}}`,
 });
 
 const aiMoodBasedRecommendationFlow = ai.defineFlow(

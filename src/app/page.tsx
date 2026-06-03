@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from 'react';
@@ -31,21 +30,21 @@ export default function Home() {
               />
               <div className="absolute inset-0 bg-gradient-to-r from-background via-background/40 to-transparent" />
               <div className="absolute inset-y-0 left-0 flex flex-col justify-center px-8 md:px-16 max-w-2xl space-y-6">
-                <Badge className="w-fit bg-accent text-accent-foreground font-bold px-4 py-1">24/7 OPEN NOW</Badge>
+                <Badge className="w-fit bg-accent text-accent-foreground font-bold px-4 py-1">ABIERTO 24/7</Badge>
                 <h1 className="text-5xl md:text-7xl font-bold font-headline tracking-tighter text-foreground leading-tight">
-                  The Party <br /> <span className="text-primary italic">Doesn't Stop.</span>
+                  La Fiesta <br /> <span className="text-primary italic">No Se Detiene.</span>
                 </h1>
                 <p className="text-lg text-muted-foreground max-w-md">
-                  Ice-cold beer, premium spirits, and complete combos delivered in under 20 minutes. Anytime. Anywhere.
+                  Cerveza helada, licores premium y combos completos entregados en menos de 20 minutos. Donde sea. Cuando sea.
                 </p>
                 <div className="flex flex-wrap gap-4">
                   <Link href="/catalog">
                     <Button size="lg" className="h-14 px-8 text-lg bg-primary neon-glow-primary">
-                      Order Now <ChevronRight className="ml-2 h-5 w-5" />
+                      Pedir Ahora <ChevronRight className="ml-2 h-5 w-5" />
                     </Button>
                   </Link>
                   <Button size="lg" variant="outline" className="h-14 px-8 text-lg border-secondary text-secondary hover:bg-secondary/10">
-                    View Combos
+                    Ver Combos
                   </Button>
                 </div>
               </div>
@@ -54,9 +53,9 @@ export default function Home() {
             {/* Features */}
             <section className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {[
-                { icon: Zap, title: "Ultra Fast", desc: "Delivery in less than 20 minutes guaranteed." },
-                { icon: Clock, title: "24/7 Service", desc: "We're awake whenever the party is." },
-                { icon: ShieldCheck, title: "Verified Quality", desc: "Official distributor of the world's best brands." }
+                { icon: Zap, title: "Ultra Rápido", desc: "Entrega en menos de 20 minutos garantizada." },
+                { icon: Clock, title: "Servicio 24/7", desc: "Estamos despiertos cuando la fiesta lo está." },
+                { icon: ShieldCheck, title: "Calidad Verificada", desc: "Distribuidor oficial de las mejores marcas del mundo." }
               ].map((f, i) => (
                 <div key={i} className="p-8 rounded-2xl bg-card border border-border/50 space-y-4 hover:border-primary/50 transition-colors group">
                   <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
@@ -78,20 +77,20 @@ export default function Home() {
                <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
                   <div className="space-y-6">
                     <div className="flex items-center gap-2 text-secondary font-bold">
-                       <MapPin className="h-5 w-5" /> LIVE TRACKING
+                       <MapPin className="h-5 w-5" /> SEGUIMIENTO EN VIVO
                     </div>
-                    <h2 className="text-4xl font-bold font-headline">Watch your drinks <span className="text-secondary">arrive</span> in real-time.</h2>
+                    <h2 className="text-4xl font-bold font-headline">Mira tus bebidas <span className="text-secondary">llegar</span> en tiempo real.</h2>
                     <p className="text-muted-foreground">
-                      No more guessing. Follow our delivery heroes on an interactive map from the warehouse to your doorstep.
+                      No más dudas. Sigue a nuestros héroes de entrega en un mapa interactivo desde el almacén hasta tu puerta.
                     </p>
-                    <Button className="bg-secondary text-secondary-foreground">Try it out</Button>
+                    <Button className="bg-secondary text-secondary-foreground">Pruébalo ahora</Button>
                   </div>
                   <div className="relative h-64 md:h-80 rounded-2xl overflow-hidden border-4 border-background shadow-2xl">
                      <img src="https://picsum.photos/seed/map/600/400" className="w-full h-full object-cover grayscale brightness-50" />
                      <div className="absolute inset-0 flex items-center justify-center">
                         <div className="h-4 w-4 bg-primary rounded-full animate-ping" />
                         <div className="absolute mt-10 bg-background/90 px-4 py-2 rounded-lg border border-primary/20 text-xs font-bold">
-                           Rider is 2 mins away!
+                           ¡El repartidor está a 2 min!
                         </div>
                      </div>
                   </div>
@@ -107,27 +106,27 @@ export default function Home() {
                     <span className="text-xl font-bold font-headline">PartyFlow</span>
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    Enjoy responsibly. Our mission is to make sure your celebrations never run dry.
+                    Disfruta con responsabilidad. Nuestra misión es asegurar que tus celebraciones nunca se queden secas.
                   </p>
                </div>
                <div>
-                  <h4 className="font-bold mb-4">Quick Links</h4>
+                  <h4 className="font-bold mb-4">Enlaces Rápidos</h4>
                   <ul className="space-y-2 text-sm text-muted-foreground">
-                    <li><Link href="/catalog" className="hover:text-primary">Catalog</Link></li>
-                    <li><Link href="/moods" className="hover:text-primary">Moods</Link></li>
+                    <li><Link href="/catalog" className="hover:text-primary">Catálogo</Link></li>
+                    <li><Link href="/moods" className="hover:text-primary">Vibra</Link></li>
                     <li><Link href="/combos" className="hover:text-primary">Combos</Link></li>
                   </ul>
                </div>
                <div>
-                  <h4 className="font-bold mb-4">Support</h4>
+                  <h4 className="font-bold mb-4">Soporte</h4>
                   <ul className="space-y-2 text-sm text-muted-foreground">
-                    <li><Link href="/faq" className="hover:text-primary">FAQs</Link></li>
-                    <li><Link href="/contact" className="hover:text-primary">Contact Us</Link></li>
-                    <li><Link href="/terms" className="hover:text-primary">Terms of Service</Link></li>
+                    <li><Link href="/faq" className="hover:text-primary">Preguntas Frecuentes</Link></li>
+                    <li><Link href="/contact" className="hover:text-primary">Contáctanos</Link></li>
+                    <li><Link href="/terms" className="hover:text-primary">Términos de Servicio</Link></li>
                   </ul>
                </div>
                <div>
-                  <h4 className="font-bold mb-4">Follow the Party</h4>
+                  <h4 className="font-bold mb-4">Sigue la Fiesta</h4>
                   <div className="flex gap-4">
                      <div className="h-10 w-10 rounded-full bg-border/50 flex items-center justify-center hover:bg-primary/20 cursor-pointer">IG</div>
                      <div className="h-10 w-10 rounded-full bg-border/50 flex items-center justify-center hover:bg-primary/20 cursor-pointer">FB</div>

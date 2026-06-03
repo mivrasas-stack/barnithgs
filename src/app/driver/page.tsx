@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from 'react';
@@ -7,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, Truck, Bell, Navigation as NavIcon, CheckCircle2 } from 'lucide-react';
+import { MapPin, Truck, Bell, Navigation as NavIcon, CheckCircle2, Zap } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
 export default function DriverPage() {
@@ -16,23 +15,23 @@ export default function DriverPage() {
 
   const simulateNewOrder = () => {
     if (!isOnline) {
-      toast({ title: "Go online to receive orders!", variant: "destructive" });
+      toast({ title: "¡Ponte online para recibir pedidos!", variant: "destructive" });
       return;
     }
     const order = {
       id: 'ORD-1234',
-      pickup: 'PartyFlow Warehouse Downtown',
-      delivery: '742 Evergreen Terrace',
-      items: '2x Vodka 1L, 3x Orange Juice',
+      pickup: 'Almacén PartyFlow Centro',
+      delivery: 'Calle Falsa 123',
+      items: '2x Vodka 1L, 3x Jugo de Naranja',
       total: '$86.00'
     };
     setActiveOrder(order);
-    toast({ title: "New Order Assigned!", description: "Incoming pickup at Downtown Warehouse" });
+    toast({ title: "¡Nuevo Pedido Asignado!", description: "Recogida entrante en el Almacén Centro" });
   };
 
   const completeStep = (step: string) => {
-    toast({ title: step, description: "Status updated for the customer." });
-    if (step === 'Delivery Confirmed') {
+    toast({ title: step, description: "Estado actualizado para el cliente." });
+    if (step === 'Entrega Confirmada') {
       setActiveOrder(null);
     }
   };
@@ -47,8 +46,8 @@ export default function DriverPage() {
                 <Truck className="h-6 w-6" />
              </div>
              <div>
-               <h2 className="text-xl font-bold font-headline">Status: {isOnline ? 'Active' : 'Offline'}</h2>
-               <p className="text-sm text-muted-foreground">{isOnline ? 'Receiving party orders...' : 'Tap to start shift'}</p>
+               <h2 className="text-xl font-bold font-headline">Estado: {isOnline ? 'Activo' : 'Desconectado'}</h2>
+               <p className="text-sm text-muted-foreground">{isOnline ? 'Recibiendo pedidos de fiesta...' : 'Pulsa para empezar turno'}</p>
              </div>
           </div>
           <Switch checked={isOnline} onCheckedChange={setIsOnline} />
@@ -63,19 +62,19 @@ export default function DriverPage() {
                 </div>
              </div>
              <div className="text-center space-y-2">
-                <h3 className="text-2xl font-bold">No active orders</h3>
-                <p className="text-muted-foreground">Keep your phone nearby. The night is young!</p>
+                <h3 className="text-2xl font-bold">Sin pedidos activos</h3>
+                <p className="text-muted-foreground">Mantén tu teléfono cerca. ¡La noche es joven!</p>
              </div>
-             <Button variant="outline" onClick={simulateNewOrder}>Simulate Incoming Order</Button>
+             <Button variant="outline" onClick={simulateNewOrder}>Simular Pedido Entrante</Button>
           </div>
         ) : (
           <Card className="border-primary neon-glow-primary animate-in zoom-in-95 duration-300">
              <CardHeader className="bg-primary/10 border-b border-primary/20">
                 <div className="flex justify-between items-center">
                    <CardTitle className="text-primary flex items-center gap-2">
-                      <Zap className="h-5 w-5" /> ACTIVE ORDER
+                      <Zap className="h-5 w-5" /> PEDIDO ACTIVO
                    </CardTitle>
-                   <Badge className="bg-primary">URGENT</Badge>
+                   <Badge className="bg-primary">URGENTE</Badge>
                 </div>
              </CardHeader>
              <CardContent className="p-6 space-y-6">
@@ -87,7 +86,7 @@ export default function DriverPage() {
                                <MapPin className="h-4 w-4" />
                             </div>
                             <div>
-                               <p className="text-xs text-muted-foreground uppercase font-bold">Pickup</p>
+                               <p className="text-xs text-muted-foreground uppercase font-bold">Recogida</p>
                                <p className="font-medium">{activeOrder.pickup}</p>
                             </div>
                          </div>
@@ -96,13 +95,13 @@ export default function DriverPage() {
                                <NavIcon className="h-4 w-4" />
                             </div>
                             <div>
-                               <p className="text-xs text-muted-foreground uppercase font-bold">Delivery</p>
+                               <p className="text-xs text-muted-foreground uppercase font-bold">Entrega</p>
                                <p className="font-medium">{activeOrder.delivery}</p>
                             </div>
                          </div>
                       </div>
                       <div className="p-4 rounded-xl bg-muted/50 border border-border/50">
-                         <p className="text-xs text-muted-foreground mb-1 uppercase font-bold">Items</p>
+                         <p className="text-xs text-muted-foreground mb-1 uppercase font-bold">Artículos</p>
                          <p className="text-sm">{activeOrder.items}</p>
                       </div>
                    </div>
@@ -110,18 +109,18 @@ export default function DriverPage() {
                       <img src="https://picsum.photos/seed/route/600/400" className="w-full h-full object-cover grayscale opacity-50" />
                       <div className="absolute inset-0 flex items-center justify-center">
                          <Button className="bg-secondary text-secondary-foreground gap-2">
-                            <NavIcon className="h-4 w-4" /> Start Navigation
+                            <NavIcon className="h-4 w-4" /> Iniciar Navegación
                          </Button>
                       </div>
                    </div>
                 </div>
 
                 <div className="flex flex-wrap gap-4 pt-4 border-t border-border/50">
-                   <Button onClick={() => completeStep('Order Picked Up')} variant="secondary" className="flex-1">
-                      Mark as Picked Up
+                   <Button onClick={() => completeStep('Pedido Recogido')} variant="secondary" className="flex-1">
+                      Marcar como Recogido
                    </Button>
-                   <Button onClick={() => completeStep('Delivery Confirmed')} variant="default" className="flex-1 bg-primary neon-glow-primary">
-                      <CheckCircle2 className="mr-2 h-4 w-4" /> Confirm Delivery
+                   <Button onClick={() => completeStep('Entrega Confirmada')} variant="default" className="flex-1 bg-primary neon-glow-primary">
+                      <CheckCircle2 className="mr-2 h-4 w-4" /> Confirmar Entrega
                    </Button>
                 </div>
              </CardContent>

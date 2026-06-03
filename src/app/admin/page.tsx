@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Navigation } from '@/components/Navigation';
@@ -10,9 +9,9 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as ChartTooltip, Re
 import { LayoutDashboard, ShoppingCart, Users, AlertTriangle, TrendingUp } from 'lucide-react';
 
 const MOCK_ORDERS = [
-  { id: 'ORD001', customer: 'Juan Perez', items: 'Vodka + Mixers', status: 'Pending', total: '$54.00' },
-  { id: 'ORD002', customer: 'Maria Gomez', items: 'Case of Beer', status: 'Delivering', total: '$32.50' },
-  { id: 'ORD003', customer: 'Carlos Ruiz', items: 'Wine Selection', status: 'Completed', total: '$120.00' },
+  { id: 'ORD001', customer: 'Juan Perez', items: 'Vodka + Mezcladores', status: 'Pendiente', total: '$54.00' },
+  { id: 'ORD002', customer: 'Maria Gomez', items: 'Caja de Cerveza', status: 'En Camino', total: '$32.50' },
+  { id: 'ORD003', customer: 'Carlos Ruiz', items: 'Selección de Vinos', status: 'Completado', total: '$120.00' },
 ];
 
 const MOCK_STATS = [
@@ -30,11 +29,11 @@ export default function AdminPage() {
       <main className="container mx-auto px-4 py-12 space-y-8">
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold font-headline flex items-center gap-2">
-            <LayoutDashboard className="text-primary" /> Admin Command Center
+            <LayoutDashboard className="text-primary" /> Centro de Comando Admin
           </h1>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" className="border-accent text-accent">Night Rate: Active</Button>
-            <Button size="sm" className="bg-primary">Flash Promo</Button>
+            <Button variant="outline" size="sm" className="border-accent text-accent">Tarifa Nocturna: Activa</Button>
+            <Button size="sm" className="bg-primary">Promo Flash</Button>
           </div>
         </div>
 
@@ -46,7 +45,7 @@ export default function AdminPage() {
                  <ShoppingCart className="h-6 w-6" />
                </div>
                <div>
-                 <p className="text-sm text-muted-foreground">Active Orders</p>
+                 <p className="text-sm text-muted-foreground">Pedidos Activos</p>
                  <h4 className="text-2xl font-bold">24</h4>
                </div>
              </CardContent>
@@ -57,7 +56,7 @@ export default function AdminPage() {
                  <TrendingUp className="h-6 w-6" />
                </div>
                <div>
-                 <p className="text-sm text-muted-foreground">Hourly Growth</p>
+                 <p className="text-sm text-muted-foreground">Crecimiento x Hora</p>
                  <h4 className="text-2xl font-bold">+12%</h4>
                </div>
              </CardContent>
@@ -68,7 +67,7 @@ export default function AdminPage() {
                  <AlertTriangle className="h-6 w-6" />
                </div>
                <div>
-                 <p className="text-sm text-muted-foreground">Stock Alerts</p>
+                 <p className="text-sm text-muted-foreground">Alertas de Stock</p>
                  <h4 className="text-2xl font-bold text-accent">3 Items</h4>
                </div>
              </CardContent>
@@ -79,7 +78,7 @@ export default function AdminPage() {
                  <Users className="h-6 w-6" />
                </div>
                <div>
-                 <p className="text-sm text-muted-foreground">Online Drivers</p>
+                 <p className="text-sm text-muted-foreground">Drivers Online</p>
                  <h4 className="text-2xl font-bold">8</h4>
                </div>
              </CardContent>
@@ -90,7 +89,7 @@ export default function AdminPage() {
           {/* Chart Section */}
           <Card className="lg:col-span-2 bg-card border-border/50">
              <CardHeader>
-               <CardTitle className="text-lg">Order Traffic (Last 5 Hours)</CardTitle>
+               <CardTitle className="text-lg">Tráfico de Pedidos (Últimas 5h)</CardTitle>
              </CardHeader>
              <CardContent className="h-[300px]">
                <ResponsiveContainer width="100%" height="100%">
@@ -112,21 +111,21 @@ export default function AdminPage() {
           <Card className="bg-card border-border/50">
             <CardHeader>
                <CardTitle className="text-lg flex items-center gap-2">
-                 Inventory Watch <Badge variant="outline" className="border-accent text-accent">Critical</Badge>
+                 Vigilancia de Inventario <Badge variant="outline" className="border-accent text-accent">Crítico</Badge>
                </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
                {[
-                 { name: 'Grey Goose 750ml', stock: '2 left', trend: 'down' },
-                 { name: 'Heineken 6-Pack', stock: '5 left', trend: 'down' },
-                 { name: 'Ice Bags (Large)', stock: 'Out of Stock', trend: 'none' }
+                 { name: 'Grey Goose 750ml', stock: '2 restantes', trend: 'down' },
+                 { name: 'Heineken 6-Pack', stock: '5 restantes', trend: 'down' },
+                 { name: 'Hielo (Bolsa Grande)', stock: 'Sin Stock', trend: 'none' }
                ].map((item, idx) => (
                  <div key={idx} className="flex items-center justify-between p-3 rounded-lg bg-background/50 border border-border/30">
                     <div>
                       <p className="font-medium">{item.name}</p>
                       <p className="text-xs text-accent font-bold uppercase">{item.stock}</p>
                     </div>
-                    <Button size="sm" variant="ghost" className="text-xs">Restock</Button>
+                    <Button size="sm" variant="ghost" className="text-xs">Reponer</Button>
                  </div>
                ))}
             </CardContent>
@@ -136,18 +135,18 @@ export default function AdminPage() {
         {/* Orders Table */}
         <Card className="bg-card border-border/50">
           <CardHeader>
-            <CardTitle>Recent Orders</CardTitle>
+            <CardTitle>Pedidos Recientes</CardTitle>
           </CardHeader>
           <CardContent>
             <Table>
               <TableHeader>
                 <TableRow className="border-border/50">
-                  <TableHead>Order ID</TableHead>
-                  <TableHead>Customer</TableHead>
+                  <TableHead>ID Pedido</TableHead>
+                  <TableHead>Cliente</TableHead>
                   <TableHead>Items</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead>Estado</TableHead>
                   <TableHead>Total</TableHead>
-                  <TableHead className="text-right">Action</TableHead>
+                  <TableHead className="text-right">Acción</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -158,15 +157,15 @@ export default function AdminPage() {
                     <TableCell>{order.items}</TableCell>
                     <TableCell>
                       <Badge className={
-                        order.status === 'Pending' ? 'bg-accent text-accent-foreground' : 
-                        order.status === 'Delivering' ? 'bg-secondary text-secondary-foreground' : 'bg-green-500'
+                        order.status === 'Pendiente' ? 'bg-accent text-accent-foreground' : 
+                        order.status === 'En Camino' ? 'bg-secondary text-secondary-foreground' : 'bg-green-500'
                       }>
                         {order.status}
                       </Badge>
                     </TableCell>
                     <TableCell>{order.total}</TableCell>
                     <TableCell className="text-right">
-                      <Button variant="ghost" size="sm">View Details</Button>
+                      <Button variant="ghost" size="sm">Ver Detalles</Button>
                     </TableCell>
                   </TableRow>
                 ))}

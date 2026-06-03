@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from 'next/link';
@@ -39,8 +38,8 @@ export function Navigation() {
           </Link>
           
           <div className="hidden md:flex items-center gap-6">
-            <Link href="/catalog" className="text-sm font-medium hover:text-primary transition-colors">Shop</Link>
-            <Link href="/moods" className="text-sm font-medium hover:text-primary transition-colors">Moods</Link>
+            <Link href="/catalog" className="text-sm font-medium hover:text-primary transition-colors">Tienda</Link>
+            <Link href="/moods" className="text-sm font-medium hover:text-primary transition-colors">Vibra</Link>
             <Link href="/combos" className="text-sm font-medium hover:text-primary transition-colors">Combos</Link>
           </div>
         </div>
@@ -50,22 +49,22 @@ export function Navigation() {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="sm" className="hidden md:flex gap-2">
                 <User className="h-4 w-4" />
-                <span className="capitalize">{role}</span>
+                <span className="capitalize">{role === 'client' ? 'Cliente' : role === 'admin' ? 'Admin' : role === 'driver' ? 'Repartidor' : 'Almacén'}</span>
                 <ChevronDown className="h-3 w-3" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
               <DropdownMenuItem onClick={() => changeRole('client')}>
-                <User className="mr-2 h-4 w-4" /> Client View
+                <User className="mr-2 h-4 w-4" /> Vista Cliente
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => changeRole('admin')}>
-                <LayoutDashboard className="mr-2 h-4 w-4" /> Admin Panel
+                <LayoutDashboard className="mr-2 h-4 w-4" /> Panel Admin
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => changeRole('driver')}>
-                <Truck className="mr-2 h-4 w-4" /> Driver View
+                <Truck className="mr-2 h-4 w-4" /> Vista Repartidor
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => changeRole('warehouse')}>
-                <Box className="mr-2 h-4 w-4" /> Warehouse View
+                <Box className="mr-2 h-4 w-4" /> Vista Almacén
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -87,7 +86,7 @@ export function Navigation() {
           
           {role === 'client' && (
              <Button variant="default" className="hidden md:flex bg-primary neon-glow-primary hover:bg-primary/90">
-                Join the Party
+                Únete a la Fiesta
              </Button>
           )}
         </div>

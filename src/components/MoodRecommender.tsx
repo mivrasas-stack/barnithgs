@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from 'react';
@@ -8,10 +7,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, Sparkles, Wine, Beer, Martini, Zap } from 'lucide-react';
 import { useCart, Product } from '@/lib/store';
 import { toast } from '@/hooks/use-toast';
+import { Badge } from '@/components/ui/badge';
 
 const MOODS = [
   { id: 'pre-copeo', label: 'Pre-copeo', icon: Martini, color: 'text-secondary' },
-  { id: 'urgente', label: 'Se acabó el trago!', icon: Zap, color: 'text-accent' },
+  { id: 'urgente', label: '¡Se acabó el trago!', icon: Zap, color: 'text-accent' },
   { id: 'romantica', label: 'Cena Romántica', icon: Wine, color: 'text-primary' },
   { id: 'after', label: 'After Party', icon: Beer, color: 'text-secondary' },
 ];
@@ -27,14 +27,13 @@ export function MoodRecommender() {
       const res = await recommendByMood({ mood });
       setRecommendations(res);
     } catch (err) {
-      toast({ title: "Failed to get recommendations", variant: "destructive" });
+      toast({ title: "Error al obtener recomendaciones", variant: "destructive" });
     } finally {
       setLoading(false);
     }
   };
 
   const handleAddToCart = (name: string, category: string) => {
-    // Mock product for the recommended item
     const mockProduct: Product = {
       id: Math.random().toString(36).substr(2, 9),
       name,
@@ -43,14 +42,14 @@ export function MoodRecommender() {
       image: "https://picsum.photos/seed/liquor/400/500"
     };
     addToCart(mockProduct);
-    toast({ title: `Added ${name} to cart!` });
+    toast({ title: `¡${name} añadido al carrito!` });
   };
 
   return (
     <div className="space-y-8">
       <div className="text-center">
         <h2 className="text-3xl font-bold font-headline mb-4 flex items-center justify-center gap-2">
-          What's the <span className="text-secondary">vibe</span> today? <Sparkles className="h-6 w-6 text-accent" />
+          ¿Cuál es la <span className="text-secondary">vibra</span> de hoy? <Sparkles className="h-6 w-6 text-accent" />
         </h2>
         <div className="flex flex-wrap justify-center gap-4">
           {MOODS.map((m) => (
@@ -70,7 +69,7 @@ export function MoodRecommender() {
       {loading && (
         <div className="flex flex-col items-center justify-center py-12 gap-4">
           <Loader2 className="h-10 w-10 animate-spin text-primary" />
-          <p className="text-muted-foreground animate-pulse">Consulting the party oracle...</p>
+          <p className="text-muted-foreground animate-pulse">Consultando al oráculo de la fiesta...</p>
         </div>
       )}
 
@@ -96,7 +95,7 @@ export function MoodRecommender() {
                    className="w-full bg-secondary text-secondary-foreground hover:bg-secondary/90 neon-glow-secondary"
                    onClick={() => handleAddToCart(liq.name, liq.category)}
                 >
-                  Add to Cart
+                  Añadir al Carrito
                 </Button>
               </CardContent>
             </Card>
@@ -104,7 +103,7 @@ export function MoodRecommender() {
           {recommendations.recommendations.combos.map((combo, idx) => (
             <Card key={`combo-${idx}`} className="bg-card border-primary/20 overflow-hidden border-2 relative">
                <div className="absolute top-2 right-2 z-10">
-                 <Badge className="bg-primary">BEST DEAL</Badge>
+                 <Badge className="bg-primary">MEJOR PRECIO</Badge>
                </div>
                <CardContent className="p-6 space-y-4">
                   <h3 className="text-xl font-bold font-headline text-primary">{combo.name}</h3>
@@ -120,7 +119,7 @@ export function MoodRecommender() {
                     className="w-full bg-primary neon-glow-primary"
                     onClick={() => handleAddToCart(combo.name, 'Combo')}
                   >
-                    Add Combo
+                    Añadir Combo
                   </Button>
                </CardContent>
             </Card>

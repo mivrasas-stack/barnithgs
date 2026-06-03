@@ -1,10 +1,9 @@
-
 import type {Metadata} from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'PartyFlow | Instant Nightlife Delivery',
-  description: 'Ultra-fast 24/7 liquor and party delivery services.',
+  title: 'PartyFlow | Entrega Inmediata para tu Fiesta',
+  description: 'Servicio de entrega de licores y artículos de fiesta 24/7 ultra rápido.',
 };
 
 export default function RootLayout({
@@ -13,7 +12,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
+    <html lang="es" className="dark">
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
