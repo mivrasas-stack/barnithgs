@@ -52,10 +52,13 @@ export type Role = 'client' | 'admin' | 'driver' | 'warehouse';
 
 export function useUserRole() {
   const [role, setRole] = useState<Role>('client');
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
-    const saved = localStorage.getItem('partyflow_role') as Role;
-    if (saved) setRole(saved);
+    const savedRole = localStorage.getItem('partyflow_role') as Role;
+    const authStatus = localStorage.getItem('partyflow_logged_in') === 'true';
+    if (savedRole) setRole(savedRole);
+    setIsLoggedIn(authStatus);
   }, []);
 
   const changeRole = (newRole: Role) => {
@@ -63,5 +66,20 @@ export function useUserRole() {
     localStorage.setItem('partyflow_role', newRole);
   };
 
-  return { role, changeRole };
+  const login = (digits: string) => {
+    // Simulación de validación: En un app real aquí verificaríamos contra una base de datos
+    // Por ahora, cualquier 4 dígitos permiten el acceso según el rol guardado
+    setIsLoggedIn(true);
+    localStorage.setItem('partyflow_logged_in', 'true');
+    return true;
+  };
+
+  const logout = () => {
+    setIsLoggedIn(false);
+    setRole('client');
+    localStorage.setItem('partyflow_logged_in', 'false');
+    localStorage.setItem('partyflow_role', 'client');
+  };
+
+  return { role, changeRole, isLoggedIn, login, logout };
 }

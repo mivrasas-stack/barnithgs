@@ -2,6 +2,7 @@
 "use client";
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useUserRole, useCart } from '@/lib/store';
 import { Button } from '@/components/ui/button';
 import { 
@@ -13,7 +14,9 @@ import {
   Box, 
   Beer,
   ChevronDown,
-  Zap
+  Zap,
+  LogOut,
+  Lock
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -24,9 +27,15 @@ import {
 import { Badge } from '@/components/ui/badge';
 
 export function Navigation() {
-  const { role, changeRole } = useUserRole();
+  const { role, changeRole, isLoggedIn, logout } = useUserRole();
   const { cart } = useCart();
+  const router = useRouter();
   const itemCount = cart.reduce((acc, item) => acc + item.quantity, 0);
+
+  const handleLogout = () => {
+    logout();
+    router.push('/');
+  };
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b border-white/10 glass-morphism">
@@ -86,15 +95,21 @@ export function Navigation() {
             </Button>
           </Link>
 
+          {isLoggedIn ? (
+            <Button variant="ghost" size="icon" onClick={handleLogout} className="h-12 w-12 text-destructive hover:bg-destructive/10 rounded-xl">
+              <LogOut className="h-6 w-6" />
+            </Button>
+          ) : (
+            <Link href="/login">
+              <Button variant="outline" className="hidden md:flex border-primary text-primary font-black tracking-widest px-6 rounded-full h-12 hover:bg-primary/10 transition-all">
+                <Lock className="mr-2 h-4 w-4" /> ACCESO STAFF
+              </Button>
+            </Link>
+          )}
+
           <Button variant="ghost" size="icon" className="md:hidden h-12 w-12 hover:bg-white/10">
             <Menu className="h-6 w-6" />
           </Button>
-          
-          {role === 'client' && (
-             <Button variant="default" className="hidden md:flex bg-primary font-black tracking-widest px-8 rounded-full h-12 neon-glow-primary hover:bg-primary/90 transition-all hover:scale-105">
-                <Zap className="mr-2 h-4 w-4 fill-white" /> ÚNETE
-             </Button>
-          )}
         </div>
       </div>
     </nav>

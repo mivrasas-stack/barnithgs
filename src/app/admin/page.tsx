@@ -1,5 +1,9 @@
+
 "use client";
 
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useUserRole } from '@/lib/store';
 import { Navigation } from '@/components/Navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -23,8 +27,19 @@ const MOCK_STATS = [
 ];
 
 export default function AdminPage() {
+  const { isLoggedIn, role } = useUserRole();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isLoggedIn || role !== 'admin') {
+      router.push('/login');
+    }
+  }, [isLoggedIn, role, router]);
+
+  if (!isLoggedIn || role !== 'admin') return null;
+
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-black text-white">
       <Navigation />
       <main className="container mx-auto px-4 py-12 space-y-12 animate-in fade-in duration-700">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
@@ -68,7 +83,6 @@ export default function AdminPage() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-          {/* Chart Section */}
           <Card className="lg:col-span-2 bg-card/40 border-white/10 glass-morphism">
              <CardHeader>
                <CardTitle className="text-2xl font-black italic tracking-tight">TRÁFICO DE RUMBA (Últimas 5h)</CardTitle>
@@ -93,7 +107,6 @@ export default function AdminPage() {
              </CardContent>
           </Card>
 
-          {/* Low Stock Alerts */}
           <Card className="bg-card/40 border-white/10 glass-morphism">
             <CardHeader>
                <CardTitle className="text-2xl font-black italic flex items-center gap-3">
@@ -117,48 +130,6 @@ export default function AdminPage() {
             </CardContent>
           </Card>
         </div>
-
-        {/* Orders Table */}
-        <Card className="bg-card/40 border-white/10 glass-morphism overflow-hidden">
-          <CardHeader className="border-b border-white/5 pb-6">
-            <CardTitle className="text-3xl font-black italic tracking-tighter">ÚLTIMOS PEDIDOS DE LA NOCHE</CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader className="bg-white/5">
-                <TableRow className="border-white/5 hover:bg-transparent">
-                  <TableHead className="text-gray-400 font-bold uppercase py-6">ID Pedido</TableHead>
-                  <TableHead className="text-gray-400 font-bold uppercase">Cliente</TableHead>
-                  <TableHead className="text-gray-400 font-bold uppercase">Items</TableHead>
-                  <TableHead className="text-gray-400 font-bold uppercase">Estado</TableHead>
-                  <TableHead className="text-gray-400 font-bold uppercase">Total</TableHead>
-                  <TableHead className="text-right text-gray-400 font-bold uppercase">Acción</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {MOCK_ORDERS.map((order) => (
-                  <TableRow key={order.id} className="border-white/5 hover:bg-white/5 transition-colors">
-                    <TableCell className="font-black text-primary py-6">{order.id}</TableCell>
-                    <TableCell className="font-bold">{order.customer}</TableCell>
-                    <TableCell className="text-gray-300">{order.items}</TableCell>
-                    <TableCell>
-                      <Badge className={
-                        order.status === 'Pendiente' ? 'bg-accent text-black font-black' : 
-                        order.status === 'En Camino' ? 'bg-secondary text-black font-black' : 'bg-green-500 text-white font-black'
-                      }>
-                        {order.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="font-black">{order.total}</TableCell>
-                    <TableCell className="text-right">
-                      <Button variant="ghost" size="sm" className="font-bold hover:text-primary">DETALLES</Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
       </main>
     </div>
   );

@@ -1,6 +1,9 @@
+
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useUserRole } from '@/lib/store';
 import { Navigation } from '@/components/Navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -33,7 +36,17 @@ const INITIAL_PACKING_ORDERS = [
 ];
 
 export default function WarehousePage() {
+  const { isLoggedIn, role } = useUserRole();
+  const router = useRouter();
   const [orders, setOrders] = useState(INITIAL_PACKING_ORDERS);
+
+  useEffect(() => {
+    if (!isLoggedIn || role !== 'warehouse') {
+      router.push('/login');
+    }
+  }, [isLoggedIn, role, router]);
+
+  if (!isLoggedIn || role !== 'warehouse') return null;
 
   const toggleItem = (orderId: string, itemName: string) => {
     setOrders(prev => prev.map(order => {
@@ -60,7 +73,7 @@ export default function WarehousePage() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-black text-white">
       <Navigation />
       <main className="container mx-auto px-4 py-12 space-y-12 animate-in fade-in duration-700">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
@@ -71,16 +84,12 @@ export default function WarehousePage() {
             </h1>
             <p className="text-gray-400 font-medium mt-2">La precisión es la clave de una rumba exitosa.</p>
           </div>
-          <div className="flex gap-4">
-             <Button variant="outline" className="border-white/10 hover:bg-white/5 font-bold rounded-xl h-12 px-6"><History className="mr-2 h-4 w-4" /> HISTORIAL</Button>
-             <Button className="bg-secondary text-black font-black italic rounded-xl h-12 px-6 neon-glow-secondary"><Clock className="mr-2 h-4 w-4" /> COLA: {orders.length + 10}</Button>
-          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
           {orders.map((order) => (
             <Card key={order.id} className="card-neon-border bg-card/40 overflow-hidden rounded-[2.5rem]">
-              <CardHeader className="flex flex-row items-center justify-between border-b border-white/5 p-8 bg-white/5">
+              <CardHeader className="flex flex-row items-center justify-between p-8 bg-white/5">
                 <div>
                    <CardTitle className="text-3xl font-black italic tracking-tighter text-white">PEDIDO #{order.id}</CardTitle>
                    <p className="text-sm font-bold text-gray-400 mt-1 uppercase tracking-widest">{order.customer} • {order.time}</p>
@@ -124,18 +133,6 @@ export default function WarehousePage() {
               </CardContent>
             </Card>
           ))}
-          
-          {orders.length === 0 && (
-            <div className="col-span-full py-32 flex flex-col items-center justify-center text-center space-y-8 animate-in fade-in zoom-in">
-               <div className="h-24 w-24 rounded-full bg-white/5 flex items-center justify-center text-gray-600 border border-white/10 shadow-[0_0_50px_rgba(255,255,255,0.05)]">
-                  <Zap className="h-12 w-12" />
-               </div>
-               <div className="space-y-4">
-                  <h3 className="text-4xl font-black italic tracking-tighter">BODEGA DESPEJADA</h3>
-                  <p className="text-xl text-gray-500 font-medium max-w-lg mx-auto">Todos los pedidos han sido despachados. Aprovecha para reponer stock antes de la siguiente ola.</p>
-               </div>
-            </div>
-          )}
         </div>
       </main>
     </div>

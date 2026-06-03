@@ -1,6 +1,9 @@
+
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useUserRole } from '@/lib/store';
 import { Navigation } from '@/components/Navigation';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -10,8 +13,18 @@ import { MapPin, Truck, Bell, Navigation as NavIcon, CheckCircle2, Zap, Radio } 
 import { toast } from '@/hooks/use-toast';
 
 export default function DriverPage() {
+  const { isLoggedIn, role } = useUserRole();
+  const router = useRouter();
   const [isOnline, setIsOnline] = useState(false);
   const [activeOrder, setActiveOrder] = useState<any>(null);
+
+  useEffect(() => {
+    if (!isLoggedIn || role !== 'driver') {
+      router.push('/login');
+    }
+  }, [isLoggedIn, role, router]);
+
+  if (!isLoggedIn || role !== 'driver') return null;
 
   const simulateNewOrder = () => {
     if (!isOnline) {
@@ -37,7 +50,7 @@ export default function DriverPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-black text-white">
       <Navigation />
       <main className="container mx-auto px-4 py-12 space-y-12 animate-in fade-in duration-700">
         <div className="flex items-center justify-between p-8 bg-card/40 rounded-[2.5rem] border border-white/10 glass-morphism shadow-[0_0_30px_rgba(0,0,0,0.5)]">
@@ -117,12 +130,6 @@ export default function DriverPage() {
                    </div>
                    <div className="h-[400px] rounded-[2.5rem] overflow-hidden border-4 border-white/5 relative group">
                       <img src="https://picsum.photos/seed/route-dark/800/600" className="w-full h-full object-cover grayscale brightness-50 contrast-125 transition-transform duration-700 group-hover:scale-110" />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent" />
-                      <div className="absolute inset-0 flex items-center justify-center">
-                         <Button size="lg" className="bg-secondary text-black font-black tracking-widest rounded-full h-16 px-10 neon-glow-secondary hover:scale-105 transition-all">
-                            <NavIcon className="mr-3 h-6 w-6" /> ABRIR MAPA
-                         </Button>
-                      </div>
                    </div>
                 </div>
 
