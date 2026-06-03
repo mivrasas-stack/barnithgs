@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -52,7 +52,10 @@ import {
   CheckCircle2,
   Navigation as NavIcon,
   LayoutDashboard,
-  ChevronRight
+  ChevronRight,
+  Phone,
+  Package,
+  Calendar
 } from 'lucide-react';
 
 const MOCK_STATS = [
@@ -87,9 +90,42 @@ const MOCK_STAFF = [
 ];
 
 const MOCK_DELIVERIES = [
-  { id: 'ORD-5501', customer: 'Andrés Felipe', address: 'Calle 100 #15-30', status: 'ENTREGANDO', driver: 'Ana Rodríguez', time: '12 min', total: 245000 },
-  { id: 'ORD-5502', customer: 'Juliana G.', address: 'Cra 7 #72-10', status: 'EMPACANDO', driver: 'Pendiente', time: '4 min', total: 85000 },
-  { id: 'ORD-5503', customer: 'Sofía V.', address: 'Av Boyacá #116-40', status: 'COMPLETADO', driver: 'Carlos Mendoza', time: '25 min', total: 115000 },
+  { 
+    id: 'ORD-5501', 
+    customer: 'Andrés Felipe', 
+    phone: '310 555 1234',
+    address: 'Calle 100 #15-30, Apt 502', 
+    status: 'ENTREGANDO', 
+    driver: 'Ana Rodríguez', 
+    time: '12 min', 
+    total: 245000,
+    items: ['2x Old Parr 12 Años 750ml', '4x Red Bull 250ml', '1x Bolsa Hielo 5kg'],
+    placedAt: '22:45'
+  },
+  { 
+    id: 'ORD-5502', 
+    customer: 'Juliana G.', 
+    phone: '311 222 3344',
+    address: 'Cra 7 #72-10, Edificio Capital', 
+    status: 'EMPACANDO', 
+    driver: 'Pendiente', 
+    time: '4 min', 
+    total: 85000,
+    items: ['1x Aguardiente Antioqueño 750ml', '2x Coca Cola 1.5L'],
+    placedAt: '22:58'
+  },
+  { 
+    id: 'ORD-5503', 
+    customer: 'Sofía V.', 
+    phone: '300 987 6543',
+    address: 'Av Boyacá #116-40', 
+    status: 'COMPLETADO', 
+    driver: 'Carlos Mendoza', 
+    time: '25 min', 
+    total: 115000,
+    items: ['1x Grey Goose 750ml', '1x Jugo de Naranja 1L'],
+    placedAt: '22:15'
+  },
 ];
 
 function AdminContent() {
@@ -99,6 +135,7 @@ function AdminContent() {
   const activeTab = searchParams.get('tab') || 'dashboard';
   const [inventory] = useState(INITIAL_INVENTORY);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedOrder, setSelectedOrder] = useState<typeof MOCK_DELIVERIES[0] | null>(null);
 
   useEffect(() => {
     if (isInitialized && (!isLoggedIn || role !== 'admin')) {
@@ -135,13 +172,14 @@ function AdminContent() {
           {activeTab === 'inventory' && (
             <Dialog>
               <DialogTrigger asChild>
-                <Button className="bg-primary hover:bg-primary/90 h-12 px-8 rounded-xl font-black italic text-base tracking-tight neon-glow-primary">
-                  <Plus className="mr-2 h-5 w-5" /> NUEVA ENTRADA
+                <Button className="bg-primary hover:bg-primary/90 h-10 px-6 rounded-xl font-black italic text-sm tracking-tight neon-glow-primary">
+                  <Plus className="mr-2 h-4 w-4" /> NUEVA ENTRADA BODEGA
                 </Button>
               </DialogTrigger>
               <DialogContent className="bg-card border-white/10 text-white rounded-[1.5rem] p-8 max-w-xl">
                 <DialogHeader>
                   <DialogTitle className="text-2xl font-black italic text-primary uppercase">REGISTRO DE MERCANCÍA</DialogTitle>
+                  <DialogDescription className="text-gray-500 font-bold text-[10px] uppercase">Ingreso de stock con valoración COP</DialogDescription>
                 </DialogHeader>
                 <div className="grid grid-cols-2 gap-4 mt-6">
                   <div className="col-span-2 space-y-1.5">
@@ -164,7 +202,7 @@ function AdminContent() {
                     </Select>
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-[9px] font-black uppercase text-gray-500">Costo (COP)</Label>
+                    <Label className="text-[9px] font-black uppercase text-gray-500">Costo Adquisición (COP)</Label>
                     <Input type="number" className="bg-white/5 border-white/10 h-11 text-sm" placeholder="0" />
                   </div>
                   <div className="space-y-1.5">
@@ -266,7 +304,7 @@ function AdminContent() {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-600 h-4 w-4" />
                 <Input 
                   placeholder="Filtrar por SKU o Nombre..." 
-                  className="bg-white/5 border-white/10 h-12 pl-10 rounded-xl font-bold text-sm focus:border-secondary"
+                  className="bg-white/5 border-white/10 h-10 pl-10 rounded-xl font-bold text-sm focus:border-secondary"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
@@ -289,14 +327,14 @@ function AdminContent() {
                     <TableRow key={item.id} className="border-white/5 hover:bg-white/5 transition-colors">
                       <TableCell className="p-4">
                         <div className="space-y-0.5">
-                          <p className="font-black text-lg italic tracking-tighter">{item.name}</p>
+                          <p className="font-black text-base italic tracking-tighter">{item.name}</p>
                           <Badge className="bg-white/5 text-gray-500 text-[7px] border-none font-black uppercase px-1.5 py-0">{item.category}</Badge>
                         </div>
                       </TableCell>
-                      <TableCell className="p-4 font-black text-secondary text-lg italic">{formatCurrency(item.price)}</TableCell>
+                      <TableCell className="p-4 font-black text-secondary text-base italic">{formatCurrency(item.price)}</TableCell>
                       <TableCell className="p-4">
                         <div className="flex flex-col">
-                          <span className={`text-2xl font-black italic ${item.stock <= item.minStock ? 'text-accent' : 'text-white'}`}>{item.stock}</span>
+                          <span className={`text-xl font-black italic ${item.stock <= item.minStock ? 'text-accent' : 'text-white'}`}>{item.stock}</span>
                           <span className="text-[7px] font-black text-gray-600 uppercase">Unidades</span>
                         </div>
                       </TableCell>
@@ -308,15 +346,15 @@ function AdminContent() {
                       <TableCell className="p-4 text-right space-x-1">
                         <Dialog>
                           <DialogTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg text-gray-500 hover:text-white"><Edit3 className="h-4 w-4" /></Button>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-gray-500 hover:text-white"><Edit3 className="h-4 w-4" /></Button>
                           </DialogTrigger>
                           <DialogContent className="bg-card border-white/10 text-white rounded-[1.5rem] p-8 max-w-md">
                             <DialogHeader>
-                              <DialogTitle className="text-xl font-black italic text-secondary uppercase">EDITAR STOCK: {item.name}</DialogTitle>
+                              <DialogTitle className="text-xl font-black italic text-secondary uppercase">EDITAR EXISTENCIAS: {item.name}</DialogTitle>
                             </DialogHeader>
                             <div className="space-y-4 mt-6">
                               <div className="space-y-1">
-                                <Label className="text-[9px] font-black uppercase text-gray-500">Nombre</Label>
+                                <Label className="text-[9px] font-black uppercase text-gray-500">Nombre del Producto</Label>
                                 <Input className="bg-white/5 border-white/10 h-11 text-sm" defaultValue={item.name} />
                               </div>
                               <div className="space-y-1">
@@ -328,10 +366,10 @@ function AdminContent() {
                                 <Input type="number" className="bg-white/5 border-white/10 h-11 text-sm" defaultValue={item.stock} />
                               </div>
                             </div>
-                            <Button className="w-full h-12 bg-secondary text-black font-black italic text-lg mt-6 rounded-lg uppercase neon-glow-secondary">ACTUALIZAR</Button>
+                            <Button className="w-full h-12 bg-secondary text-black font-black italic text-lg mt-6 rounded-lg uppercase neon-glow-secondary">CONFIRMAR ACTUALIZACIÓN</Button>
                           </DialogContent>
                         </Dialog>
-                        <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg text-gray-500 hover:text-destructive"><Trash2 className="h-4 w-4" /></Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-gray-500 hover:text-destructive"><Trash2 className="h-4 w-4" /></Button>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -341,7 +379,7 @@ function AdminContent() {
           </div>
         )}
 
-        {/* DELIVERIES VIEW */}
+        {/* DELIVERIES VIEW - LIVE LOGISTICS */}
         {activeTab === 'deliveries' && (
           <div className="space-y-8 animate-in fade-in duration-700">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -350,29 +388,99 @@ function AdminContent() {
                   <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent" />
                   <div className="absolute bottom-6 left-6 space-y-1">
                     <Badge className="bg-secondary text-black font-black animate-pulse px-4 py-1 text-[10px]">8 REPARTIDORES EN RUTA</Badge>
-                    <p className="text-[10px] font-bold text-gray-400">Mapa Satelital en Tiempo Real</p>
+                    <p className="text-[10px] font-bold text-gray-400">Monitoreo Satelital Activo</p>
                   </div>
                </div>
-               <div className="space-y-4">
-                  {MOCK_DELIVERIES.map((order) => (
-                    <div key={order.id} className="bg-white/[0.02] border border-white/5 p-4 rounded-[1.5rem] space-y-3 hover:border-secondary/30 transition-all cursor-pointer">
-                      <div className="flex justify-between items-start">
-                        <p className="font-black text-secondary italic text-base">{order.id}</p>
-                        <Badge className="bg-secondary/10 text-secondary border-none text-[7px] font-black uppercase">{order.status}</Badge>
-                      </div>
-                      <div className="space-y-0.5">
-                        <p className="text-xs font-bold text-gray-300">{order.customer}</p>
-                        <p className="text-[10px] text-gray-500 flex items-center gap-1"><MapPin className="h-2.5 w-2.5" /> {order.address}</p>
-                      </div>
-                      <div className="flex justify-between items-center pt-2 border-t border-white/5">
-                        <span className="text-[9px] font-black text-gray-600">{order.driver}</span>
-                        <div className="text-right">
-                          <p className="text-[8px] font-black text-gray-500 uppercase">Total</p>
-                          <span className="text-xs font-black italic text-primary">{formatCurrency(order.total)}</span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+               
+               <div className="space-y-3">
+                  <h3 className="text-xs font-black uppercase tracking-widest text-gray-500 mb-4 px-2">Pedidos en Tiempo Real</h3>
+                  <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 no-scrollbar">
+                    {MOCK_DELIVERIES.map((order) => (
+                      <Dialog key={order.id}>
+                        <DialogTrigger asChild>
+                          <div 
+                            className="bg-white/[0.02] border border-white/5 p-4 rounded-[1.5rem] space-y-3 hover:border-secondary/30 transition-all cursor-pointer group"
+                            onClick={() => setSelectedOrder(order)}
+                          >
+                            <div className="flex justify-between items-start">
+                              <p className="font-black text-secondary italic text-base group-hover:neon-text-secondary transition-all">{order.id}</p>
+                              <Badge className={`${order.status === 'COMPLETADO' ? 'bg-green-500/10 text-green-400' : 'bg-secondary/10 text-secondary'} border-none text-[7px] font-black uppercase`}>
+                                {order.status}
+                              </Badge>
+                            </div>
+                            <div className="space-y-0.5">
+                              <p className="text-xs font-bold text-gray-300">{order.customer}</p>
+                              <p className="text-[10px] text-gray-500 flex items-center gap-1 line-clamp-1"><MapPin className="h-2.5 w-2.5" /> {order.address}</p>
+                            </div>
+                            <div className="flex justify-between items-center pt-2 border-t border-white/5">
+                              <span className="text-[9px] font-black text-gray-600 flex items-center gap-1"><Truck className="h-3 w-3" /> {order.driver}</span>
+                              <div className="text-right">
+                                <span className="text-xs font-black italic text-primary">{formatCurrency(order.total)}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </DialogTrigger>
+                        <DialogContent className="bg-card border-white/10 text-white rounded-[2rem] p-8 max-w-lg">
+                          <DialogHeader>
+                            <div className="flex justify-between items-center mb-4">
+                              <DialogTitle className="text-2xl font-black italic text-secondary uppercase tracking-tighter">DETALLE PEDIDO {order.id}</DialogTitle>
+                              <Badge className="bg-secondary/20 text-secondary border-none px-3 py-1 font-black text-[10px] uppercase">{order.status}</Badge>
+                            </div>
+                          </DialogHeader>
+                          
+                          <div className="space-y-6">
+                            {/* CLIENT INFO */}
+                            <div className="grid grid-cols-2 gap-4 p-4 bg-white/5 rounded-2xl border border-white/5">
+                              <div className="space-y-1">
+                                <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest">Cliente</p>
+                                <p className="text-sm font-bold flex items-center gap-2"><Users className="h-3.5 w-3.5 text-secondary" /> {order.customer}</p>
+                              </div>
+                              <div className="space-y-1">
+                                <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest">Contacto</p>
+                                <p className="text-sm font-bold flex items-center gap-2"><Phone className="h-3.5 w-3.5 text-secondary" /> {order.phone}</p>
+                              </div>
+                              <div className="col-span-2 space-y-1 pt-2 border-t border-white/5">
+                                <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest">Dirección de Entrega</p>
+                                <p className="text-sm font-bold flex items-center gap-2"><MapPin className="h-3.5 w-3.5 text-primary" /> {order.address}</p>
+                              </div>
+                            </div>
+
+                            {/* ORDER ITEMS */}
+                            <div className="space-y-3">
+                              <p className="text-[9px] font-black text-secondary uppercase tracking-widest flex items-center gap-2">
+                                <Package className="h-4 w-4" /> Desglose de Productos
+                              </p>
+                              <div className="space-y-2">
+                                {order.items.map((item, idx) => (
+                                  <div key={idx} className="flex justify-between items-center p-3 bg-white/[0.03] rounded-xl border border-white/5">
+                                    <span className="text-xs font-bold text-gray-300">{item}</span>
+                                    <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+
+                            {/* LOGISTICS INFO */}
+                            <div className="flex justify-between items-center p-4 bg-primary/5 rounded-2xl border border-primary/10">
+                              <div className="space-y-1">
+                                <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest">Repartidor</p>
+                                <p className="text-sm font-black italic">{order.driver}</p>
+                              </div>
+                              <div className="text-right space-y-1">
+                                <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest">Valor Total</p>
+                                <p className="text-xl font-black text-primary neon-text-primary">{formatCurrency(order.total)}</p>
+                              </div>
+                            </div>
+
+                            <div className="flex gap-2">
+                              <Button className="flex-1 h-12 bg-secondary text-black font-black italic tracking-widest rounded-xl hover:bg-secondary/90">CONTACTAR DRIVER</Button>
+                              <Button variant="outline" className="h-12 w-12 rounded-xl border-white/10 hover:bg-white/10"><NavIcon className="h-5 w-5" /></Button>
+                            </div>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                    ))}
+                  </div>
                </div>
             </div>
           </div>
@@ -384,26 +492,26 @@ function AdminContent() {
             {MOCK_STAFF.map((member) => (
               <div key={member.id} className="bg-white/[0.02] border border-white/5 p-6 rounded-[2rem] space-y-6 group hover:border-primary/50 transition-all relative">
                 <div className="flex justify-between items-start">
-                  <div className="h-12 w-12 bg-white/5 rounded-xl flex items-center justify-center text-primary group-hover:neon-glow-primary transition-all">
-                    <Users className="h-6 w-6" />
+                  <div className="h-10 w-10 bg-white/5 rounded-xl flex items-center justify-center text-primary group-hover:neon-glow-primary transition-all">
+                    <Users className="h-5 w-5" />
                   </div>
                   <Badge className={`${member.status === 'Online' ? 'bg-green-500/10 text-green-400' : 'bg-secondary/10 text-secondary'} font-black px-3 py-0 text-[10px]`}>{member.status}</Badge>
                 </div>
                 <div>
-                  <h3 className="text-xl font-black italic tracking-tighter uppercase">{member.name}</h3>
+                  <h3 className="text-lg font-black italic tracking-tighter uppercase">{member.name}</h3>
                   <p className="text-[8px] font-black text-gray-600 uppercase tracking-widest mt-0.5">Cédula: {member.cedula}</p>
                 </div>
                 <div className="flex gap-2">
-                  <Button className="flex-1 h-11 bg-white/5 border border-white/10 hover:bg-white/10 font-black italic rounded-lg text-sm">PERFIL</Button>
-                  <Button variant="ghost" className="h-11 w-11 rounded-lg text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>
+                  <Button className="flex-1 h-10 bg-white/5 border border-white/10 hover:bg-white/10 font-black italic rounded-lg text-xs">PERFIL</Button>
+                  <Button variant="ghost" className="h-10 w-10 rounded-lg text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>
                 </div>
               </div>
             ))}
             <div className="bg-white/[0.01] border border-dashed border-white/10 rounded-[2rem] flex flex-col items-center justify-center p-8 space-y-4 hover:bg-white/[0.03] transition-all cursor-pointer group">
-               <div className="h-14 w-14 bg-primary/10 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <UserPlus className="h-7 w-7 text-primary" />
+               <div className="h-12 w-12 bg-primary/10 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <UserPlus className="h-6 w-6 text-primary" />
                </div>
-               <p className="font-black italic text-base tracking-tight text-gray-500">NUEVO MIEMBRO</p>
+               <p className="font-black italic text-sm tracking-tight text-gray-500">NUEVO MIEMBRO</p>
             </div>
           </div>
         )}
