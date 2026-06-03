@@ -8,9 +8,8 @@ import { StaffNavigation } from '@/components/StaffNavigation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -41,15 +40,18 @@ import {
   ShieldCheck,
   UserPlus,
   CreditCard,
-  History,
   DollarSign,
   ArrowUpRight,
   ArrowDownRight,
   Search,
   Filter,
   FileText,
-  Activity,
-  ClipboardList
+  ClipboardList,
+  MapPin,
+  Clock,
+  Zap,
+  CheckCircle2,
+  Navigation as NavIcon
 } from 'lucide-react';
 
 const MOCK_STATS = [
@@ -98,6 +100,13 @@ const INITIAL_AUDIT_LOGS = [
   { id: 'LOG-004', type: 'AJUSTE', item: 'Grey Goose 750ml', user: 'Carlos Mendoza', delta: -1, reason: 'Botella Rota', date: 'Hace 2h' },
 ];
 
+const MOCK_DELIVERIES = [
+  { id: 'ORD-5501', customer: 'Andrés Felipe', address: 'Calle 100 #15-30', status: 'ENTREGANDO', driver: 'Ana Rodríguez', time: '12 min', total: 245000 },
+  { id: 'ORD-5502', customer: 'Juliana G.', address: 'Cra 7 #72-10', status: 'EMPACANDO', driver: 'Pendiente', time: '4 min', total: 85000 },
+  { id: 'ORD-5503', customer: 'Ricardo M.', address: 'Cl 127 #45-12', status: 'PENDIENTE', driver: 'Pendiente', time: '1 min', total: 420000 },
+  { id: 'ORD-5504', customer: 'Sofía V.', address: 'Av Boyacá #116-40', status: 'COMPLETADO', driver: 'Carlos Mendoza', time: '25 min', total: 115000 },
+];
+
 function AdminContent() {
   const { isLoggedIn, role, isInitialized } = useUserRole();
   const router = useRouter();
@@ -112,7 +121,7 @@ function AdminContent() {
     if (isInitialized && (!isLoggedIn || role !== 'admin')) {
       router.push('/login');
     }
-  }, [isLoggedIn, role, router, isInitialized]);
+  }, [isInitialized, isLoggedIn, role, router]);
 
   if (!isInitialized) {
     return (
@@ -150,6 +159,16 @@ function AdminContent() {
     );
   };
 
+  const getDeliveryStatusColor = (status: string) => {
+    switch(status) {
+      case 'ENTREGANDO': return 'bg-secondary/20 text-secondary border-secondary/40';
+      case 'EMPACANDO': return 'bg-amber-500/20 text-amber-400 border-amber-500/40';
+      case 'PENDIENTE': return 'bg-red-500/20 text-red-400 border-red-500/40';
+      case 'COMPLETADO': return 'bg-green-500/20 text-green-400 border-green-500/40';
+      default: return 'bg-white/10 text-gray-400';
+    }
+  };
+
   return (
     <div className="min-h-screen bg-black text-white selection:bg-primary selection:text-white">
       <StaffNavigation />
@@ -166,12 +185,12 @@ function AdminContent() {
                 ADMIN <span className="text-primary neon-text-primary">CONTROL</span>
               </h1>
             </div>
-            <p className="text-gray-400 font-bold uppercase text-[10px] tracking-widest pl-1">Auditoría Financiera y Logística PartyFlow</p>
+            <p className="text-gray-400 font-bold uppercase text-[10px] tracking-widest pl-1">Supervisión Total PartyFlow</p>
           </div>
           
           <div className="hidden lg:block">
-            <Badge variant="outline" className="border-primary/20 text-primary/60 font-black italic px-4 py-2">
-               ESTADO DE RED: SEGURO
+            <Badge variant="outline" className="border-primary/20 text-primary/60 font-black italic px-4 py-2 uppercase">
+               SISTEMA DE GESTIÓN EMPRESARIAL
             </Badge>
           </div>
         </div>
@@ -507,12 +526,108 @@ function AdminContent() {
              </Card>
           )}
 
+          {activeTab === 'deliveries' && (
+            <div className="space-y-12 animate-in fade-in duration-500">
+               {/* KPIs LOGÍSTICOS */}
+               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                {[
+                  { title: 'Pedidos Activos', value: '12', icon: Truck, color: 'text-secondary', bg: 'bg-secondary/10', trend: 'En Ruta', up: true },
+                  { title: 'Tiempo Promedio', value: '18 min', icon: Clock, color: 'text-primary', bg: 'bg-primary/10', trend: 'Turno', up: false },
+                  { title: 'Repartidores Online', value: '5', icon: Users, color: 'text-green-400', bg: 'bg-green-400/10', trend: 'Disponibles', up: true },
+                  { title: 'Ventas Logística', value: formatCurrency(2450000), icon: DollarSign, color: 'text-accent', bg: 'bg-accent/10', trend: 'Hoy', up: true }
+                ].map((stat, i) => (
+                  <Card key={i} className="bg-card/40 border-white/10 glass-morphism p-8 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className={`h-12 w-12 rounded-xl ${stat.bg} flex items-center justify-center ${stat.color}`}>
+                        <stat.icon className="h-6 w-6" />
+                      </div>
+                      <Badge className="bg-white/5 text-gray-400 border-none font-black text-[10px]">{stat.trend}</Badge>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{stat.title}</p>
+                      <h4 className="text-3xl font-black italic tracking-tighter">{stat.value}</h4>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+
+              {/* TABLA DE ENTREGAS EN VIVO */}
+              <Card className="bg-card/40 border-white/10 glass-morphism overflow-hidden rounded-[3rem] shadow-2xl">
+                  <CardHeader className="p-10 border-b border-white/5 flex flex-col md:flex-row items-center justify-between gap-6">
+                     <div className="space-y-1">
+                        <CardTitle className="text-4xl font-black italic tracking-tighter uppercase leading-none">SEGUIMIENTO DE RUTAS</CardTitle>
+                        <CardDescription className="text-gray-500 font-bold uppercase text-[10px] tracking-widest">Control satelital de pedidos y repartidores</CardDescription>
+                     </div>
+                     <div className="flex gap-4">
+                        <Button variant="outline" className="border-secondary text-secondary font-black italic rounded-xl h-12 px-6">
+                           MAPA EN VIVO
+                        </Button>
+                        <Button className="bg-secondary text-black font-black italic rounded-xl h-12 px-6 neon-glow-secondary">
+                           ASIGNAR REPARTIDOR
+                        </Button>
+                     </div>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                     <Table>
+                        <TableHeader className="bg-white/5">
+                           <TableRow className="border-white/5 hover:bg-transparent">
+                              <TableHead className="text-gray-500 font-black uppercase p-8 tracking-widest text-[10px]">ID / CLIENTE</TableHead>
+                              <TableHead className="text-gray-500 font-black uppercase p-8 tracking-widest text-[10px]">DIRECCIÓN / DESTINO</TableHead>
+                              <TableHead className="text-gray-500 font-black uppercase p-8 tracking-widest text-[10px]">REPARTIDOR</TableHead>
+                              <TableHead className="text-gray-500 font-black uppercase p-8 tracking-widest text-[10px]">ESTADO</TableHead>
+                              <TableHead className="text-gray-500 font-black uppercase p-8 tracking-widest text-[10px]">TIEMPO</TableHead>
+                              <TableHead className="text-right p-8 text-[10px] uppercase font-black">ACCIONES</TableHead>
+                           </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                           {MOCK_DELIVERIES.map((order) => (
+                             <TableRow key={order.id} className="border-white/5 hover:bg-white/5 transition-all group">
+                                <TableCell className="p-8">
+                                   <div className="space-y-1">
+                                      <p className="font-black text-primary text-xl italic">{order.id}</p>
+                                      <p className="text-sm font-bold text-gray-400">{order.customer}</p>
+                                   </div>
+                                </TableCell>
+                                <TableCell className="p-8">
+                                   <div className="flex items-center gap-3">
+                                      <MapPin className="h-4 w-4 text-secondary" />
+                                      <span className="font-bold text-gray-200">{order.address}</span>
+                                   </div>
+                                </TableCell>
+                                <TableCell className="p-8">
+                                   <Badge variant="outline" className="border-white/10 bg-white/5 font-black px-4 py-1">
+                                      {order.driver}
+                                   </Badge>
+                                </TableCell>
+                                <TableCell className="p-8">
+                                   <Badge className={`${getDeliveryStatusColor(order.status)} font-black px-4 py-1 text-[10px] border`}>
+                                      {order.status}
+                                   </Badge>
+                                </TableCell>
+                                <TableCell className="p-8 font-black italic text-lg text-gray-400">{order.time}</TableCell>
+                                <TableCell className="p-8 text-right">
+                                   <Button variant="ghost" size="icon" className="text-secondary hover:bg-secondary/10 rounded-xl">
+                                      <NavIcon className="h-5 w-5" />
+                                   </Button>
+                                   <Button variant="ghost" size="icon" className="text-primary hover:bg-primary/10 rounded-xl">
+                                      <CheckCircle2 className="h-5 w-5" />
+                                   </Button>
+                                </TableCell>
+                             </TableRow>
+                           ))}
+                        </TableBody>
+                     </Table>
+                  </CardContent>
+              </Card>
+            </div>
+          )}
+
           {activeTab === 'staff' && (
             <div className="space-y-12 animate-in fade-in duration-500">
               <div className="flex flex-col md:flex-row justify-between items-end gap-6">
                 <div className="space-y-2">
                    <h2 className="text-5xl font-black italic tracking-tighter uppercase leading-none">RUMBEROS <span className="text-secondary neon-text-secondary">STAFF</span></h2>
-                   <p className="text-gray-400 font-bold uppercase text-[10px] tracking-[0.3em] pl-1">Monitoreo de rendimiento operativo y seguridad de acceso</p>
+                   <p className="text-gray-400 font-bold uppercase text-[10px] tracking-[0.3em] pl-1">Gestión operativa de equipo</p>
                 </div>
                 <Dialog>
                    <DialogTrigger asChild>
@@ -596,7 +711,7 @@ function AdminContent() {
                <div className="flex flex-col md:flex-row justify-between items-center gap-6">
                   <div className="space-y-2">
                     <h2 className="text-5xl font-black italic tracking-tighter uppercase leading-none">ESTRUCTURA DE <span className="text-primary neon-text-primary">TIENDA</span></h2>
-                    <p className="text-gray-400 font-bold uppercase text-[10px] tracking-[0.3em] pl-1">Curaduría de productos visibles para el consumidor final</p>
+                    <p className="text-gray-400 font-bold uppercase text-[10px] tracking-[0.3em] pl-1">Curaduría de productos visibles</p>
                   </div>
                   <Button className="bg-primary text-white font-black italic px-10 h-16 rounded-[1.5rem] text-xl tracking-tight neon-glow-primary uppercase">
                     <Plus className="mr-3 h-7 w-7" /> PUBLICAR ITEM

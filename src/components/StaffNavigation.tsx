@@ -18,7 +18,8 @@ import {
   ChevronRight,
   Package,
   Users,
-  History
+  History,
+  MapPin
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { 
@@ -48,14 +49,15 @@ export function StaffNavigation() {
   const adminSubItems = [
     { name: 'Dashboard', tab: 'dashboard', icon: LayoutDashboard, desc: 'Métricas en tiempo real' },
     { name: 'Inventario', tab: 'inventory', icon: Box, desc: 'Control de existencias' },
+    { name: 'Entregas', tab: 'deliveries', icon: MapPin, desc: 'Control satelital de pedidos' },
     { name: 'Catálogo', tab: 'catalog', icon: Package, desc: 'Gestión de tienda' },
     { name: 'Personal', tab: 'staff', icon: Users, desc: 'Gestión de equipo' },
     { name: 'Historial', tab: 'history', icon: History, desc: 'Bitácora de auditoría' },
   ];
 
   const mainNavItems = [
-    { name: 'Entregas', href: '/driver', icon: Truck, roles: ['driver', 'admin'], desc: 'Rutas activas' },
-    { name: 'Almacén', href: '/warehouse', icon: Box, roles: ['warehouse', 'admin'], desc: 'Gestión de empaque' },
+    { name: 'Vista Driver', href: '/driver', icon: Truck, roles: ['driver', 'admin'], desc: 'Interfaz de Reparto' },
+    { name: 'Vista Almacén', href: '/warehouse', icon: Box, roles: ['warehouse', 'admin'], desc: 'Interfaz de Empaque' },
   ];
 
   return (
@@ -111,7 +113,7 @@ export function StaffNavigation() {
 
                   {/* SECCIÓN OPERATIVA */}
                   <div className="space-y-4">
-                    <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.3em] px-2">Operaciones en Campo</p>
+                    <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.3em] px-2">Interfaces Operativas</p>
                     {mainNavItems.filter(item => item.roles.includes(role)).map((item) => (
                       <Link key={item.href} href={item.href} onClick={() => setIsOpen(false)}>
                         <div className={`flex items-center gap-4 p-5 rounded-[1.5rem] border transition-all group ${
