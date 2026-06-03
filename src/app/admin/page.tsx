@@ -131,7 +131,6 @@ const MOCK_DELIVERIES = [
   },
 ];
 
-// Sub-componente para manejar la edición individual con estado de imagen local
 function EditCatalogDialog({ product, onUpdate }: { product: any, onUpdate: (id: string, updates: any) => void }) {
   const [previewImage, setPreviewImage] = useState(product.image);
   const [formData, setFormData] = useState({ ...product });
@@ -163,7 +162,7 @@ function EditCatalogDialog({ product, onUpdate }: { product: any, onUpdate: (id:
         <DialogTitle className="text-xl font-black italic text-primary uppercase">EDITAR CATÁLOGO: {product.name}</DialogTitle>
       </DialogHeader>
       <div className="space-y-4 mt-6">
-        <div className="aspect-video rounded-xl bg-white/5 border border-dashed border-white/10 flex flex-col items-center justify-center relative overflow-hidden group">
+        <div className="aspect-video rounded-xl bg-white/5 border border-dashed border-white/10 flex flex-col items-center justify-center relative overflow-hidden group cursor-pointer" onClick={() => document.getElementById('edit-image-upload')?.click()}>
           <img 
             src={previewImage} 
             className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-60 transition-opacity" 
@@ -172,9 +171,10 @@ function EditCatalogDialog({ product, onUpdate }: { product: any, onUpdate: (id:
           <Upload className="h-6 w-6 text-primary relative z-10" />
           <p className="text-[10px] font-black uppercase text-gray-300 relative z-10 mt-2">CAMBIAR IMAGEN</p>
           <Input 
+            id="edit-image-upload"
             type="file" 
             accept="image/*"
-            className="absolute inset-0 opacity-0 cursor-pointer z-20" 
+            className="hidden" 
             onChange={handleFileChange}
           />
         </div>
@@ -247,6 +247,28 @@ function AdminContent() {
     }
   };
 
+  const handleContactDriver = (driverName: string) => {
+    if (driverName === 'Pendiente') {
+      toast({
+        title: "SIN ASIGNACIÓN",
+        description: "Este pedido aún no tiene un repartidor vinculado.",
+        variant: "destructive"
+      });
+      return;
+    }
+    toast({
+      title: `CONEXIÓN CON ${driverName.toUpperCase()}`,
+      description: "Abriendo canal de comunicación cifrado...",
+    });
+  };
+
+  const handleTrackOrder = (orderId: string) => {
+    toast({
+      title: `RASTREO ${orderId}`,
+      description: "Sincronizando con satélite PartyFlow...",
+    });
+  };
+
   const filteredInventory = inventory.filter(item => 
     item.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
     item.category.toLowerCase().includes(searchTerm.toLowerCase())
@@ -258,7 +280,6 @@ function AdminContent() {
       
       <main className="md:pl-16 transition-all duration-300 container mx-auto px-6 py-8 max-w-[1400px] space-y-10">
         
-        {/* SECTION HEADER - COMPACT */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 pb-4 border-b border-white/5">
           <div className="space-y-1">
             <h1 className="text-3xl font-black italic tracking-tighter uppercase leading-none">
@@ -288,10 +309,12 @@ function AdminContent() {
                 </DialogHeader>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-                  {/* Left Column: Image Upload */}
                   <div className="space-y-4">
                     <Label className="text-[9px] font-black uppercase text-gray-500">Imagen del Producto</Label>
-                    <div className="aspect-square rounded-2xl border-2 border-dashed border-white/10 bg-white/5 flex flex-col items-center justify-center gap-3 group hover:border-primary/40 transition-all cursor-pointer relative overflow-hidden">
+                    <div 
+                      className="aspect-square rounded-2xl border-2 border-dashed border-white/10 bg-white/5 flex flex-col items-center justify-center gap-3 group hover:border-primary/40 transition-all cursor-pointer relative overflow-hidden"
+                      onClick={() => document.getElementById('new-product-image')?.click()}
+                    >
                        {newProductImage ? (
                          <img src={newProductImage} className="absolute inset-0 w-full h-full object-cover" alt="Preview" />
                        ) : (
@@ -303,15 +326,15 @@ function AdminContent() {
                          </>
                        )}
                        <Input 
+                        id="new-product-image"
                         type="file" 
                         accept="image/*"
-                        className="absolute inset-0 opacity-0 cursor-pointer z-10" 
+                        className="hidden" 
                         onChange={handleNewProductImageChange}
                        />
                     </div>
                   </div>
 
-                  {/* Right Column: Basic Info */}
                   <div className="space-y-5">
                     <div className="space-y-1.5">
                       <Label className="text-[9px] font-black uppercase text-gray-500">Nombre del Producto</Label>
@@ -416,10 +439,8 @@ function AdminContent() {
           )}
         </div>
 
-        {/* DASHBOARD VIEW */}
         {activeTab === 'dashboard' && (
           <div className="space-y-10 animate-in fade-in duration-700">
-            {/* KPI STRIP - COMPACT */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {[
                 { label: 'Ingresos Hoy', value: formatCurrency(12450000), trend: '+14%', icon: DollarSign, color: 'text-primary' },
@@ -443,7 +464,6 @@ function AdminContent() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* MAIN CHART */}
               <div className="lg:col-span-2 bg-white/[0.02] border border-white/5 p-6 rounded-[2rem]">
                 <div className="flex justify-between items-center mb-6">
                   <h3 className="text-lg font-black italic uppercase tracking-tight">Flujo de Caja</h3>
@@ -469,7 +489,6 @@ function AdminContent() {
                 </div>
               </div>
 
-              {/* SIDE MONITOR */}
               <div className="bg-white/[0.02] border border-white/5 p-6 rounded-[2rem]">
                 <h3 className="text-base font-black italic uppercase mb-4 flex items-center gap-2">
                   <AlertTriangle className="text-accent h-4 w-4" /> Alertas
@@ -480,8 +499,8 @@ function AdminContent() {
                     { msg: 'Alta demanda en Zona Norte', type: 'info' },
                     { msg: '3 pedidos con retraso', type: 'error' },
                   ].map((alert, i) => (
-                    <div key={i} className="p-4 rounded-xl bg-white/5 border-l-4 border-accent flex justify-between items-center text-xs">
-                      <span className="font-bold">{alert.msg}</span>
+                    <div key={i} className="p-4 rounded-xl bg-white/5 border-l-4 border-accent flex justify-between items-center">
+                      <span className="text-sm font-bold">{alert.msg}</span>
                       <ChevronRight className="h-4 w-4 text-gray-600" />
                     </div>
                   ))}
@@ -491,7 +510,6 @@ function AdminContent() {
           </div>
         )}
 
-        {/* INVENTORY VIEW */}
         {activeTab === 'inventory' && (
           <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
             <div className="flex flex-col md:flex-row gap-4">
@@ -631,7 +649,6 @@ function AdminContent() {
           </div>
         )}
 
-        {/* CATALOG VIEW - PRODUCT MANAGEMENT */}
         {activeTab === 'catalog' && (
           <div className="space-y-6 animate-in fade-in duration-700">
             <div className="flex flex-col md:flex-row gap-4">
@@ -678,7 +695,6 @@ function AdminContent() {
           </div>
         )}
 
-        {/* DELIVERIES VIEW - LIVE LOGISTICS */}
         {activeTab === 'deliveries' && (
           <div className="space-y-8 animate-in fade-in duration-700">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -728,7 +744,6 @@ function AdminContent() {
                           </DialogHeader>
                           
                           <div className="space-y-6">
-                            {/* CLIENT INFO */}
                             <div className="grid grid-cols-2 gap-4 p-4 bg-white/5 rounded-2xl border border-white/5">
                               <div className="space-y-1">
                                 <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest">Cliente</p>
@@ -744,7 +759,6 @@ function AdminContent() {
                               </div>
                             </div>
 
-                            {/* ORDER ITEMS */}
                             <div className="space-y-3">
                               <p className="text-[9px] font-black text-secondary uppercase tracking-widest flex items-center gap-2">
                                 <Package className="h-4 w-4" /> Desglose de Productos
@@ -759,7 +773,6 @@ function AdminContent() {
                               </div>
                             </div>
 
-                            {/* LOGISTICS INFO */}
                             <div className="flex justify-between items-center p-4 bg-primary/5 rounded-2xl border border-primary/10">
                               <div className="space-y-1">
                                 <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest">Repartidor</p>
@@ -772,8 +785,19 @@ function AdminContent() {
                             </div>
 
                             <div className="flex gap-2">
-                              <Button className="flex-1 h-12 bg-secondary text-black font-black italic tracking-widest rounded-xl hover:bg-secondary/90">CONTACTAR DRIVER</Button>
-                              <Button variant="outline" className="h-12 w-12 rounded-xl border-white/10 hover:bg-white/10"><NavIcon className="h-5 w-5" /></Button>
+                              <Button 
+                                className="flex-1 h-12 bg-secondary text-black font-black italic tracking-widest rounded-xl hover:bg-secondary/90"
+                                onClick={() => handleContactDriver(order.driver)}
+                              >
+                                CONTACTAR DRIVER
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                className="h-12 w-12 rounded-xl border-white/10 hover:bg-white/10"
+                                onClick={() => handleTrackOrder(order.id)}
+                              >
+                                <NavIcon className="h-5 w-5" />
+                              </Button>
                             </div>
                           </div>
                         </DialogContent>
@@ -785,7 +809,6 @@ function AdminContent() {
           </div>
         )}
 
-        {/* STAFF VIEW */}
         {activeTab === 'staff' && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in duration-700">
             {MOCK_STAFF.map((member) => (
