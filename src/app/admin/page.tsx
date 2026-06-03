@@ -279,7 +279,7 @@ function AdminContent() {
                 <CardHeader className="p-10 border-b border-white/5 flex flex-col xl:flex-row items-center justify-between gap-8">
                    <div className="space-y-2">
                       <div className="flex items-center gap-4">
-                         <CardTitle className="text-4xl font-black italic tracking-tighter uppercase leading-none">AUDITORÍA DE EXISTENCIAS</CardTitle>
+                         <CardTitle className="text-4xl font-black italic tracking-tighter uppercase leading-none">CONTROL DE INVENTARIO</CardTitle>
                          <Dialog>
                             <DialogTrigger asChild>
                               <Button size="sm" className="bg-primary hover:bg-primary/90 neon-glow-primary font-black italic px-6 h-10 rounded-xl text-xs tracking-tight">
@@ -372,7 +372,7 @@ function AdminContent() {
                           <TableHead className="text-gray-500 font-black uppercase p-10 tracking-widest text-[10px]">CAPITAL (COSTO)</TableHead>
                           <TableHead className="text-gray-500 font-black uppercase p-10 tracking-widest text-[10px]">PRECIO VENTA</TableHead>
                           <TableHead className="text-gray-500 font-black uppercase p-10 tracking-widest text-[10px]">EXISTENCIAS</TableHead>
-                          <TableHead className="text-gray-500 font-black uppercase p-10 tracking-widest text-[10px]">ESTADO AUDITORÍA</TableHead>
+                          <TableHead className="text-gray-500 font-black uppercase p-10 tracking-widest text-[10px]">ESTADO CONTROL</TableHead>
                           <TableHead className="text-right p-10">ACCIONES</TableHead>
                         </TableRow>
                       </TableHeader>
@@ -412,7 +412,7 @@ function AdminContent() {
                                     </DialogTrigger>
                                     <DialogContent className="bg-card/95 border-white/10 text-white glass-morphism rounded-[3rem] p-12 shadow-[0_0_100px_rgba(255,0,122,0.2)]">
                                        <DialogHeader className="mb-10">
-                                          <DialogTitle className="text-4xl font-black italic tracking-tighter uppercase text-primary">AJUSTE DE AUDITORÍA</DialogTitle>
+                                          <DialogTitle className="text-4xl font-black italic tracking-tighter uppercase text-primary">AJUSTE DE INVENTARIO</DialogTitle>
                                           <CardDescription className="text-gray-400 uppercase font-black text-[10px] tracking-[0.3em] mt-2">SKU: {item.name}</CardDescription>
                                        </DialogHeader>
                                        <form className="space-y-8" onSubmit={handleSaveProduct}>

@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from 'next/link';
@@ -46,10 +47,10 @@ export function StaffNavigation() {
 
   const adminSubItems = [
     { name: 'Dashboard', tab: 'dashboard', icon: LayoutDashboard, desc: 'Métricas en tiempo real' },
-    { name: 'Inventario', tab: 'inventory', icon: Box, desc: 'Stock y existencias' },
+    { name: 'Inventario', tab: 'inventory', icon: Box, desc: 'Control de existencias' },
     { name: 'Catálogo', tab: 'catalog', icon: Package, desc: 'Gestión de tienda' },
     { name: 'Personal', tab: 'staff', icon: Users, desc: 'Gestión de equipo' },
-    { name: 'Historial', tab: 'history', icon: History, desc: 'Registro de ventas' },
+    { name: 'Historial', tab: 'history', icon: History, desc: 'Bitácora de auditoría' },
   ];
 
   const mainNavItems = [
@@ -88,7 +89,7 @@ export function StaffNavigation() {
                   {/* SECCIÓN ADMINISTRATIVA (Solo si es Admin) */}
                   {role === 'admin' && (
                     <div className="space-y-4">
-                      <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.3em] px-2">Gestión Administrativa</p>
+                      <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.3em] px-2">Gestión de Control</p>
                       {adminSubItems.map((item) => (
                         <Link key={item.tab} href={`/admin?tab=${item.tab}`} onClick={() => setIsOpen(false)}>
                           <div className={`flex items-center gap-4 p-5 rounded-[1.5rem] border transition-all group ${
