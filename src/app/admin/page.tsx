@@ -148,18 +148,41 @@ function AdminContent() {
                 <div className="grid grid-cols-2 gap-6 mt-6">
                   <div className="col-span-2 space-y-2">
                     <Label className="text-[10px] font-black uppercase text-gray-500">Nombre del Producto</Label>
-                    <Input className="bg-white/5 border-white/10 h-14" />
+                    <Input className="bg-white/5 border-white/10 h-14 placeholder:text-gray-600" placeholder="Ej: Johnnie Walker Red Label" />
+                  </div>
+                  <div className="col-span-2 space-y-2">
+                    <Label className="text-[10px] font-black uppercase text-gray-500">Categoría Contable</Label>
+                    <Select>
+                      <SelectTrigger className="bg-white/5 border-white/10 h-14">
+                        <SelectValue placeholder="Seleccionar categoría..." />
+                      </SelectTrigger>
+                      <SelectContent className="bg-card border-white/10 text-white">
+                        {CATEGORIAS_CONTABLES.map((cat) => (
+                          <SelectItem key={cat.id} value={cat.id}>
+                            {cat.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="space-y-2">
                     <Label className="text-[10px] font-black uppercase text-gray-500">Costo Adquisición</Label>
-                    <Input type="number" className="bg-white/5 border-white/10 h-14" />
+                    <Input type="number" className="bg-white/5 border-white/10 h-14" placeholder="0" />
                   </div>
                   <div className="space-y-2">
                     <Label className="text-[10px] font-black uppercase text-gray-500">Precio Venta</Label>
-                    <Input type="number" className="bg-white/5 border-white/10 h-14" />
+                    <Input type="number" className="bg-white/5 border-white/10 h-14" placeholder="0" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-black uppercase text-gray-500">Stock Inicial</Label>
+                    <Input type="number" className="bg-white/5 border-white/10 h-14" placeholder="0" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-black uppercase text-gray-500">Stock Mínimo</Label>
+                    <Input type="number" className="bg-white/5 border-white/10 h-14" placeholder="5" />
                   </div>
                 </div>
-                <Button className="w-full h-16 bg-primary font-black italic text-xl mt-8 rounded-xl uppercase">Vincular a Bodega</Button>
+                <Button className="w-full h-16 bg-primary font-black italic text-xl mt-8 rounded-xl uppercase neon-glow-primary">Vincular a Bodega</Button>
               </DialogContent>
             </Dialog>
           )}
