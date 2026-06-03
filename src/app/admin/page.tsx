@@ -48,17 +48,17 @@ const MOCK_STATS = [
 ];
 
 const MOCK_INVENTORY = [
-  { id: '1', name: 'Johnnie Walker Black', stock: 12, category: 'Whisky', price: 45.00 },
-  { id: '2', name: 'Don Julio 70', stock: 5, category: 'Tequila', price: 85.00 },
-  { id: '3', name: 'Grey Goose 750ml', stock: 2, category: 'Vodka', price: 55.00 },
-  { id: '4', name: 'Heineken 6-Pack', stock: 45, category: 'Cerveza', price: 12.00 },
-  { id: '5', name: 'Hielo (Bolsa 5kg)', stock: 0, category: 'Complementos', price: 5.00 },
+  { id: '1', name: 'Johnnie Walker Black', stock: 12, category: 'Whisky', price: 185000 },
+  { id: '2', name: 'Don Julio 70', stock: 5, category: 'Tequila', price: 420000 },
+  { id: '3', name: 'Grey Goose 750ml', stock: 2, category: 'Vodka', price: 210000 },
+  { id: '4', name: 'Heineken 6-Pack', stock: 45, category: 'Cerveza', price: 32000 },
+  { id: '5', name: 'Hielo (Bolsa 5kg)', stock: 0, category: 'Complementos', price: 15000 },
 ];
 
 const MOCK_HISTORY = [
-  { id: 'ORD-882', user: 'Carlos M.', total: 120.00, date: 'Hoy, 01:22 AM', status: 'Completado' },
-  { id: 'ORD-881', user: 'Ana R.', total: 35.50, date: 'Hoy, 01:15 AM', status: 'Entregado' },
-  { id: 'ORD-880', user: 'Juan P.', total: 85.00, date: 'Ayer, 11:45 PM', status: 'Completado' },
+  { id: 'ORD-882', user: 'Carlos M.', total: 450000, date: 'Hoy, 01:22 AM', status: 'Completado' },
+  { id: 'ORD-881', user: 'Ana R.', total: 125000, date: 'Hoy, 01:15 AM', status: 'Entregado' },
+  { id: 'ORD-880', user: 'Juan P.', total: 320000, date: 'Ayer, 11:45 PM', status: 'Completado' },
 ];
 
 export default function AdminPage() {
@@ -135,7 +135,7 @@ export default function AdminPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                {[
                  { title: 'Pedidos Activos', value: '24', icon: ShoppingCart, color: 'text-secondary', bg: 'bg-secondary/10' },
-                 { title: 'Ventas de Hoy', value: formatCurrency(2450), icon: TrendingUp, color: 'text-primary', bg: 'bg-primary/10' },
+                 { title: 'Ventas de Hoy', value: formatCurrency(8450000), icon: TrendingUp, color: 'text-primary', bg: 'bg-primary/10' },
                  { title: 'Alertas Stock', value: '3 Items', icon: AlertTriangle, color: 'text-accent', bg: 'bg-accent/10' },
                  { title: 'Drivers Online', value: '8', icon: Users, color: 'text-blue-400', bg: 'bg-blue-400/10' }
                ].map((stat, i) => (
@@ -146,7 +146,7 @@ export default function AdminPage() {
                      </div>
                      <div>
                        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">{stat.title}</p>
-                       <h4 className="text-3xl font-black italic">{stat.value}</h4>
+                       <h4 className="text-2xl font-black italic">{stat.value}</h4>
                      </div>
                    </CardContent>
                  </Card>

@@ -12,14 +12,14 @@ import { Input } from '@/components/ui/input';
 import { formatCurrency } from '@/lib/utils';
 
 const PRODUCTS: Product[] = [
-  { id: '1', name: 'Johnnie Walker Black', price: 45, category: 'Whisky', image: 'https://picsum.photos/seed/whiskey1/400/500' },
-  { id: '2', name: 'Don Julio 70', price: 85, category: 'Tequila', image: 'https://picsum.photos/seed/tequila1/400/500' },
-  { id: '3', name: 'Grey Goose 750ml', price: 55, category: 'Vodka', image: 'https://picsum.photos/seed/vodka1/400/500' },
-  { id: '4', name: 'Heineken 6-Pack', price: 12, category: 'Cerveza', image: 'https://picsum.photos/seed/beer1/400/500' },
-  { id: '5', name: 'Ron Zacapa 23', price: 70, category: 'Ron', image: 'https://picsum.photos/seed/ron1/400/500' },
-  { id: '6', name: 'Jagermeister 700ml', price: 35, category: 'Licores', image: 'https://picsum.photos/seed/jager1/400/500' },
-  { id: '7', name: 'Combo Pre-Copeo VIP', price: 120, category: 'Combos', image: 'https://picsum.photos/seed/combo1/400/500' },
-  { id: '8', name: 'Jack Daniels + 2 Cocas', price: 50, category: 'Combos', image: 'https://picsum.photos/seed/combo2/400/500' },
+  { id: '1', name: 'Johnnie Walker Black', price: 185000, category: 'Whisky', image: 'https://picsum.photos/seed/whiskey1/400/500' },
+  { id: '2', name: 'Don Julio 70', price: 420000, category: 'Tequila', image: 'https://picsum.photos/seed/tequila1/400/500' },
+  { id: '3', name: 'Grey Goose 750ml', price: 210000, category: 'Vodka', image: 'https://picsum.photos/seed/vodka1/400/500' },
+  { id: '4', name: 'Heineken 6-Pack', price: 32000, category: 'Cerveza', image: 'https://picsum.photos/seed/beer1/400/500' },
+  { id: '5', name: 'Ron Zacapa 23', price: 280000, category: 'Ron', image: 'https://picsum.photos/seed/ron1/400/500' },
+  { id: '6', name: 'Jagermeister 700ml', price: 145000, category: 'Licores', image: 'https://picsum.photos/seed/jager1/400/500' },
+  { id: '7', name: 'Combo Pre-Copeo VIP', price: 450000, category: 'Combos', image: 'https://picsum.photos/seed/combo1/400/500' },
+  { id: '8', name: 'Jack Daniels + 2 Cocas', price: 165000, category: 'Combos', image: 'https://picsum.photos/seed/combo2/400/500' },
 ];
 
 const CATEGORIES = ['Todos', 'Whisky', 'Tequila', 'Vodka', 'Cerveza', 'Ron', 'Combos'];
@@ -48,7 +48,6 @@ export default function CatalogPage() {
       <Navigation />
       
       <main className="container mx-auto px-4 py-12 space-y-12">
-        {/* Header de la Tienda */}
         <div className="flex flex-col md:flex-row justify-between items-end gap-8 border-b border-white/10 pb-12">
           <div className="space-y-4">
             <Badge className="bg-secondary text-black font-black neon-glow-secondary">CAVA DIGITAL 24/7</Badge>
@@ -68,7 +67,6 @@ export default function CatalogPage() {
           </div>
         </div>
 
-        {/* Filtros de Categoría */}
         <div className="flex flex-wrap gap-4 overflow-x-auto pb-4 no-scrollbar">
           {CATEGORIES.map(cat => (
             <Button
@@ -86,7 +84,6 @@ export default function CatalogPage() {
           ))}
         </div>
 
-        {/* Grid de Productos */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
           {filteredProducts.map((product) => (
             <Card key={product.id} className="card-neon-border group overflow-hidden rounded-[2.5rem] bg-card/40 border-white/10">
@@ -110,7 +107,7 @@ export default function CatalogPage() {
               <CardContent className="p-8 space-y-6">
                 <div>
                   <h3 className="text-2xl font-black italic tracking-tight mb-1">{product.name}</h3>
-                  <p className="text-3xl font-black text-secondary neon-text-secondary">{formatCurrency(product.price)}</p>
+                  <p className="text-2xl font-black text-secondary neon-text-secondary">{formatCurrency(product.price)}</p>
                 </div>
                 
                 <Button 

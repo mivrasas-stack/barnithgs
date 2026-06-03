@@ -35,7 +35,8 @@ export function MoodRecommender() {
   };
 
   const handleAddToCart = (name: string, category: string) => {
-    const price = Math.floor(Math.random() * 50) + 20;
+    // Generar precio realista en COP (entre 45k y 450k)
+    const price = Math.floor(Math.random() * 400000) + 45000;
     const mockProduct: Product = {
       id: Math.random().toString(36).substr(2, 9),
       name,

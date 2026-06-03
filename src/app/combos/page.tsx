@@ -10,10 +10,10 @@ import { toast } from '@/hooks/use-toast';
 import { Flame, Zap, ShoppingCart } from 'lucide-react';
 
 const COMBOS: Product[] = [
-  { id: 'c1', name: 'Combo Pre-Copeo VIP', price: 120, category: 'Combos', image: 'https://picsum.photos/seed/combo1/400/500' },
-  { id: 'c2', name: 'Jack Daniels + 2 Cocas', price: 50, category: 'Combos', image: 'https://picsum.photos/seed/combo2/400/500' },
-  { id: 'c3', name: 'Pack Parrandero (Ron + Hielo)', price: 45, category: 'Combos', image: 'https://picsum.photos/seed/combo3/400/500' },
-  { id: 'c4', name: 'Kit Margarita Pro', price: 85, category: 'Combos', image: 'https://picsum.photos/seed/combo4/400/500' },
+  { id: 'c1', name: 'Combo Pre-Copeo VIP', price: 480000, category: 'Combos', image: 'https://picsum.photos/seed/combo1/400/500' },
+  { id: 'c2', name: 'Jack Daniels + 2 Cocas', price: 185000, category: 'Combos', image: 'https://picsum.photos/seed/combo2/400/500' },
+  { id: 'c3', name: 'Pack Parrandero (Ron + Hielo)', price: 125000, category: 'Combos', image: 'https://picsum.photos/seed/combo3/400/500' },
+  { id: 'c4', name: 'Kit Margarita Pro', price: 290000, category: 'Combos', image: 'https://picsum.photos/seed/combo4/400/500' },
 ];
 
 export default function CombosPage() {
@@ -63,7 +63,7 @@ export default function CombosPage() {
               <CardContent className="p-8 space-y-6">
                 <div>
                   <h3 className="text-2xl font-black italic tracking-tight mb-1">{combo.name}</h3>
-                  <p className="text-3xl font-black text-secondary neon-text-secondary">{formatCurrency(combo.price)}</p>
+                  <p className="text-2xl font-black text-secondary neon-text-secondary">{formatCurrency(combo.price)}</p>
                 </div>
                 
                 <Button 

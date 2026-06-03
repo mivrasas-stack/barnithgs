@@ -6,12 +6,13 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
- * Formatea un número como moneda (USD/Pesos)
+ * Formatea un número como moneda (COP - Pesos Colombianos)
  */
 export function formatCurrency(amount: number) {
-  return new Intl.NumberFormat('en-US', {
+  return new Intl.NumberFormat('es-CO', {
     style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
+    currency: 'COP',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
   }).format(amount);
 }
