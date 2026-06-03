@@ -49,11 +49,7 @@ import {
   Filter,
   FileText,
   Activity,
-  ClipboardList,
-  Beer,
-  Wine,
-  Zap,
-  Flame
+  ClipboardList
 } from 'lucide-react';
 
 const MOCK_STATS = [
