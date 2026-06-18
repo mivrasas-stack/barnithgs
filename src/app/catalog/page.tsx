@@ -1,14 +1,14 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Navigation } from '@/components/Navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useCart, Product } from '@/lib/store';
 import { toast } from '@/hooks/use-toast';
-import { ShoppingCart, Search, Filter, Zap, Flame, Beer as BeerIcon } from 'lucide-react';
+import { ShoppingCart, Search, Filter, Zap, Flame, Beer as BeerIcon, Volume2, VolumeX } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { formatCurrency } from '@/lib/utils';
 import Link from 'next/link';
@@ -26,10 +26,29 @@ const PRODUCTS: Product[] = [
 
 const CATEGORIES = ['Todos', 'Whisky', 'Tequila', 'Vodka', 'Cerveza', 'Ron', 'Combos'];
 
+// URL de un beat de fiesta electrónico (Royalty Free)
+const PARTY_BEAT_URL = 'https://cdn.pixabay.com/audio/2022/03/10/audio_c35078173b.mp3';
+
 export default function CatalogPage() {
   const [selectedCategory, setSelectedCategory] = useState('Todos');
   const [searchQuery, setSearchQuery] = useState('');
+  const [isMuted, setIsMuted] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const { addToCart } = useCart();
+
+  useEffect(() => {
+    // Inicializar el objeto de audio en el cliente
+    audioRef.current = new Audio(PARTY_BEAT_URL);
+    audioRef.current.loop = true;
+    audioRef.current.volume = 0.4;
+
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };
+  }, []);
 
   const filteredProducts = PRODUCTS.filter(p => {
     const matchesCategory = selectedCategory === 'Todos' || p.category === selectedCategory;
@@ -45,6 +64,21 @@ export default function CatalogPage() {
     });
   };
 
+  const playHoverSound = () => {
+    if (audioRef.current && !isMuted) {
+      audioRef.current.play().catch(() => {
+        // Ignorar errores de autoplay si el navegador bloquea
+      });
+    }
+  };
+
+  const stopHoverSound = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground selection:bg-primary selection:text-white">
       <Navigation />
@@ -52,7 +86,18 @@ export default function CatalogPage() {
       <main className="container mx-auto px-4 py-8 space-y-10">
         <div className="flex flex-col md:flex-row justify-between items-end gap-6 border-b border-white/5 pb-8">
           <div className="space-y-2">
-            <Badge className="bg-secondary/10 text-secondary border-none font-black text-[9px] uppercase tracking-widest px-3">CAVA DIGITAL 24/7</Badge>
+            <div className="flex items-center gap-4">
+              <Badge className="bg-secondary/10 text-secondary border-none font-black text-[9px] uppercase tracking-widest px-3">CAVA DIGITAL 24/7</Badge>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-8 w-8 rounded-full bg-white/5 border border-white/10 text-gray-400 hover:text-primary transition-all"
+                onClick={() => setIsMuted(!isMuted)}
+                title={isMuted ? "Activar Sonido" : "Silenciar"}
+              >
+                {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+              </Button>
+            </div>
             <h1 className="text-4xl font-black italic tracking-tighter uppercase leading-none">
               NUESTRO <span className="text-primary neon-text-primary">ARSENAL</span>
             </h1>
@@ -88,7 +133,12 @@ export default function CatalogPage() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {filteredProducts.map((product) => (
-            <Card key={product.id} className="group overflow-hidden rounded-[1.5rem] bg-white/[0.02] border border-white/5 hover:border-primary/40 transition-all duration-300">
+            <Card 
+              key={product.id} 
+              onMouseEnter={playHoverSound}
+              onMouseLeave={stopHoverSound}
+              className="group overflow-hidden rounded-[1.5rem] bg-white/[0.02] border border-white/5 hover:border-primary/40 transition-all duration-300 transform hover:-translate-y-2"
+            >
               <div className="relative h-56 overflow-hidden">
                 <img 
                   src={product.image} 
@@ -99,6 +149,14 @@ export default function CatalogPage() {
                 <Badge className="absolute top-3 right-3 bg-black/60 backdrop-blur-md border-none text-primary font-black text-[9px]">
                   {product.category.toUpperCase()}
                 </Badge>
+                {/* Indicador visual de audio al hacer hover */}
+                <div className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                   <div className="flex gap-0.5 items-end h-4">
+                      <div className="w-1 bg-primary animate-[pulse_0.6s_infinite] h-full" />
+                      <div className="w-1 bg-primary animate-[pulse_0.8s_infinite] h-2/3" />
+                      <div className="w-1 bg-primary animate-[pulse_0.5s_infinite] h-full" />
+                   </div>
+                </div>
               </div>
               
               <CardContent className="p-5 space-y-4">
