@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState, Suspense, useRef } from 'react';
@@ -35,7 +34,8 @@ import {
   Upload,
   Settings2,
   Disc,
-  Flame
+  Flame,
+  LayoutDashboard
 } from 'lucide-react';
 
 const INITIAL_INVENTORY: Product[] = [
@@ -132,12 +132,12 @@ function AdminContent() {
     localStorage.setItem('partyflow_inventory', JSON.stringify(newInventory));
   };
 
-  const handleCreateClick = (isCombo = false) => {
+  const handleCreateClick = (category = 'Whisky') => {
     setEditingProduct({
       id: `prod-${Date.now()}`,
       name: '',
       price: 0,
-      category: isCombo ? 'Combos' : 'Whisky',
+      category: category,
       image: 'https://picsum.photos/seed/new-item/400/500'
     });
     setIsEditDialogOpen(true);
@@ -259,18 +259,17 @@ function AdminContent() {
           <div className="space-y-1">
             <h1 className="text-3xl font-black italic tracking-tighter uppercase leading-none">
               {activeTab === 'dashboard' && <><span className="text-primary neon-text-primary">COMMAND</span> CENTER</>}
-              {activeTab === 'catalog' && <><span className="text-secondary neon-text-secondary">PRODUCT</span> CATALOG</>}
-              {activeTab === 'combos' && <><span className="text-primary neon-text-primary">VIP</span> COMBOS</>}
+              {activeTab === 'catalog' && <><span className="text-secondary neon-text-secondary">INVENTARIO</span> MAESTRO</>}
               {activeTab === 'audio' && <><span className="text-primary neon-text-primary">AUDIO</span> STUDIO</>}
             </h1>
             <p className="text-gray-500 font-bold uppercase text-[8px] tracking-[0.3em] pl-1">PartyFlow OS v4.0</p>
           </div>
-          {(activeTab === 'catalog' || activeTab === 'combos') && (
+          {activeTab === 'catalog' && (
             <Button 
               className="bg-secondary text-black font-black italic tracking-tighter h-10 px-6 rounded-xl hover:scale-105 transition-all"
-              onClick={() => handleCreateClick(activeTab === 'combos')}
+              onClick={() => handleCreateClick()}
             >
-              <Plus className="mr-2 h-4 w-4" /> NUEVO {activeTab === 'combos' ? 'COMBO' : 'PRODUCTO'}
+              <Plus className="mr-2 h-4 w-4" /> NUEVO ÍTEM
             </Button>
           )}
           {activeTab === 'audio' && (
@@ -305,47 +304,104 @@ function AdminContent() {
           </div>
         )}
 
-        {(activeTab === 'catalog' || activeTab === 'combos') && (
-          <Card className="bg-white/[0.02] border border-white/5 rounded-[2rem] overflow-hidden">
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader className="bg-white/5">
-                  <TableRow className="border-white/5">
-                    <TableHead className="text-[8px] font-black uppercase p-4">ÍTEM</TableHead>
-                    <TableHead className="text-[8px] font-black uppercase p-4">CATEGORÍA</TableHead>
-                    <TableHead className="text-[8px] font-black uppercase p-4">PRECIO</TableHead>
-                    <TableHead className="text-right p-4">ACCIONES</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {(activeTab === 'combos' ? combos : products).map((item) => (
-                    <TableRow key={item.id} className="border-white/5 hover:bg-white/[0.02] transition-colors">
-                      <TableCell className="p-4">
-                        <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 rounded-lg overflow-hidden border border-white/10">
-                            <img src={item.image} className="w-full h-full object-cover" alt="" />
-                          </div>
-                          <span className="font-black italic text-xs uppercase">{item.name}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="p-4">
-                        <Badge variant="outline" className="text-[7px] border-white/10 text-gray-400 uppercase">{item.category}</Badge>
-                      </TableCell>
-                      <TableCell className="p-4 font-black text-xs text-secondary">{formatCurrency(item.price)}</TableCell>
-                      <TableCell className="p-4 text-right space-x-2">
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-500 hover:text-primary" onClick={() => handleEditClick(item)}>
-                          <Edit3 className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-500 hover:text-destructive" onClick={() => handleDeleteProduct(item.id)}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
+        {activeTab === 'catalog' && (
+          <div className="space-y-12">
+            {/* Sección de Licores */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <Package className="h-5 w-5 text-secondary" />
+                <h2 className="text-xl font-black italic tracking-tighter uppercase">Licores Individuales</h2>
+              </div>
+              <Card className="bg-white/[0.02] border border-white/5 rounded-[2rem] overflow-hidden">
+                <CardContent className="p-0">
+                  <Table>
+                    <TableHeader className="bg-white/5">
+                      <TableRow className="border-white/5">
+                        <TableHead className="text-[8px] font-black uppercase p-4">ÍTEM</TableHead>
+                        <TableHead className="text-[8px] font-black uppercase p-4">CATEGORÍA</TableHead>
+                        <TableHead className="text-[8px] font-black uppercase p-4">PRECIO</TableHead>
+                        <TableHead className="text-right p-4">ACCIONES</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {products.map((item) => (
+                        <TableRow key={item.id} className="border-white/5 hover:bg-white/[0.02] transition-colors">
+                          <TableCell className="p-4">
+                            <div className="flex items-center gap-3">
+                              <div className="h-10 w-10 rounded-lg overflow-hidden border border-white/10">
+                                <img src={item.image} className="w-full h-full object-cover" alt="" />
+                              </div>
+                              <span className="font-black italic text-xs uppercase">{item.name}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="p-4">
+                            <Badge variant="outline" className="text-[7px] border-white/10 text-gray-400 uppercase">{item.category}</Badge>
+                          </TableCell>
+                          <TableCell className="p-4 font-black text-xs text-secondary">{formatCurrency(item.price)}</TableCell>
+                          <TableCell className="p-4 text-right space-x-2">
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-500 hover:text-primary" onClick={() => handleEditClick(item)}>
+                              <Edit3 className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-500 hover:text-destructive" onClick={() => handleDeleteProduct(item.id)}>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Sección de Combos */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <Flame className="h-5 w-5 text-primary" />
+                <h2 className="text-xl font-black italic tracking-tighter uppercase">Combos VIP</h2>
+              </div>
+              <Card className="bg-white/[0.02] border border-white/5 rounded-[2rem] overflow-hidden">
+                <CardContent className="p-0">
+                  <Table>
+                    <TableHeader className="bg-white/5">
+                      <TableRow className="border-white/5">
+                        <TableHead className="text-[8px] font-black uppercase p-4">COMBO</TableHead>
+                        <TableHead className="text-[8px] font-black uppercase p-4">CATEGORÍA</TableHead>
+                        <TableHead className="text-[8px] font-black uppercase p-4">PRECIO</TableHead>
+                        <TableHead className="text-right p-4">ACCIONES</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {combos.map((item) => (
+                        <TableRow key={item.id} className="border-white/5 hover:bg-white/[0.02] transition-colors">
+                          <TableCell className="p-4">
+                            <div className="flex items-center gap-3">
+                              <div className="h-10 w-10 rounded-lg overflow-hidden border border-white/10">
+                                <img src={item.image} className="w-full h-full object-cover" alt="" />
+                              </div>
+                              <span className="font-black italic text-xs uppercase">{item.name}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="p-4">
+                            <Badge variant="outline" className="text-[7px] border-primary/20 text-primary uppercase">{item.category}</Badge>
+                          </TableCell>
+                          <TableCell className="p-4 font-black text-xs text-secondary">{formatCurrency(item.price)}</TableCell>
+                          <TableCell className="p-4 text-right space-x-2">
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-500 hover:text-primary" onClick={() => handleEditClick(item)}>
+                              <Edit3 className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-500 hover:text-destructive" onClick={() => handleDeleteProduct(item.id)}>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
         )}
 
         {activeTab === 'audio' && (

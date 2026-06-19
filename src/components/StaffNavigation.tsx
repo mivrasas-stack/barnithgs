@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from 'next/link';
@@ -48,8 +47,7 @@ export function StaffNavigation() {
 
   const adminSubItems = [
     { name: 'Dashboard', tab: 'dashboard', icon: LayoutDashboard },
-    { name: 'Catálogo', tab: 'catalog', icon: Package },
-    { name: 'Combos VIP', tab: 'combos', icon: Flame },
+    { name: 'Inventario', tab: 'catalog', icon: Package },
     { name: 'Audio Studio', tab: 'audio', icon: Music },
     { name: 'Entregas', tab: 'deliveries', icon: MapPin },
     { name: 'Staff', tab: 'staff', icon: Users },
