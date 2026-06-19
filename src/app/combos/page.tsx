@@ -11,7 +11,7 @@ import { formatCurrency } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
 import { Flame, Zap, Music, Volume2, VolumeX, Youtube } from 'lucide-react';
 
-const COMBOS: Product[] = [
+const DEFAULT_COMBOS: Product[] = [
   { 
     id: 'c5', 
     name: 'Combo "Me Bebí Tu Recuerdo"', 
@@ -48,6 +48,7 @@ const COMBOS: Product[] = [
 
 export default function CombosPage() {
   const { addToCart } = useCart();
+  const [combos, setCombos] = useState<Product[]>(DEFAULT_COMBOS);
   const [isMuted, setIsMuted] = useState(false);
   const [activeComboId, setActiveComboId] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -55,6 +56,15 @@ export default function CombosPage() {
   const [ytReady, setYtReady] = useState(false);
 
   useEffect(() => {
+    const saved = localStorage.getItem('partyflow_inventory');
+    if (saved) {
+      const allInventory = JSON.parse(saved) as Product[];
+      const savedCombos = allInventory.filter(p => p.category.toLowerCase().includes('combo') || p.id.startsWith('c'));
+      if (savedCombos.length > 0) {
+        setCombos(savedCombos);
+      }
+    }
+
     // Inicializar reproductor de audio estándar
     audioRef.current = new Audio();
     audioRef.current.loop = true;
@@ -188,7 +198,7 @@ export default function CombosPage() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {COMBOS.map((combo) => (
+          {combos.map((combo) => (
             <Card 
               key={combo.id} 
               onMouseEnter={() => handleMouseEnter(combo)}

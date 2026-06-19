@@ -22,13 +22,15 @@ import {
   Upload,
   Play,
   Youtube,
-  Save
+  Save,
+  Pause
 } from 'lucide-react';
 
 const INITIAL_INVENTORY: Product[] = [
-  { id: '1', name: 'Johnnie Walker Black 750ml', stock: 12, category: 'whisky', price: 185000, cost: 130000, minStock: 5, image: 'https://picsum.photos/seed/1/400/500' },
-  { id: '2', name: 'Aguardiente Antioqueño 750ml', stock: 24, category: 'aguardiente', price: 65000, cost: 42000, minStock: 10, image: 'https://picsum.photos/seed/2/400/500' },
+  { id: '1', name: 'Johnnie Walker Black', price: 185000, category: 'Whisky', image: 'https://picsum.photos/seed/whiskey1/400/500' },
+  { id: '2', name: 'Don Julio 70', price: 420000, category: 'Tequila', image: 'https://picsum.photos/seed/tequila1/400/500' },
   { id: 'c5', name: 'Combo "Me Bebí Tu Recuerdo"', price: 195000, category: 'Combos VIP', image: 'https://picsum.photos/seed/despecho/400/500', youtubeUrl: 'https://www.youtube.com/watch?v=o302pTudeO4' },
+  { id: 'c1', name: 'Combo Pre-Copeo VIP', price: 480000, category: 'Combos', image: 'https://picsum.photos/seed/combo1/400/500', audioUrl: 'https://cdn.pixabay.com/audio/2022/03/10/audio_c35078173b.mp3' },
 ];
 
 function AdminContent() {
@@ -36,13 +38,23 @@ function AdminContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const activeTab = searchParams.get('tab') || 'dashboard';
-  const [inventory, setInventory] = useState(INITIAL_INVENTORY);
+  const [inventory, setInventory] = useState<Product[]>([]);
+  const [previewingId, setPreviewingId] = useState<string | null>(null);
 
   useEffect(() => {
     if (isInitialized && (!isLoggedIn || role !== 'admin')) {
       router.push('/login');
     }
   }, [isInitialized, isLoggedIn, role, router]);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('partyflow_inventory');
+    if (saved) {
+      setInventory(JSON.parse(saved));
+    } else {
+      setInventory(INITIAL_INVENTORY);
+    }
+  }, []);
 
   const handleUpdateAudio = (id: string, url: string) => {
     setInventory(prev => prev.map(item => {
@@ -57,9 +69,22 @@ function AdminContent() {
   };
 
   const handleSaveAudio = () => {
+    localStorage.setItem('partyflow_inventory', JSON.stringify(inventory));
     toast({
       title: "🚀 SINCRONIZACIÓN EXITOSA",
       description: "Los enlaces de YouTube y archivos de audio han sido vinculados al catálogo.",
+    });
+  };
+
+  const togglePreview = (item: Product) => {
+    if (previewingId === item.id) {
+      setPreviewingId(null);
+      return;
+    }
+    setPreviewingId(item.id);
+    toast({
+      title: "🎧 VISTA PREVIA ACTIVA",
+      description: `Reproduciendo audio de: ${item.name}`,
     });
   };
 
@@ -168,8 +193,13 @@ function AdminContent() {
                           </div>
                         </TableCell>
                         <TableCell className="p-4 text-right">
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-secondary">
-                            <Play className="h-4 w-4" />
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className={`h-8 w-8 transition-all ${previewingId === item.id ? 'text-primary scale-125' : 'text-secondary hover:text-primary'}`}
+                            onClick={() => togglePreview(item)}
+                          >
+                            {previewingId === item.id ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
                           </Button>
                         </TableCell>
                       </TableRow>
@@ -186,7 +216,7 @@ function AdminContent() {
                </p>
                <Button 
                 onClick={handleSaveAudio}
-                className="bg-primary h-10 px-8 rounded-xl font-black italic text-xs tracking-widest neon-glow-primary"
+                className="bg-primary h-12 px-12 rounded-xl font-black italic text-xs tracking-widest neon-glow-primary hover:scale-105 transition-transform"
                >
                  <Save className="mr-2 h-4 w-4" /> GUARDAR CAMBIOS MUSICALES
                </Button>
