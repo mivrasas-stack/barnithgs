@@ -10,7 +10,8 @@ export type Product = {
   category: string;
   image: string;
   audioUrl?: string; 
-  youtubeUrl?: string; // Nueva propiedad para enlaces de YouTube
+  youtubeUrl?: string;
+  startTime?: number; // Segundo de inicio para el audio
 };
 
 export type CartItem = Product & {

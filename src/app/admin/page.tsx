@@ -23,14 +23,15 @@ import {
   Play,
   Youtube,
   Save,
-  Pause
+  Pause,
+  Timer
 } from 'lucide-react';
 
 const INITIAL_INVENTORY: Product[] = [
   { id: '1', name: 'Johnnie Walker Black', price: 185000, category: 'Whisky', image: 'https://picsum.photos/seed/whiskey1/400/500' },
   { id: '2', name: 'Don Julio 70', price: 420000, category: 'Tequila', image: 'https://picsum.photos/seed/tequila1/400/500' },
-  { id: 'c5', name: 'Combo "Me Bebí Tu Recuerdo"', price: 195000, category: 'Combos VIP', image: 'https://picsum.photos/seed/despecho/400/500', youtubeUrl: 'https://www.youtube.com/watch?v=o302pTudeO4' },
-  { id: 'c1', name: 'Combo Pre-Copeo VIP', price: 480000, category: 'Combos', image: 'https://picsum.photos/seed/combo1/400/500', audioUrl: 'https://cdn.pixabay.com/audio/2022/03/10/audio_c35078173b.mp3' },
+  { id: 'c5', name: 'Combo "Me Bebí Tu Recuerdo"', price: 195000, category: 'Combos VIP', image: 'https://picsum.photos/seed/despecho/400/500', youtubeUrl: 'https://www.youtube.com/watch?v=o302pTudeO4', startTime: 0 },
+  { id: 'c1', name: 'Combo Pre-Copeo VIP', price: 480000, category: 'Combos', image: 'https://picsum.photos/seed/combo1/400/500', audioUrl: 'https://cdn.pixabay.com/audio/2022/03/10/audio_c35078173b.mp3', startTime: 0 },
 ];
 
 function AdminContent() {
@@ -107,11 +108,20 @@ function AdminContent() {
     }));
   };
 
+  const handleUpdateStartTime = (id: string, seconds: number) => {
+    setInventory(prev => prev.map(item => {
+      if (item.id === id) {
+        return { ...item, startTime: seconds };
+      }
+      return item;
+    }));
+  };
+
   const handleSaveAudio = () => {
     localStorage.setItem('partyflow_inventory', JSON.stringify(inventory));
     toast({
       title: "🚀 SINCRONIZACIÓN EXITOSA",
-      description: "Los enlaces de YouTube y archivos de audio han sido vinculados al catálogo.",
+      description: "Los enlaces y fragmentos de tiempo han sido vinculados al catálogo.",
     });
   };
 
@@ -128,17 +138,21 @@ function AdminContent() {
     if (item.youtubeUrl && ytPlayerRef.current && ytReady) {
       const vid = getYoutubeId(item.youtubeUrl);
       if (vid) {
-        ytPlayerRef.current.loadVideoById(vid);
+        ytPlayerRef.current.loadVideoById({
+          videoId: vid,
+          startSeconds: item.startTime || 0
+        });
         ytPlayerRef.current.playVideo();
       }
     } else if (item.audioUrl && audioRef.current) {
       audioRef.current.src = item.audioUrl;
+      audioRef.current.currentTime = item.startTime || 0;
       audioRef.current.play().catch(() => {});
     }
 
     toast({
       title: "🎧 VISTA PREVIA ACTIVA",
-      description: `Reproduciendo audio de: ${item.name}`,
+      description: `Reproduciendo desde el segundo: ${item.startTime || 0}`,
     });
   };
 
@@ -194,7 +208,7 @@ function AdminContent() {
                   <Music className="h-5 w-5 text-primary" /> SINCRONIZACIÓN MULTIMEDIA VIP
                 </CardTitle>
                 <CardDescription className="text-[9px] font-bold uppercase tracking-widest text-gray-500">
-                  Pega enlaces de YouTube o archivos MP3 directos para cada combo
+                  Configura el enlace y el segundo exacto de inicio para cada combo
                 </CardDescription>
               </CardHeader>
               <CardContent className="p-0">
@@ -202,8 +216,8 @@ function AdminContent() {
                   <TableHeader className="bg-black/20">
                     <TableRow className="border-white/5">
                       <TableHead className="text-[8px] font-black uppercase p-4">PRODUCTO / COMBO</TableHead>
-                      <TableHead className="text-[8px] font-black uppercase p-4">TIPO SOURCE</TableHead>
                       <TableHead className="text-[8px] font-black uppercase p-4">URL (YOUTUBE O MP3)</TableHead>
+                      <TableHead className="text-[8px] font-black uppercase p-4">INICIO (SEG)</TableHead>
                       <TableHead className="text-right p-4"></TableHead>
                     </TableRow>
                   </TableHeader>
@@ -222,29 +236,29 @@ function AdminContent() {
                           </div>
                         </TableCell>
                         <TableCell className="p-4">
-                          {item.youtubeUrl ? (
-                            <Badge className="bg-red-500/10 text-red-500 border-none flex items-center gap-1 text-[8px] font-black uppercase">
-                              <Youtube className="h-3 w-3" /> YouTube
-                            </Badge>
-                          ) : item.audioUrl ? (
-                            <Badge className="bg-primary/10 text-primary border-none flex items-center gap-1 text-[8px] font-black uppercase">
-                              <Music className="h-3 w-3" /> MP3 / File
-                            </Badge>
-                          ) : (
-                            <Badge className="bg-gray-500/10 text-gray-500 border-none text-[8px] font-black uppercase">Vacio</Badge>
-                          )}
-                        </TableCell>
-                        <TableCell className="p-4">
-                          <div className="relative group">
+                          <div className="relative group min-w-[300px]">
                             <Input 
                               className="bg-white/5 border-white/10 h-8 text-[10px] pr-10 font-mono text-gray-400 focus:text-primary transition-all" 
                               defaultValue={item.youtubeUrl || item.audioUrl || ''} 
                               placeholder="YouTube URL o MP3 URL"
                               onBlur={(e) => handleUpdateAudio(item.id, e.target.value)}
                             />
-                            <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 text-gray-600 hover:text-primary">
-                              <Upload className="h-3 w-3" />
-                            </Button>
+                            {item.youtubeUrl ? (
+                              <Youtube className="absolute right-3 top-1/2 -translate-y-1/2 h-3 w-3 text-red-500" />
+                            ) : (
+                              <Music className="absolute right-3 top-1/2 -translate-y-1/2 h-3 w-3 text-primary" />
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="p-4">
+                          <div className="flex items-center gap-2">
+                             <Timer className="h-3 w-3 text-gray-500" />
+                             <Input 
+                               type="number"
+                               className="bg-white/5 border-white/10 h-8 w-20 text-[10px] font-mono text-center" 
+                               defaultValue={item.startTime || 0}
+                               onChange={(e) => handleUpdateStartTime(item.id, parseInt(e.target.value) || 0)}
+                             />
                           </div>
                         </TableCell>
                         <TableCell className="p-4 text-right">
@@ -267,13 +281,13 @@ function AdminContent() {
             <div className="p-6 bg-primary/5 border border-dashed border-primary/20 rounded-3xl text-center space-y-3">
                <Music className="h-8 w-8 text-primary mx-auto opacity-50" />
                <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">
-                 Los enlaces de YouTube se procesan automáticamente para reproducción en hover
+                 Los cambios se sincronizarán inmediatamente con la experiencia de usuario
                </p>
                <Button 
                 onClick={handleSaveAudio}
                 className="bg-primary h-12 px-12 rounded-xl font-black italic text-xs tracking-widest neon-glow-primary hover:scale-105 transition-transform"
                >
-                 <Save className="mr-2 h-4 w-4" /> GUARDAR CAMBIOS MUSICALES
+                 <Save className="mr-2 h-4 w-4" /> GUARDAR CONFIGURACIÓN STUDIO
                </Button>
             </div>
           </div>

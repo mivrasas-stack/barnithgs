@@ -18,7 +18,8 @@ const DEFAULT_COMBOS: Product[] = [
     price: 195000, 
     category: 'Combos VIP', 
     image: 'https://picsum.photos/seed/despecho/400/500',
-    youtubeUrl: 'https://www.youtube.com/watch?v=o302pTudeO4' 
+    youtubeUrl: 'https://www.youtube.com/watch?v=o302pTudeO4',
+    startTime: 0
   },
   { 
     id: 'c1', 
@@ -26,23 +27,8 @@ const DEFAULT_COMBOS: Product[] = [
     price: 480000, 
     category: 'Combos', 
     image: 'https://picsum.photos/seed/combo1/400/500',
-    audioUrl: 'https://cdn.pixabay.com/audio/2022/03/10/audio_c35078173b.mp3'
-  },
-  { 
-    id: 'c2', 
-    name: 'Jack Daniels + 2 Cocas', 
-    price: 185000, 
-    category: 'Combos', 
-    image: 'https://picsum.photos/seed/combo2/400/500',
-    audioUrl: 'https://cdn.pixabay.com/audio/2024/02/08/audio_8241b714f3.mp3'
-  },
-  { 
-    id: 'c3', 
-    name: 'Pack Parrandero (Ron + Hielo)', 
-    price: 125000, 
-    category: 'Combos', 
-    image: 'https://picsum.photos/seed/combo3/400/500',
-    audioUrl: 'https://cdn.pixabay.com/audio/2023/11/15/audio_51a3a60a8b.mp3'
+    audioUrl: 'https://cdn.pixabay.com/audio/2022/03/10/audio_c35078173b.mp3',
+    startTime: 0
   },
 ];
 
@@ -56,11 +42,9 @@ export default function CombosPage() {
   const [ytReady, setYtReady] = useState(false);
 
   useEffect(() => {
-    // 1. Cargar inventario personalizado del Admin si existe
     const saved = localStorage.getItem('partyflow_inventory');
     if (saved) {
       const allInventory = JSON.parse(saved) as Product[];
-      // Filtrar por combos o productos que tengan música configurada
       const savedCombos = allInventory.filter(p => 
         p.category.toLowerCase().includes('combo') || 
         p.id.startsWith('c') || 
@@ -72,12 +56,10 @@ export default function CombosPage() {
       }
     }
 
-    // 2. Inicializar Audio estándar
     audioRef.current = new Audio();
     audioRef.current.loop = true;
     audioRef.current.volume = 0.6;
 
-    // 3. Inicializar API de YouTube
     const initYoutube = () => {
       if (ytPlayerRef.current) return;
       
@@ -138,14 +120,13 @@ export default function CombosPage() {
     if (isMuted) return;
     setActiveComboId(combo.id);
 
-    // Priorizar YouTube si existe
     if (combo.youtubeUrl && ytPlayerRef.current && ytReady) {
       const videoId = getYoutubeId(combo.youtubeUrl);
       if (videoId) {
         try {
           ytPlayerRef.current.loadVideoById({
             videoId: videoId,
-            startSeconds: 0
+            startSeconds: combo.startTime || 0
           });
           ytPlayerRef.current.playVideo();
           ytPlayerRef.current.setVolume(80);
@@ -154,12 +135,10 @@ export default function CombosPage() {
         }
       }
     } 
-    // Si no hay YouTube, usar audio URL estándar
     else if (combo.audioUrl && audioRef.current) {
       audioRef.current.src = combo.audioUrl;
-      audioRef.current.play().catch(() => {
-        // Fallback si el navegador bloquea
-      });
+      audioRef.current.currentTime = combo.startTime || 0;
+      audioRef.current.play().catch(() => {});
     }
   };
 
@@ -185,43 +164,23 @@ export default function CombosPage() {
   return (
     <div className="min-h-screen bg-black text-white selection:bg-primary">
       <Navigation />
-      
-      {/* Reproductor oculto de YouTube */}
       <div id="hidden-yt-player" className="hidden"></div>
       
       <main className="container mx-auto px-4 py-12 space-y-12 max-w-7xl">
         <div className="flex flex-col items-center text-center space-y-4">
-          <div className="flex items-center gap-4">
-            <Badge className="bg-primary/20 text-primary border-primary/40 font-black neon-glow-primary uppercase text-[8px] px-4 py-1">
-              ATMÓSFERA VIP ACTIVADA
-            </Badge>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="h-8 w-8 rounded-full bg-white/5 border border-white/10 text-gray-400 hover:text-primary transition-all"
-              onClick={() => {
-                const nextMute = !isMuted;
-                setIsMuted(nextMute);
-                if (nextMute) {
-                  if (audioRef.current) audioRef.current.pause();
-                  if (ytPlayerRef.current && ytReady) ytPlayerRef.current.stopVideo();
-                }
-              }}
-            >
-              {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
-            </Button>
-          </div>
-          
+          <Badge className="bg-primary/20 text-primary border-primary/40 font-black neon-glow-primary uppercase text-[8px] px-4 py-1">
+            ATMÓSFERA VIP ACTIVADA
+          </Badge>
           <h1 className="text-4xl md:text-6xl font-black italic tracking-tighter leading-none uppercase">
             COMBOS <span className="text-primary neon-text-primary">MUSICALES</span>
           </h1>
           <p className="text-gray-500 font-bold uppercase text-[9px] tracking-[0.3em] max-w-xl">
-            Sincronización instantánea con YouTube. Pasa el cursor y vive la rumba antes de pedir.
+            Cada combo inicia en el segundo exacto configurado. Pasa el cursor y siente la vibra.
           </p>
           
           {!ytReady && !isMuted && (
             <div className="flex items-center gap-2 text-[7px] text-primary font-black uppercase tracking-widest animate-pulse">
-              <Loader2 className="h-3 w-3 animate-spin" /> SINCRONIZANDO SATÉLITES DE AUDIO...
+              <Loader2 className="h-3 w-3 animate-spin" /> SINCRONIZANDO FRAGMENTOS MUSICALES...
             </div>
           )}
         </div>
@@ -253,10 +212,6 @@ export default function CombosPage() {
                      </div>
                   </div>
                 )}
-
-                <div className="absolute top-4 left-4">
-                  <Flame className="h-5 w-5 text-accent animate-bounce" />
-                </div>
               </div>
               
               <CardContent className="p-6 space-y-4">
@@ -279,39 +234,9 @@ export default function CombosPage() {
                 >
                   <Zap className="mr-2 h-4 w-4 fill-current" /> PEDIR AHORA
                 </Button>
-
-                {activeComboId === combo.id && (
-                   <div className="pt-2 flex justify-center gap-0.5 h-4">
-                      {[0, 1, 2, 3, 4, 5].map(i => (
-                        <div 
-                          key={i} 
-                          className="w-1 bg-primary animate-pulse" 
-                          style={{ 
-                            height: `${30 + Math.random() * 70}%`, 
-                            animationDelay: `${i * 0.1}s`,
-                            boxShadow: '0 0 10px hsl(var(--primary))'
-                          }} 
-                        />
-                      ))}
-                   </div>
-                )}
               </CardContent>
             </Card>
           ))}
-        </div>
-
-        <div className="bg-white/[0.02] border border-white/10 rounded-[2.5rem] p-10 text-center space-y-6 max-w-2xl mx-auto glass-morphism">
-           <Music className="h-10 w-10 text-primary mx-auto opacity-50" />
-           <div className="space-y-2">
-             <h2 className="text-2xl font-black italic uppercase tracking-tighter">¿Sientes la vibra?</h2>
-             <p className="text-gray-500 font-bold text-[8px] uppercase tracking-[0.2em] leading-relaxed">
-               Cada combo tiene una identidad sonora única. <br />
-               Si no escuchas nada, asegúrate de haber interactuado con la página primero.
-             </p>
-           </div>
-           <Button variant="outline" className="border-primary text-primary hover:bg-primary/10 font-black h-12 px-10 rounded-full text-[9px] tracking-widest italic neon-glow-primary">
-              PEDIR RECOMENDACIÓN IA
-           </Button>
         </div>
       </main>
     </div>
