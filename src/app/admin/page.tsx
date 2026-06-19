@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, useState, Suspense, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useUserRole, Product } from '@/lib/store';
 import { StaffNavigation } from '@/components/StaffNavigation';
@@ -40,6 +40,10 @@ function AdminContent() {
   const activeTab = searchParams.get('tab') || 'dashboard';
   const [inventory, setInventory] = useState<Product[]>([]);
   const [previewingId, setPreviewingId] = useState<string | null>(null);
+  
+  const ytPlayerRef = useRef<any>(null);
+  const [ytReady, setYtReady] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     if (isInitialized && (!isLoggedIn || role !== 'admin')) {
@@ -54,7 +58,42 @@ function AdminContent() {
     } else {
       setInventory(INITIAL_INVENTORY);
     }
+
+    audioRef.current = new Audio();
+    audioRef.current.loop = false;
+
+    const initYt = () => {
+      if (ytPlayerRef.current) return;
+      ytPlayerRef.current = new (window as any).YT.Player('admin-yt-player', {
+        height: '0',
+        width: '0',
+        videoId: '',
+        events: {
+          onReady: () => setYtReady(true)
+        }
+      });
+    };
+
+    if (!(window as any).YT) {
+      const tag = document.createElement('script');
+      tag.src = "https://www.youtube.com/iframe_api";
+      const firstScriptTag = document.getElementsByTagName('script')[0];
+      firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
+      (window as any).onYouTubeIframeAPIReady = initYt;
+    } else {
+      initYt();
+    }
+
+    return () => {
+      if (audioRef.current) audioRef.current.pause();
+    };
   }, []);
+
+  const getYoutubeId = (url: string) => {
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : null;
+  };
 
   const handleUpdateAudio = (id: string, url: string) => {
     setInventory(prev => prev.map(item => {
@@ -79,9 +118,24 @@ function AdminContent() {
   const togglePreview = (item: Product) => {
     if (previewingId === item.id) {
       setPreviewingId(null);
+      if (audioRef.current) audioRef.current.pause();
+      if (ytPlayerRef.current && ytReady) ytPlayerRef.current.stopVideo();
       return;
     }
+    
     setPreviewingId(item.id);
+    
+    if (item.youtubeUrl && ytPlayerRef.current && ytReady) {
+      const vid = getYoutubeId(item.youtubeUrl);
+      if (vid) {
+        ytPlayerRef.current.loadVideoById(vid);
+        ytPlayerRef.current.playVideo();
+      }
+    } else if (item.audioUrl && audioRef.current) {
+      audioRef.current.src = item.audioUrl;
+      audioRef.current.play().catch(() => {});
+    }
+
     toast({
       title: "🎧 VISTA PREVIA ACTIVA",
       description: `Reproduciendo audio de: ${item.name}`,
@@ -94,6 +148,7 @@ function AdminContent() {
   return (
     <div className="min-h-screen bg-black text-white selection:bg-primary">
       <StaffNavigation />
+      <div id="admin-yt-player" className="hidden"></div>
       <main className="md:pl-16 container mx-auto px-6 py-6 max-w-[1200px] space-y-8 animate-in fade-in duration-500">
         
         <div className="flex justify-between items-end border-b border-white/5 pb-4">

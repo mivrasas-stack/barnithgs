@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { useCart, Product } from '@/lib/store';
 import { formatCurrency } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
-import { Flame, Zap, Music, Volume2, VolumeX, Youtube } from 'lucide-react';
+import { Flame, Zap, Music, Volume2, VolumeX, Youtube, Loader2 } from 'lucide-react';
 
 const DEFAULT_COMBOS: Product[] = [
   { 
@@ -65,20 +65,13 @@ export default function CombosPage() {
       }
     }
 
-    // Inicializar reproductor de audio estándar
     audioRef.current = new Audio();
     audioRef.current.loop = true;
     audioRef.current.volume = 0.6;
 
-    // Cargar YouTube IFrame API
-    if (!window.YT) {
-      const tag = document.createElement('script');
-      tag.src = "https://www.youtube.com/iframe_api";
-      const firstScriptTag = document.getElementsByTagName('script')[0];
-      firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
-    }
-
-    (window as any).onYouTubeIframeAPIReady = () => {
+    const initYoutube = () => {
+      if (ytPlayerRef.current) return;
+      
       ytPlayerRef.current = new (window as any).YT.Player('hidden-yt-player', {
         height: '0',
         width: '0',
@@ -92,13 +85,25 @@ export default function CombosPage() {
           fs: 0,
           cc_load_policy: 0,
           iv_load_policy: 3,
-          autohide: 1
+          autohide: 1,
+          mute: 0
         },
         events: {
-          onReady: () => setYtReady(true)
+          onReady: () => setYtReady(true),
+          onError: () => setYtReady(false)
         }
       });
     };
+
+    if (!(window as any).YT) {
+      const tag = document.createElement('script');
+      tag.src = "https://www.youtube.com/iframe_api";
+      const firstScriptTag = document.getElementsByTagName('script')[0];
+      firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
+      (window as any).onYouTubeIframeAPIReady = initYoutube;
+    } else {
+      initYoutube();
+    }
 
     return () => {
       if (audioRef.current) {
@@ -121,7 +126,6 @@ export default function CombosPage() {
     if (isMuted) return;
     setActiveComboId(combo.id);
 
-    // Caso YouTube
     if (combo.youtubeUrl && ytPlayerRef.current && ytReady) {
       const videoId = getYoutubeId(combo.youtubeUrl);
       if (videoId) {
@@ -130,10 +134,9 @@ export default function CombosPage() {
           startSeconds: 0
         });
         ytPlayerRef.current.playVideo();
-        ytPlayerRef.current.setVolume(70);
+        ytPlayerRef.current.setVolume(80);
       }
     } 
-    // Caso MP3
     else if (combo.audioUrl && audioRef.current) {
       audioRef.current.src = combo.audioUrl;
       audioRef.current.play().catch(() => {});
@@ -163,7 +166,6 @@ export default function CombosPage() {
     <div className="min-h-screen bg-black text-white selection:bg-primary">
       <Navigation />
       
-      {/* Reproductor oculto de YouTube */}
       <div id="hidden-yt-player" className="hidden"></div>
       
       <main className="container mx-auto px-4 py-12 space-y-12 max-w-7xl">
@@ -195,6 +197,11 @@ export default function CombosPage() {
           <p className="text-gray-500 font-bold uppercase text-[9px] tracking-[0.3em] max-w-xl">
             Sincronizados con YouTube y Beats exclusivos. Pasa el cursor y siente la vibra.
           </p>
+          {!ytReady && !isMuted && (
+            <p className="text-[7px] text-primary animate-pulse font-black uppercase tracking-widest">
+              Sincronizando reproductores satelitales...
+            </p>
+          )}
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -269,7 +276,7 @@ export default function CombosPage() {
 
         <div className="bg-white/[0.02] border border-white/10 rounded-[2.5rem] p-8 text-center space-y-4 max-w-2xl mx-auto">
            <h2 className="text-2xl font-black italic uppercase tracking-tighter">¿LISTO PARA LA TUSA?</h2>
-           <p className="text-gray-500 font-bold text-[8px] uppercase tracking-[0.2em]">Sube el volumen. La sincronización con YouTube es automática para todos los combos VIP.</p>
+           <p className="text-gray-500 font-bold text-[8px] uppercase tracking-[0.2em]">Sube el volumen. La rumba se activa al pasar el mouse por los combos VIP.</p>
            <Button variant="outline" className="border-primary text-primary hover:bg-primary/10 font-black h-10 px-8 rounded-full text-[9px] tracking-widest italic neon-glow-primary">
               CHAT DE DESPECHO 24/7
            </Button>
