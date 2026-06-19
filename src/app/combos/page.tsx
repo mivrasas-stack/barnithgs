@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { useCart, Product } from '@/lib/store';
 import { formatCurrency } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
-import { Flame, Zap, Music, Volume2, VolumeX } from 'lucide-react';
+import { Flame, Zap, Music, Volume2, VolumeX, Youtube } from 'lucide-react';
 
 const COMBOS: Product[] = [
   { 
@@ -18,7 +18,7 @@ const COMBOS: Product[] = [
     price: 195000, 
     category: 'Combos VIP', 
     image: 'https://picsum.photos/seed/despecho/400/500',
-    audioUrl: 'https://cdn.pixabay.com/audio/2022/10/24/audio_985532d5e2.mp3' // Fragmento Popular
+    youtubeUrl: 'https://www.youtube.com/watch?v=o302pTudeO4' 
   },
   { 
     id: 'c1', 
@@ -26,7 +26,7 @@ const COMBOS: Product[] = [
     price: 480000, 
     category: 'Combos', 
     image: 'https://picsum.photos/seed/combo1/400/500',
-    audioUrl: 'https://cdn.pixabay.com/audio/2022/03/10/audio_c35078173b.mp3' // Electronic Beat
+    audioUrl: 'https://cdn.pixabay.com/audio/2022/03/10/audio_c35078173b.mp3'
   },
   { 
     id: 'c2', 
@@ -34,7 +34,7 @@ const COMBOS: Product[] = [
     price: 185000, 
     category: 'Combos', 
     image: 'https://picsum.photos/seed/combo2/400/500',
-    audioUrl: 'https://cdn.pixabay.com/audio/2024/02/08/audio_8241b714f3.mp3' // Rock/Party vibe
+    audioUrl: 'https://cdn.pixabay.com/audio/2024/02/08/audio_8241b714f3.mp3'
   },
   { 
     id: 'c3', 
@@ -42,47 +42,91 @@ const COMBOS: Product[] = [
     price: 125000, 
     category: 'Combos', 
     image: 'https://picsum.photos/seed/combo3/400/500',
-    audioUrl: 'https://cdn.pixabay.com/audio/2023/11/15/audio_51a3a60a8b.mp3' // Latin Rhythm
+    audioUrl: 'https://cdn.pixabay.com/audio/2023/11/15/audio_51a3a60a8b.mp3'
   },
 ];
 
 export default function CombosPage() {
   const { addToCart } = useCart();
   const [isMuted, setIsMuted] = useState(false);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
   const [activeComboId, setActiveComboId] = useState<string | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const ytPlayerRef = useRef<any>(null);
+  const [ytReady, setYtReady] = useState(false);
 
   useEffect(() => {
-    // Inicializar reproductor oculto
+    // Inicializar reproductor de audio estándar
     audioRef.current = new Audio();
     audioRef.current.loop = true;
     audioRef.current.volume = 0.6;
+
+    // Cargar YouTube IFrame API
+    if (!window.YT) {
+      const tag = document.createElement('script');
+      tag.src = "https://www.youtube.com/iframe_api";
+      const firstScriptTag = document.getElementsByTagName('script')[0];
+      firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
+    }
+
+    (window as any).onYouTubeIframeAPIReady = () => {
+      ytPlayerRef.current = new (window as any).YT.Player('hidden-yt-player', {
+        height: '0',
+        width: '0',
+        videoId: '',
+        playerVars: {
+          autoplay: 0,
+          controls: 0,
+          showinfo: 0,
+          modestbranding: 1,
+          loop: 1,
+          fs: 0,
+          cc_load_policy: 0,
+          iv_load_policy: 3,
+          autohide: 1
+        },
+        events: {
+          onReady: () => setYtReady(true)
+        }
+      });
+    };
 
     return () => {
       if (audioRef.current) {
         audioRef.current.pause();
         audioRef.current = null;
       }
+      if (ytPlayerRef.current && ytPlayerRef.current.destroy) {
+        ytPlayerRef.current.destroy();
+      }
     };
   }, []);
 
-  const handleAdd = (product: Product) => {
-    addToCart(product);
-    toast({
-      title: "¡Combo Añadido!",
-      description: `${product.name} listo para el cargamento.`,
-    });
+  const getYoutubeId = (url: string) => {
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : null;
   };
 
   const handleMouseEnter = (combo: Product) => {
-    if (!combo.audioUrl || isMuted) return;
-
+    if (isMuted) return;
     setActiveComboId(combo.id);
-    if (audioRef.current) {
+
+    // Caso YouTube
+    if (combo.youtubeUrl && ytPlayerRef.current && ytReady) {
+      const videoId = getYoutubeId(combo.youtubeUrl);
+      if (videoId) {
+        ytPlayerRef.current.loadVideoById({
+          videoId: videoId,
+          startSeconds: 0
+        });
+        ytPlayerRef.current.playVideo();
+        ytPlayerRef.current.setVolume(70);
+      }
+    } 
+    // Caso MP3
+    else if (combo.audioUrl && audioRef.current) {
       audioRef.current.src = combo.audioUrl;
-      audioRef.current.play().catch(() => {
-        console.warn("Interacción requerida para audio.");
-      });
+      audioRef.current.play().catch(() => {});
     }
   };
 
@@ -92,11 +136,25 @@ export default function CombosPage() {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
     }
+    if (ytPlayerRef.current && ytReady) {
+      ytPlayerRef.current.stopVideo();
+    }
+  };
+
+  const handleAdd = (product: Product) => {
+    addToCart(product);
+    toast({
+      title: "¡Combo Añadido!",
+      description: `${product.name} listo para el cargamento.`,
+    });
   };
 
   return (
     <div className="min-h-screen bg-black text-white selection:bg-primary">
       <Navigation />
+      
+      {/* Reproductor oculto de YouTube */}
+      <div id="hidden-yt-player" className="hidden"></div>
       
       <main className="container mx-auto px-4 py-12 space-y-12 max-w-7xl">
         <div className="flex flex-col items-center text-center space-y-4">
@@ -111,7 +169,10 @@ export default function CombosPage() {
               onClick={() => {
                 const nextMute = !isMuted;
                 setIsMuted(nextMute);
-                if (nextMute && audioRef.current) audioRef.current.pause();
+                if (nextMute) {
+                  if (audioRef.current) audioRef.current.pause();
+                  if (ytPlayerRef.current && ytReady) ytPlayerRef.current.stopVideo();
+                }
               }}
             >
               {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
@@ -122,7 +183,7 @@ export default function CombosPage() {
             COMBOS <span className="text-primary neon-text-primary uppercase">VIP</span>
           </h1>
           <p className="text-gray-500 font-bold uppercase text-[9px] tracking-[0.3em] max-w-xl">
-            Cada combo tiene su propia banda sonora. Pasa el cursor y siente la vibra.
+            Sincronizados con YouTube y Beats exclusivos. Pasa el cursor y siente la vibra.
           </p>
         </div>
 
@@ -149,7 +210,7 @@ export default function CombosPage() {
                 {activeComboId === combo.id && (
                   <div className="absolute inset-0 flex items-center justify-center animate-in fade-in zoom-in duration-300">
                      <div className="p-3 bg-primary/20 backdrop-blur-md rounded-full border border-primary/40 animate-pulse">
-                        <Music className="h-6 w-6 text-white" />
+                        {combo.youtubeUrl ? <Youtube className="h-6 w-6 text-white" /> : <Music className="h-6 w-6 text-white" />}
                      </div>
                   </div>
                 )}
@@ -198,7 +259,7 @@ export default function CombosPage() {
 
         <div className="bg-white/[0.02] border border-white/10 rounded-[2.5rem] p-8 text-center space-y-4 max-w-2xl mx-auto">
            <h2 className="text-2xl font-black italic uppercase tracking-tighter">¿LISTO PARA LA TUSA?</h2>
-           <p className="text-gray-500 font-bold text-[8px] uppercase tracking-[0.2em]">Licor 100% legal. Sube el volumen y deja que nosotros nos encarguemos.</p>
+           <p className="text-gray-500 font-bold text-[8px] uppercase tracking-[0.2em]">Sube el volumen. La sincronización con YouTube es automática para todos los combos VIP.</p>
            <Button variant="outline" className="border-primary text-primary hover:bg-primary/10 font-black h-10 px-8 rounded-full text-[9px] tracking-widest italic neon-glow-primary">
               CHAT DE DESPECHO 24/7
            </Button>

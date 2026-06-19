@@ -9,7 +9,8 @@ export type Product = {
   price: number;
   category: string;
   image: string;
-  audioUrl?: string; // Nueva propiedad para música específica
+  audioUrl?: string; 
+  youtubeUrl?: string; // Nueva propiedad para enlaces de YouTube
 };
 
 export type CartItem = Product & {
