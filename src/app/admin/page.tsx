@@ -384,9 +384,14 @@ function AdminContent() {
                 <div className="relative">
                   <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-secondary" />
                   <Input 
-                    type="number"
-                    value={editingProduct.price} 
-                    onChange={(e) => setEditingProduct({ ...editingProduct, price: parseInt(e.target.value) || 0 })}
+                    type="text"
+                    placeholder="0"
+                    value={editingProduct.price === 0 ? "" : editingProduct.price.toLocaleString('es-CO')} 
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\./g, '').replace(/[^0-9]/g, '');
+                      const num = parseInt(val) || 0;
+                      setEditingProduct({ ...editingProduct, price: num });
+                    }}
                     className="bg-white/5 border-white/10 h-10 pl-10 font-black text-secondary"
                   />
                 </div>
