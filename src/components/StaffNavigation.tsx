@@ -18,7 +18,8 @@ import {
   Package,
   Users,
   History,
-  MapPin
+  MapPin,
+  Music
 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
@@ -49,13 +50,14 @@ export function StaffNavigation() {
     { name: 'Inventario', tab: 'inventory', icon: Box },
     { name: 'Entregas', tab: 'deliveries', icon: MapPin },
     { name: 'Catálogo', tab: 'catalog', icon: Package },
-    { name: 'Personal', tab: 'staff', icon: Users },
-    { name: 'Historial', tab: 'history', icon: History },
+    { name: 'Staff', tab: 'staff', icon: Users },
+    { name: 'Audio Studio', tab: 'audio', icon: Music },
+    { name: 'Auditoría', tab: 'history', icon: History },
   ];
 
   const mainNavItems = [
-    { name: 'Vista Driver', href: '/driver', icon: Truck, roles: ['driver', 'admin'] },
-    { name: 'Vista Almacén', href: '/warehouse', icon: Box, roles: ['warehouse', 'admin'] },
+    { name: 'Driver', href: '/driver', icon: Truck, roles: ['driver', 'admin'] },
+    { name: 'Bodega', href: '/warehouse', icon: Box, roles: ['warehouse', 'admin'] },
   ];
 
   return (
@@ -63,29 +65,24 @@ export function StaffNavigation() {
       <aside 
         className={cn(
           "fixed left-0 top-0 h-screen z-50 transition-all duration-300 border-r border-white/10 glass-morphism flex flex-col hidden md:flex",
-          isExpanded ? "w-56" : "w-16"
+          isExpanded ? "w-48" : "w-16"
         )}
       >
-        {/* Header / Logo */}
         <div className="p-3 flex items-center gap-2 border-b border-white/5 h-16 overflow-hidden">
           <div className="shrink-0 h-10 w-10 bg-secondary/20 rounded-xl flex items-center justify-center neon-glow-secondary">
             <ShieldCheck className="h-6 w-6 text-secondary" />
           </div>
           {isExpanded && (
             <div className="animate-in fade-in slide-in-from-left-2 duration-300">
-              <p className="text-[10px] font-black italic tracking-tighter text-white leading-none">COMMAND</p>
+              <p className="text-[10px] font-black italic text-white leading-none">COMMAND</p>
               <p className="text-[8px] font-bold text-secondary uppercase tracking-widest">CENTER</p>
             </div>
           )}
         </div>
 
-        {/* Navigation */}
         <div className="flex-1 py-4 flex flex-col gap-4 overflow-y-auto no-scrollbar">
-          
-          {/* Admin Items */}
           {role === 'admin' && (
             <div className="px-2 space-y-1">
-              {isExpanded && <p className="text-[8px] font-black text-gray-500 uppercase tracking-[0.2em] px-2 mb-2">Control</p>}
               {adminSubItems.map((item) => (
                 <Tooltip key={item.tab}>
                   <TooltipTrigger asChild>
@@ -100,11 +97,7 @@ export function StaffNavigation() {
                           "h-5 w-5 shrink-0 transition-all",
                           pathname === '/admin' && activeTab === item.tab ? 'neon-text-primary' : 'group-hover:scale-110'
                         )} />
-                        {isExpanded && (
-                          <div className="animate-in fade-in slide-in-from-left-2 duration-300 overflow-hidden">
-                            <p className="font-black italic text-xs uppercase tracking-tight">{item.name}</p>
-                          </div>
-                        )}
+                        {isExpanded && <p className="font-black italic text-[10px] uppercase tracking-tight">{item.name}</p>}
                       </div>
                     </Link>
                   </TooltipTrigger>
@@ -114,9 +107,7 @@ export function StaffNavigation() {
             </div>
           )}
 
-          {/* Operational Items */}
           <div className="px-2 space-y-1">
-            {isExpanded && <p className="text-[8px] font-black text-gray-500 uppercase tracking-[0.2em] px-2 mb-2">Operaciones</p>}
             {mainNavItems.filter(item => item.roles.includes(role)).map((item) => (
               <Tooltip key={item.href}>
                 <TooltipTrigger asChild>
@@ -131,11 +122,7 @@ export function StaffNavigation() {
                         "h-5 w-5 shrink-0 transition-all",
                         pathname === item.href ? 'neon-text-secondary' : 'group-hover:scale-110'
                       )} />
-                      {isExpanded && (
-                        <div className="animate-in fade-in slide-in-from-left-2 duration-300 overflow-hidden">
-                          <p className="font-black italic text-xs uppercase tracking-tight">{item.name}</p>
-                        </div>
-                      )}
+                      {isExpanded && <p className="font-black italic text-[10px] uppercase tracking-tight">{item.name}</p>}
                     </div>
                   </Link>
                 </TooltipTrigger>
@@ -145,38 +132,17 @@ export function StaffNavigation() {
           </div>
         </div>
 
-        {/* Footer */}
         <div className="p-2 border-t border-white/5 space-y-1">
           <Tooltip>
             <TooltipTrigger asChild>
-              <Link href="/">
-                <div className="flex items-center gap-3 p-2.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-all group cursor-pointer">
-                  <Home className="h-5 w-5 shrink-0 group-hover:scale-110 transition-all" />
-                  {isExpanded && <span className="font-black italic text-[10px] uppercase">Público</span>}
-                </div>
-              </Link>
-            </TooltipTrigger>
-            {!isExpanded && <TooltipContent side="right" className="bg-black border-white/10 font-bold uppercase text-[8px] tracking-widest">Inicio</TooltipContent>}
-          </Tooltip>
-
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button 
-                onClick={handleLogout}
-                className="w-full flex items-center gap-3 p-2.5 rounded-lg text-destructive hover:bg-destructive/10 transition-all group"
-              >
-                <LogOut className="h-5 w-5 shrink-0 group-hover:scale-110 transition-all" />
+              <button onClick={handleLogout} className="w-full flex items-center gap-3 p-2.5 rounded-lg text-destructive hover:bg-destructive/10 transition-all group">
+                <LogOut className="h-5 w-5 shrink-0" />
                 {isExpanded && <span className="font-black italic text-[10px] uppercase">Salir</span>}
               </button>
             </TooltipTrigger>
-            {!isExpanded && <TooltipContent side="right" className="bg-black border-white/10 font-bold uppercase text-[8px] tracking-widest">Salir</TooltipContent>}
+            {!isExpanded && <TooltipContent side="right" className="bg-black border-white/10 font-bold uppercase text-[8px]">Salir</TooltipContent>}
           </Tooltip>
-
-          {/* Toggle Button */}
-          <button 
-            onClick={() => setIsExpanded(!isExpanded)}
-            className="w-full h-10 flex items-center justify-center bg-white/5 hover:bg-white/10 rounded-lg transition-all mt-2 border border-white/5"
-          >
+          <button onClick={() => setIsExpanded(!isExpanded)} className="w-full h-8 flex items-center justify-center bg-white/5 hover:bg-white/10 rounded-lg transition-all mt-1">
             {isExpanded ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
           </button>
         </div>

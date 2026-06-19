@@ -9,6 +9,7 @@ export type Product = {
   price: number;
   category: string;
   image: string;
+  audioUrl?: string; // Nueva propiedad para música específica
 };
 
 export type CartItem = Product & {
