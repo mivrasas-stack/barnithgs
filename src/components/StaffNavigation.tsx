@@ -19,7 +19,8 @@ import {
   Users,
   History,
   MapPin,
-  Music
+  Music,
+  Flame
 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
@@ -47,11 +48,11 @@ export function StaffNavigation() {
 
   const adminSubItems = [
     { name: 'Dashboard', tab: 'dashboard', icon: LayoutDashboard },
-    { name: 'Inventario', tab: 'inventory', icon: Box },
-    { name: 'Entregas', tab: 'deliveries', icon: MapPin },
     { name: 'Catálogo', tab: 'catalog', icon: Package },
-    { name: 'Staff', tab: 'staff', icon: Users },
+    { name: 'Combos VIP', tab: 'combos', icon: Flame },
     { name: 'Audio Studio', tab: 'audio', icon: Music },
+    { name: 'Entregas', tab: 'deliveries', icon: MapPin },
+    { name: 'Staff', tab: 'staff', icon: Users },
     { name: 'Auditoría', tab: 'history', icon: History },
   ];
 

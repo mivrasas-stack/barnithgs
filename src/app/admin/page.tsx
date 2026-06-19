@@ -34,7 +34,8 @@ import {
   Image as ImageIcon,
   Upload,
   Settings2,
-  Disc
+  Disc,
+  Flame
 } from 'lucide-react';
 
 const INITIAL_INVENTORY: Product[] = [
@@ -116,12 +117,12 @@ function AdminContent() {
     localStorage.setItem('partyflow_inventory', JSON.stringify(newInventory));
   };
 
-  const handleCreateClick = () => {
+  const handleCreateClick = (isCombo = false) => {
     setEditingProduct({
       id: `prod-${Date.now()}`,
       name: '',
       price: 0,
-      category: 'Licores',
+      category: isCombo ? 'Combos' : 'Licores',
       image: 'https://picsum.photos/seed/new-item/400/500'
     });
     setIsEditDialogOpen(true);
@@ -140,10 +141,10 @@ function AdminContent() {
     
     if (exists) {
       updatedInventory = inventory.map(p => p.id === editingProduct.id ? editingProduct : p);
-      toast({ title: "PRODUCTO ACTUALIZADO", description: `${editingProduct.name} ha sido modificado.` });
+      toast({ title: "ACTUALIZADO", description: `${editingProduct.name} modificado.` });
     } else {
       updatedInventory = [...inventory, editingProduct];
-      toast({ title: "NUEVO PRODUCTO CREADO", description: `${editingProduct.name} añadido al arsenal.` });
+      toast({ title: "CREADO", description: `${editingProduct.name} añadido.` });
     }
     
     handleSaveInventory(updatedInventory);
@@ -153,12 +154,12 @@ function AdminContent() {
   const handleDeleteProduct = (id: string) => {
     const updatedInventory = inventory.filter(p => p.id !== id);
     handleSaveInventory(updatedInventory);
-    toast({ title: "PRODUCTO ELIMINADO", variant: "destructive" });
+    toast({ title: "ELIMINADO", variant: "destructive" });
   };
 
   const handleAssignAudio = () => {
     if (!selectedProductId) {
-      toast({ title: "ERROR", description: "Selecciona un producto primero.", variant: "destructive" });
+      toast({ title: "ERROR", description: "Selecciona un producto.", variant: "destructive" });
       return;
     }
 
@@ -182,7 +183,7 @@ function AdminContent() {
     setSelectedProductId("");
     setAudioUrl("");
     setAudioStartTime(0);
-    toast({ title: "MÚSICA ASIGNADA", description: "Configuración guardada correctamente." });
+    toast({ title: "AUDIO ASIGNADO", description: "Cambios guardados." });
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -222,8 +223,6 @@ function AdminContent() {
       audioRef.current.src = item.audioUrl;
       audioRef.current.currentTime = item.startTime || 0;
       audioRef.current.play().catch(() => {});
-    } else if (item.spotifyUrl) {
-      toast({ title: "INFO SPOTIFY", description: "Spotify requiere interacción manual en el widget." });
     }
   };
 
@@ -231,6 +230,7 @@ function AdminContent() {
   if (!isLoggedIn || role !== 'admin') return null;
 
   const isCreating = editingProduct && !inventory.some(p => p.id === editingProduct.id);
+  const products = inventory.filter(p => !p.category.toLowerCase().includes('combo'));
   const combos = inventory.filter(p => p.category.toLowerCase().includes('combo'));
 
   return (
@@ -244,17 +244,18 @@ function AdminContent() {
           <div className="space-y-1">
             <h1 className="text-3xl font-black italic tracking-tighter uppercase leading-none">
               {activeTab === 'dashboard' && <><span className="text-primary neon-text-primary">COMMAND</span> CENTER</>}
-              {activeTab === 'catalog' && <><span className="text-secondary neon-text-secondary">CATALOG</span> CONTROL</>}
+              {activeTab === 'catalog' && <><span className="text-secondary neon-text-secondary">PRODUCT</span> CATALOG</>}
+              {activeTab === 'combos' && <><span className="text-primary neon-text-primary">VIP</span> COMBOS</>}
               {activeTab === 'audio' && <><span className="text-primary neon-text-primary">AUDIO</span> STUDIO</>}
             </h1>
             <p className="text-gray-500 font-bold uppercase text-[8px] tracking-[0.3em] pl-1">PartyFlow OS v4.0</p>
           </div>
-          {activeTab === 'catalog' && (
+          {(activeTab === 'catalog' || activeTab === 'combos') && (
             <Button 
               className="bg-secondary text-black font-black italic tracking-tighter h-10 px-6 rounded-xl hover:scale-105 transition-all"
-              onClick={handleCreateClick}
+              onClick={() => handleCreateClick(activeTab === 'combos')}
             >
-              <Plus className="mr-2 h-4 w-4" /> NUEVO PRODUCTO
+              <Plus className="mr-2 h-4 w-4" /> NUEVO {activeTab === 'combos' ? 'COMBO' : 'PRODUCTO'}
             </Button>
           )}
           {activeTab === 'audio' && (
@@ -275,7 +276,7 @@ function AdminContent() {
               { label: 'Entregas', value: '18 min', trend: '-2 min', icon: Clock, color: 'text-green-400' },
               { label: 'Staff Online', value: '8', trend: 'Activos', icon: Users, color: 'text-accent' },
             ].map((kpi, i) => (
-              <div key={i} className="bg-white/[0.02] border border-white/5 p-4 rounded-2xl space-y-2 hover:border-white/10 transition-all">
+              <div key={i} className="bg-white/[0.02] border border-white/5 p-4 rounded-2xl space-y-2">
                 <div className="flex justify-between">
                   <kpi.icon className={`h-4 w-4 ${kpi.color}`} />
                   <span className="text-[8px] font-black text-gray-600 uppercase">{kpi.trend}</span>
@@ -289,20 +290,20 @@ function AdminContent() {
           </div>
         )}
 
-        {activeTab === 'catalog' && (
+        {(activeTab === 'catalog' || activeTab === 'combos') && (
           <Card className="bg-white/[0.02] border border-white/5 rounded-[2rem] overflow-hidden">
             <CardContent className="p-0">
               <Table>
                 <TableHeader className="bg-white/5">
                   <TableRow className="border-white/5">
-                    <TableHead className="text-[8px] font-black uppercase p-4">PRODUCTO</TableHead>
+                    <TableHead className="text-[8px] font-black uppercase p-4">ÍTEM</TableHead>
                     <TableHead className="text-[8px] font-black uppercase p-4">CATEGORÍA</TableHead>
                     <TableHead className="text-[8px] font-black uppercase p-4">PRECIO</TableHead>
                     <TableHead className="text-right p-4">ACCIONES</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {inventory.map((item) => (
+                  {(activeTab === 'combos' ? combos : products).map((item) => (
                     <TableRow key={item.id} className="border-white/5 hover:bg-white/[0.02] transition-colors">
                       <TableCell className="p-4">
                         <div className="flex items-center gap-3">
@@ -336,42 +337,36 @@ function AdminContent() {
           <div className="space-y-6">
              <div className="bg-primary/5 border border-primary/20 rounded-2xl p-6 mb-8">
                <h3 className="text-primary font-black italic uppercase text-sm mb-2 flex items-center gap-2">
-                 <Disc className="h-5 w-5 animate-spin-slow" /> ¿CÓMO FUNCIONA EL AUDIO?
+                 <Disc className="h-5 w-5 animate-spin-slow" /> MÚSICA PERSONALIZADA
                </h3>
-               <ul className="text-[10px] text-gray-400 font-bold uppercase space-y-2 tracking-widest">
-                 <li>• <span className="text-white">YouTube:</span> Ideal para rumbas, controlamos el inicio exacto.</li>
-                 <li>• <span className="text-white">Spotify:</span> Muestra un widget interactivo (requiere clic del usuario).</li>
-                 <li>• <span className="text-white">Directo (MP3):</span> Carga instantánea para efectos rápidos.</li>
-               </ul>
+               <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Asigna pistas de YouTube o MP3 a tus combos para crear ambiente.</p>
              </div>
 
             <Card className="bg-white/[0.02] border border-white/5 rounded-[2rem] overflow-hidden">
               <Table>
                 <TableHeader className="bg-white/5">
                   <TableRow className="border-white/5">
-                    <TableHead className="text-[8px] font-black uppercase p-4">PRODUCTO / COMBO</TableHead>
-                    <TableHead className="text-[8px] font-black uppercase p-4">URL (YT, SPOTIFY O MP3)</TableHead>
+                    <TableHead className="text-[8px] font-black uppercase p-4">COMBO / PRODUCTO</TableHead>
+                    <TableHead className="text-[8px] font-black uppercase p-4">URL (YT / MP3)</TableHead>
                     <TableHead className="text-[8px] font-black uppercase p-4">INICIO (SEG)</TableHead>
                     <TableHead className="text-right p-4"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {inventory.filter(i => i.category.toLowerCase().includes('combo') || i.audioUrl || i.youtubeUrl || i.spotifyUrl).map((item) => (
+                  {inventory.filter(i => i.category.toLowerCase().includes('combo') || i.audioUrl || i.youtubeUrl).map((item) => (
                     <TableRow key={item.id} className="border-white/5 hover:bg-white/[0.02]">
                       <TableCell className="p-4 font-black italic text-xs uppercase">{item.name}</TableCell>
                       <TableCell className="p-4">
                         <Input 
                           className="bg-white/5 border-white/10 h-8 text-[10px] font-mono" 
-                          value={item.youtubeUrl || item.audioUrl || item.spotifyUrl || ''} 
+                          value={item.youtubeUrl || item.audioUrl || ''} 
                           onChange={(e) => {
                             const val = e.target.value;
                             const isYt = val.includes('youtube.com') || val.includes('youtu.be');
-                            const isSpotify = val.includes('spotify.com');
                             const updated = inventory.map(p => p.id === item.id ? { 
                               ...p, 
                               youtubeUrl: isYt ? val : undefined, 
-                              spotifyUrl: isSpotify ? val : undefined,
-                              audioUrl: (!isYt && !isSpotify) ? val : undefined 
+                              audioUrl: !isYt ? val : undefined 
                             } : p);
                             handleSaveInventory(updated);
                           }}
@@ -402,12 +397,12 @@ function AdminContent() {
         )}
       </main>
 
-      {/* MODAL DE CREACIÓN/EDICIÓN DE CATÁLOGO */}
+      {/* MODAL DE CREACIÓN/EDICIÓN */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="bg-[#0a0a0a] border-white/10 text-white rounded-[2rem] max-w-lg">
           <DialogHeader>
             <DialogTitle className="text-xl font-black italic tracking-tighter uppercase">
-              {isCreating ? 'NUEVO PRODUCTO' : 'EDITAR PRODUCTO'}
+              {isCreating ? 'NUEVO ÍTEM' : 'EDITAR ÍTEM'}
             </DialogTitle>
           </DialogHeader>
           {editingProduct && (
@@ -437,7 +432,7 @@ function AdminContent() {
                 <div className="space-y-2">
                   <Label className="text-[8px] font-black uppercase tracking-widest text-gray-500">Categoría</Label>
                   <Input 
-                    placeholder="Ej. Tequila"
+                    placeholder="Ej. Tequila o Combo"
                     value={editingProduct.category} 
                     onChange={(e) => setEditingProduct({ ...editingProduct, category: e.target.value })}
                     className="bg-white/5 border-white/10 h-10 font-black italic text-xs"
@@ -467,25 +462,25 @@ function AdminContent() {
           <DialogFooter className="gap-2">
             <Button variant="ghost" className="rounded-xl font-black italic text-xs uppercase" onClick={() => setIsEditDialogOpen(false)}>CANCELAR</Button>
             <Button className="bg-primary text-white font-black italic text-xs uppercase rounded-xl px-8 neon-glow-primary" onClick={handleSaveEdit}>
-              <Save className="mr-2 h-4 w-4" /> {isCreating ? 'CREAR PRODUCTO' : 'GUARDAR CAMBIOS'}
+              <Save className="mr-2 h-4 w-4" /> {isCreating ? 'CREAR' : 'GUARDAR'}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* MODAL DE ASIGNACIÓN DE AUDIO */}
+      {/* MODAL DE AUDIO */}
       <Dialog open={isAudioModalOpen} onOpenChange={setIsAudioModalOpen}>
         <DialogContent className="bg-[#0a0a0a] border-white/10 text-white rounded-[2rem] max-w-lg">
           <DialogHeader>
             <DialogTitle className="text-xl font-black italic tracking-tighter uppercase flex items-center gap-2">
-              <Settings2 className="h-5 w-5 text-primary" /> CONFIGURAR AUDIO DE PRODUCTO
+              <Settings2 className="h-5 w-5 text-primary" /> CONFIGURAR AUDIO
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-6 py-4">
             <div className="space-y-2">
               <Label className="text-[8px] font-black uppercase tracking-widest text-gray-500">Seleccionar Ítem</Label>
               <Select onValueChange={setSelectedProductId} value={selectedProductId}>
-                <SelectTrigger className="bg-white/5 border-white/10 h-12 font-black italic text-xs uppercase">
+                <SelectTrigger className="bg-white/5 border-white/10 h-12 font-black italic text-xs uppercase text-white">
                   <SelectValue placeholder="ELIGE UN PRODUCTO" />
                 </SelectTrigger>
                 <SelectContent className="bg-[#0a0a0a] border-white/10 text-white">
@@ -499,37 +494,30 @@ function AdminContent() {
             </div>
 
             <div className="space-y-2">
-              <Label className="text-[8px] font-black uppercase tracking-widest text-gray-500">URL de YT, Spotify o MP3</Label>
-              <div className="relative">
-                <Music className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-primary" />
-                <Input 
-                  placeholder="YouTube, Spotify o enlace MP3..."
-                  value={audioUrl} 
-                  onChange={(e) => setAudioUrl(e.target.value)}
-                  className="bg-white/5 border-white/10 h-12 pl-10 font-black italic text-xs"
-                />
-              </div>
-              <p className="text-[7px] text-gray-500 font-bold uppercase tracking-widest ml-1 italic">Soporta enlaces de YouTube y Spotify Tracks.</p>
+              <Label className="text-[8px] font-black uppercase tracking-widest text-gray-500">URL de YouTube o MP3</Label>
+              <Input 
+                placeholder="YouTube o enlace MP3..."
+                value={audioUrl} 
+                onChange={(e) => setAudioUrl(e.target.value)}
+                className="bg-white/5 border-white/10 h-12 font-black italic text-xs"
+              />
             </div>
 
             <div className="space-y-2">
-              <Label className="text-[8px] font-black uppercase tracking-widest text-gray-500">Segundo de Inicio (YT/MP3)</Label>
-              <div className="relative">
-                <Timer className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-secondary" />
-                <Input 
-                  type="number"
-                  placeholder="0"
-                  value={audioStartTime} 
-                  onChange={(e) => setAudioStartTime(parseInt(e.target.value) || 0)}
-                  className="bg-white/5 border-white/10 h-12 pl-10 font-black text-secondary"
-                />
-              </div>
+              <Label className="text-[8px] font-black uppercase tracking-widest text-gray-500">Segundo de Inicio</Label>
+              <Input 
+                type="number"
+                placeholder="0"
+                value={audioStartTime} 
+                onChange={(e) => setAudioStartTime(parseInt(e.target.value) || 0)}
+                className="bg-white/5 border-white/10 h-12 font-black text-secondary"
+              />
             </div>
           </div>
           <DialogFooter className="gap-2">
             <Button variant="ghost" className="rounded-xl font-black italic text-xs uppercase" onClick={() => setIsAudioModalOpen(false)}>CANCELAR</Button>
             <Button className="bg-primary text-white font-black italic text-xs uppercase rounded-xl px-8 neon-glow-primary" onClick={handleAssignAudio}>
-              <Music className="mr-2 h-4 w-4" /> ASIGNAR SONIDO
+              <Music className="mr-2 h-4 w-4" /> ASIGNAR
             </Button>
           </DialogFooter>
         </DialogContent>
