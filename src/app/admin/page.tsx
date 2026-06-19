@@ -107,6 +107,17 @@ function AdminContent() {
     localStorage.setItem('partyflow_inventory', JSON.stringify(newInventory));
   };
 
+  const handleCreateClick = () => {
+    setEditingProduct({
+      id: `prod-${Date.now()}`,
+      name: '',
+      price: 0,
+      category: 'Licores',
+      image: 'https://picsum.photos/seed/new-item/400/500'
+    });
+    setIsEditDialogOpen(true);
+  };
+
   const handleEditClick = (product: Product) => {
     setEditingProduct({ ...product });
     setIsEditDialogOpen(true);
@@ -114,10 +125,20 @@ function AdminContent() {
 
   const handleSaveEdit = () => {
     if (!editingProduct) return;
-    const updatedInventory = inventory.map(p => p.id === editingProduct.id ? editingProduct : p);
+    
+    const exists = inventory.find(p => p.id === editingProduct.id);
+    let updatedInventory: Product[];
+    
+    if (exists) {
+      updatedInventory = inventory.map(p => p.id === editingProduct.id ? editingProduct : p);
+      toast({ title: "PRODUCTO ACTUALIZADO", description: `${editingProduct.name} ha sido modificado.` });
+    } else {
+      updatedInventory = [...inventory, editingProduct];
+      toast({ title: "NUEVO PRODUCTO CREADO", description: `${editingProduct.name} añadido al arsenal.` });
+    }
+    
     handleSaveInventory(updatedInventory);
     setIsEditDialogOpen(false);
-    toast({ title: "PRODUCTO ACTUALIZADO", description: `${editingProduct.name} ha sido modificado.` });
   };
 
   const handleDeleteProduct = (id: string) => {
@@ -169,6 +190,8 @@ function AdminContent() {
   if (!isInitialized) return <div className="min-h-screen bg-black flex items-center justify-center"><Loader2 className="h-12 w-12 text-primary animate-spin" /></div>;
   if (!isLoggedIn || role !== 'admin') return null;
 
+  const isCreating = editingProduct && !inventory.some(p => p.id === editingProduct.id);
+
   return (
     <div className="min-h-screen bg-black text-white selection:bg-primary">
       <StaffNavigation />
@@ -186,7 +209,10 @@ function AdminContent() {
             <p className="text-gray-500 font-bold uppercase text-[8px] tracking-[0.3em] pl-1">PartyFlow OS v4.0</p>
           </div>
           {activeTab === 'catalog' && (
-            <Button className="bg-secondary text-black font-black italic tracking-tighter h-10 px-6 rounded-xl hover:scale-105 transition-all">
+            <Button 
+              className="bg-secondary text-black font-black italic tracking-tighter h-10 px-6 rounded-xl hover:scale-105 transition-all"
+              onClick={handleCreateClick}
+            >
               <Plus className="mr-2 h-4 w-4" /> NUEVO PRODUCTO
             </Button>
           )}
@@ -310,11 +336,13 @@ function AdminContent() {
         )}
       </main>
 
-      {/* MODAL DE EDICIÓN DE CATÁLOGO */}
+      {/* MODAL DE CREACIÓN/EDICIÓN DE CATÁLOGO */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="bg-[#0a0a0a] border-white/10 text-white rounded-[2rem] max-w-lg">
           <DialogHeader>
-            <DialogTitle className="text-xl font-black italic tracking-tighter uppercase">EDITAR PRODUCTO</DialogTitle>
+            <DialogTitle className="text-xl font-black italic tracking-tighter uppercase">
+              {isCreating ? 'NUEVO PRODUCTO' : 'EDITAR PRODUCTO'}
+            </DialogTitle>
           </DialogHeader>
           {editingProduct && (
             <div className="space-y-6 py-4">
@@ -334,6 +362,7 @@ function AdminContent() {
                 <div className="space-y-2">
                   <Label className="text-[8px] font-black uppercase tracking-widest text-gray-500">Nombre</Label>
                   <Input 
+                    placeholder="Ej. Tequila Patrón"
                     value={editingProduct.name} 
                     onChange={(e) => setEditingProduct({ ...editingProduct, name: e.target.value })}
                     className="bg-white/5 border-white/10 h-10 font-black italic text-xs"
@@ -342,6 +371,7 @@ function AdminContent() {
                 <div className="space-y-2">
                   <Label className="text-[8px] font-black uppercase tracking-widest text-gray-500">Categoría</Label>
                   <Input 
+                    placeholder="Ej. Tequila"
                     value={editingProduct.category} 
                     onChange={(e) => setEditingProduct({ ...editingProduct, category: e.target.value })}
                     className="bg-white/5 border-white/10 h-10 font-black italic text-xs"
@@ -366,7 +396,7 @@ function AdminContent() {
           <DialogFooter className="gap-2">
             <Button variant="ghost" className="rounded-xl font-black italic text-xs uppercase" onClick={() => setIsEditDialogOpen(false)}>CANCELAR</Button>
             <Button className="bg-primary text-white font-black italic text-xs uppercase rounded-xl px-8 neon-glow-primary" onClick={handleSaveEdit}>
-              <Save className="mr-2 h-4 w-4" /> GUARDAR CAMBIOS
+              <Save className="mr-2 h-4 w-4" /> {isCreating ? 'CREAR PRODUCTO' : 'GUARDAR CAMBIOS'}
             </Button>
           </DialogFooter>
         </DialogContent>
