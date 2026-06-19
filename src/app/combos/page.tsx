@@ -56,19 +56,28 @@ export default function CombosPage() {
   const [ytReady, setYtReady] = useState(false);
 
   useEffect(() => {
+    // 1. Cargar inventario personalizado del Admin si existe
     const saved = localStorage.getItem('partyflow_inventory');
     if (saved) {
       const allInventory = JSON.parse(saved) as Product[];
-      const savedCombos = allInventory.filter(p => p.category.toLowerCase().includes('combo') || p.id.startsWith('c'));
+      // Filtrar por combos o productos que tengan música configurada
+      const savedCombos = allInventory.filter(p => 
+        p.category.toLowerCase().includes('combo') || 
+        p.id.startsWith('c') || 
+        p.audioUrl || 
+        p.youtubeUrl
+      );
       if (savedCombos.length > 0) {
         setCombos(savedCombos);
       }
     }
 
+    // 2. Inicializar Audio estándar
     audioRef.current = new Audio();
     audioRef.current.loop = true;
     audioRef.current.volume = 0.6;
 
+    // 3. Inicializar API de YouTube
     const initYoutube = () => {
       if (ytPlayerRef.current) return;
       
@@ -90,7 +99,10 @@ export default function CombosPage() {
         },
         events: {
           onReady: () => setYtReady(true),
-          onError: () => setYtReady(false)
+          onError: (e: any) => {
+            console.error("YT Player Error:", e);
+            setYtReady(false);
+          }
         }
       });
     };
@@ -126,20 +138,28 @@ export default function CombosPage() {
     if (isMuted) return;
     setActiveComboId(combo.id);
 
+    // Priorizar YouTube si existe
     if (combo.youtubeUrl && ytPlayerRef.current && ytReady) {
       const videoId = getYoutubeId(combo.youtubeUrl);
       if (videoId) {
-        ytPlayerRef.current.loadVideoById({
-          videoId: videoId,
-          startSeconds: 0
-        });
-        ytPlayerRef.current.playVideo();
-        ytPlayerRef.current.setVolume(80);
+        try {
+          ytPlayerRef.current.loadVideoById({
+            videoId: videoId,
+            startSeconds: 0
+          });
+          ytPlayerRef.current.playVideo();
+          ytPlayerRef.current.setVolume(80);
+        } catch (e) {
+          console.error("Error playing YT:", e);
+        }
       }
     } 
+    // Si no hay YouTube, usar audio URL estándar
     else if (combo.audioUrl && audioRef.current) {
       audioRef.current.src = combo.audioUrl;
-      audioRef.current.play().catch(() => {});
+      audioRef.current.play().catch(() => {
+        // Fallback si el navegador bloquea
+      });
     }
   };
 
@@ -157,8 +177,8 @@ export default function CombosPage() {
   const handleAdd = (product: Product) => {
     addToCart(product);
     toast({
-      title: "¡Combo Añadido!",
-      description: `${product.name} listo para el cargamento.`,
+      title: "🔥 COMBO LISTO",
+      description: `${product.name} añadido a tu cargamento.`,
     });
   };
 
@@ -166,18 +186,19 @@ export default function CombosPage() {
     <div className="min-h-screen bg-black text-white selection:bg-primary">
       <Navigation />
       
+      {/* Reproductor oculto de YouTube */}
       <div id="hidden-yt-player" className="hidden"></div>
       
       <main className="container mx-auto px-4 py-12 space-y-12 max-w-7xl">
         <div className="flex flex-col items-center text-center space-y-4">
           <div className="flex items-center gap-4">
             <Badge className="bg-primary/20 text-primary border-primary/40 font-black neon-glow-primary uppercase text-[8px] px-4 py-1">
-              ESTRENOS VIP
+              ATMÓSFERA VIP ACTIVADA
             </Badge>
             <Button 
               variant="ghost" 
               size="icon" 
-              className="h-8 w-8 rounded-full bg-white/5 border border-white/10 text-gray-400 hover:text-primary"
+              className="h-8 w-8 rounded-full bg-white/5 border border-white/10 text-gray-400 hover:text-primary transition-all"
               onClick={() => {
                 const nextMute = !isMuted;
                 setIsMuted(nextMute);
@@ -191,16 +212,17 @@ export default function CombosPage() {
             </Button>
           </div>
           
-          <h1 className="text-4xl md:text-6xl font-black italic tracking-tighter leading-none">
-            COMBOS <span className="text-primary neon-text-primary uppercase">VIP</span>
+          <h1 className="text-4xl md:text-6xl font-black italic tracking-tighter leading-none uppercase">
+            COMBOS <span className="text-primary neon-text-primary">MUSICALES</span>
           </h1>
           <p className="text-gray-500 font-bold uppercase text-[9px] tracking-[0.3em] max-w-xl">
-            Sincronizados con YouTube y Beats exclusivos. Pasa el cursor y siente la vibra.
+            Sincronización instantánea con YouTube. Pasa el cursor y vive la rumba antes de pedir.
           </p>
+          
           {!ytReady && !isMuted && (
-            <p className="text-[7px] text-primary animate-pulse font-black uppercase tracking-widest">
-              Sincronizando reproductores satelitales...
-            </p>
+            <div className="flex items-center gap-2 text-[7px] text-primary font-black uppercase tracking-widest animate-pulse">
+              <Loader2 className="h-3 w-3 animate-spin" /> SINCRONIZANDO SATÉLITES DE AUDIO...
+            </div>
           )}
         </div>
 
@@ -212,7 +234,7 @@ export default function CombosPage() {
               onMouseLeave={handleMouseLeave}
               className={`group overflow-hidden rounded-[2rem] bg-white/[0.02] border transition-all duration-500 transform hover:-translate-y-2 ${
                 activeComboId === combo.id 
-                ? 'border-primary shadow-[0_0_30px_rgba(255,0,122,0.15)]' 
+                ? 'border-primary shadow-[0_0_40px_rgba(255,0,122,0.2)] scale-[1.02]' 
                 : 'border-white/5'
               }`}
             >
@@ -226,8 +248,8 @@ export default function CombosPage() {
                 
                 {activeComboId === combo.id && (
                   <div className="absolute inset-0 flex items-center justify-center animate-in fade-in zoom-in duration-300">
-                     <div className="p-3 bg-primary/20 backdrop-blur-md rounded-full border border-primary/40 animate-pulse">
-                        {combo.youtubeUrl ? <Youtube className="h-6 w-6 text-white" /> : <Music className="h-6 w-6 text-white" />}
+                     <div className="p-4 bg-primary/20 backdrop-blur-md rounded-full border border-primary/40 animate-pulse">
+                        {combo.youtubeUrl ? <Youtube className="h-8 w-8 text-white" /> : <Music className="h-8 w-8 text-white" />}
                      </div>
                   </div>
                 )}
@@ -248,23 +270,27 @@ export default function CombosPage() {
                 </div>
                 
                 <Button 
-                  className={`w-full h-10 rounded-xl font-black tracking-widest transition-all text-[10px] italic ${
+                  className={`w-full h-11 rounded-xl font-black tracking-widest transition-all text-[10px] italic ${
                     activeComboId === combo.id 
                     ? 'bg-primary text-white neon-glow-primary' 
                     : 'bg-white/5 text-white hover:bg-white/10'
                   }`}
                   onClick={() => handleAdd(combo)}
                 >
-                  <Zap className="mr-2 h-3.5 w-3.5 fill-current" /> AGREGAR AL CARRO
+                  <Zap className="mr-2 h-4 w-4 fill-current" /> PEDIR AHORA
                 </Button>
 
                 {activeComboId === combo.id && (
-                   <div className="pt-2 flex justify-center gap-0.5 h-3">
-                      {[0, 1, 2, 3].map(i => (
+                   <div className="pt-2 flex justify-center gap-0.5 h-4">
+                      {[0, 1, 2, 3, 4, 5].map(i => (
                         <div 
                           key={i} 
                           className="w-1 bg-primary animate-pulse" 
-                          style={{ height: `${20 + Math.random() * 80}%`, animationDelay: `${i * 0.1}s` }} 
+                          style={{ 
+                            height: `${30 + Math.random() * 70}%`, 
+                            animationDelay: `${i * 0.1}s`,
+                            boxShadow: '0 0 10px hsl(var(--primary))'
+                          }} 
                         />
                       ))}
                    </div>
@@ -274,11 +300,17 @@ export default function CombosPage() {
           ))}
         </div>
 
-        <div className="bg-white/[0.02] border border-white/10 rounded-[2.5rem] p-8 text-center space-y-4 max-w-2xl mx-auto">
-           <h2 className="text-2xl font-black italic uppercase tracking-tighter">¿LISTO PARA LA TUSA?</h2>
-           <p className="text-gray-500 font-bold text-[8px] uppercase tracking-[0.2em]">Sube el volumen. La rumba se activa al pasar el mouse por los combos VIP.</p>
-           <Button variant="outline" className="border-primary text-primary hover:bg-primary/10 font-black h-10 px-8 rounded-full text-[9px] tracking-widest italic neon-glow-primary">
-              CHAT DE DESPECHO 24/7
+        <div className="bg-white/[0.02] border border-white/10 rounded-[2.5rem] p-10 text-center space-y-6 max-w-2xl mx-auto glass-morphism">
+           <Music className="h-10 w-10 text-primary mx-auto opacity-50" />
+           <div className="space-y-2">
+             <h2 className="text-2xl font-black italic uppercase tracking-tighter">¿Sientes la vibra?</h2>
+             <p className="text-gray-500 font-bold text-[8px] uppercase tracking-[0.2em] leading-relaxed">
+               Cada combo tiene una identidad sonora única. <br />
+               Si no escuchas nada, asegúrate de haber interactuado con la página primero.
+             </p>
+           </div>
+           <Button variant="outline" className="border-primary text-primary hover:bg-primary/10 font-black h-12 px-10 rounded-full text-[9px] tracking-widest italic neon-glow-primary">
+              PEDIR RECOMENDACIÓN IA
            </Button>
         </div>
       </main>
