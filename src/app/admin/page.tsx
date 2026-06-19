@@ -45,6 +45,22 @@ const INITIAL_INVENTORY: Product[] = [
   { id: 'c1', name: 'Combo Pre-Copeo VIP', price: 480000, category: 'Combos', image: 'https://picsum.photos/seed/combo1/400/500', audioUrl: 'https://cdn.pixabay.com/audio/2022/03/10/audio_c35078173b.mp3', startTime: 0 },
 ];
 
+const CATEGORIES_OPTIONS = [
+  'Whisky',
+  'Tequila',
+  'Vodka',
+  'Ron',
+  'Aguardiente',
+  'Cerveza',
+  'Ginebra',
+  'Vino',
+  'Champaña',
+  'Combos',
+  'Combos VIP',
+  'Mezcladores',
+  'Snacks y Hielo'
+];
+
 function AdminContent() {
   const { isLoggedIn, role, isInitialized } = useUserRole();
   const router = useRouter();
@@ -57,7 +73,6 @@ function AdminContent() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isAudioModalOpen, setIsAudioModalOpen] = useState(false);
   
-  // State para el modal de asignación de audio
   const [selectedProductId, setSelectedProductId] = useState<string>("");
   const [audioUrl, setAudioUrl] = useState("");
   const [audioStartTime, setAudioStartTime] = useState(0);
@@ -122,7 +137,7 @@ function AdminContent() {
       id: `prod-${Date.now()}`,
       name: '',
       price: 0,
-      category: isCombo ? 'Combos' : 'Licores',
+      category: isCombo ? 'Combos' : 'Whisky',
       image: 'https://picsum.photos/seed/new-item/400/500'
     });
     setIsEditDialogOpen(true);
@@ -431,12 +446,21 @@ function AdminContent() {
                 </div>
                 <div className="space-y-2">
                   <Label className="text-[8px] font-black uppercase tracking-widest text-gray-500">Categoría</Label>
-                  <Input 
-                    placeholder="Ej. Tequila o Combo"
+                  <Select 
                     value={editingProduct.category} 
-                    onChange={(e) => setEditingProduct({ ...editingProduct, category: e.target.value })}
-                    className="bg-white/5 border-white/10 h-10 font-black italic text-xs"
-                  />
+                    onValueChange={(val) => setEditingProduct({ ...editingProduct, category: val })}
+                  >
+                    <SelectTrigger className="bg-white/5 border-white/10 h-10 font-black italic text-xs uppercase text-white">
+                      <SelectValue placeholder="Categoría" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-[#0a0a0a] border-white/10 text-white">
+                      {CATEGORIES_OPTIONS.map((cat) => (
+                        <SelectItem key={cat} value={cat} className="font-black italic text-xs uppercase focus:bg-primary/20">
+                          {cat}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
