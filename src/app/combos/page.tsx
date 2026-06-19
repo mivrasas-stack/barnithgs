@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { useCart, Product } from '@/lib/store';
 import { formatCurrency } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
-import { Flame, Zap, Music, Volume2, VolumeX, Youtube, Loader2 } from 'lucide-react';
+import { Flame, Zap, Music, Volume2, VolumeX, Youtube, Loader2, Disc } from 'lucide-react';
 
 const DEFAULT_COMBOS: Product[] = [
   { 
@@ -49,7 +49,8 @@ export default function CombosPage() {
         p.category.toLowerCase().includes('combo') || 
         p.id.startsWith('c') || 
         p.audioUrl || 
-        p.youtubeUrl
+        p.youtubeUrl ||
+        p.spotifyUrl
       );
       if (savedCombos.length > 0) {
         setCombos(savedCombos);
@@ -81,10 +82,6 @@ export default function CombosPage() {
         },
         events: {
           onReady: () => setYtReady(true),
-          onError: (e: any) => {
-            console.error("YT Player Error:", e);
-            setYtReady(false);
-          }
         }
       });
     };
@@ -116,6 +113,12 @@ export default function CombosPage() {
     return (match && match[2].length === 11) ? match[2] : null;
   };
 
+  const getSpotifyId = (url: string) => {
+    const regExp = /track\/([a-zA-Z0-9]+)/;
+    const match = url.match(regExp);
+    return match ? match[1] : null;
+  };
+
   const handleMouseEnter = (combo: Product) => {
     if (isMuted) return;
     setActiveComboId(combo.id);
@@ -129,10 +132,7 @@ export default function CombosPage() {
             startSeconds: combo.startTime || 0
           });
           ytPlayerRef.current.playVideo();
-          ytPlayerRef.current.setVolume(80);
-        } catch (e) {
-          console.error("Error playing YT:", e);
-        }
+        } catch (e) {}
       }
     } 
     else if (combo.audioUrl && audioRef.current) {
@@ -175,68 +175,80 @@ export default function CombosPage() {
             COMBOS <span className="text-primary neon-text-primary">MUSICALES</span>
           </h1>
           <p className="text-gray-500 font-bold uppercase text-[9px] tracking-[0.3em] max-w-xl">
-            Cada combo inicia en el segundo exacto configurado. Pasa el cursor y siente la vibra.
+            Soportamos YouTube, Spotify y MP3. Pasa el cursor y siente la vibra.
           </p>
-          
-          {!ytReady && !isMuted && (
-            <div className="flex items-center gap-2 text-[7px] text-primary font-black uppercase tracking-widest animate-pulse">
-              <Loader2 className="h-3 w-3 animate-spin" /> SINCRONIZANDO FRAGMENTOS MUSICALES...
-            </div>
-          )}
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {combos.map((combo) => (
-            <Card 
-              key={combo.id} 
-              onMouseEnter={() => handleMouseEnter(combo)}
-              onMouseLeave={handleMouseLeave}
-              className={`group overflow-hidden rounded-[2rem] bg-white/[0.02] border transition-all duration-500 transform hover:-translate-y-2 ${
-                activeComboId === combo.id 
-                ? 'border-primary shadow-[0_0_40px_rgba(255,0,122,0.2)] scale-[1.02]' 
-                : 'border-white/5'
-              }`}
-            >
-              <div className="relative h-64 overflow-hidden">
-                <img 
-                  src={combo.image} 
-                  alt={combo.name}
-                  className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110 grayscale group-hover:grayscale-0 brightness-75 group-hover:brightness-100"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent" />
-                
-                {activeComboId === combo.id && (
-                  <div className="absolute inset-0 flex items-center justify-center animate-in fade-in zoom-in duration-300">
-                     <div className="p-4 bg-primary/20 backdrop-blur-md rounded-full border border-primary/40 animate-pulse">
-                        {combo.youtubeUrl ? <Youtube className="h-8 w-8 text-white" /> : <Music className="h-8 w-8 text-white" />}
-                     </div>
-                  </div>
-                )}
-              </div>
-              
-              <CardContent className="p-6 space-y-4">
-                <div className="space-y-1">
-                  <h3 className="text-xs font-black italic tracking-tighter uppercase truncate group-hover:text-primary transition-colors">
-                    {combo.name}
-                  </h3>
-                  <p className="text-xl font-black text-secondary neon-text-secondary">
-                    {formatCurrency(combo.price)}
-                  </p>
+          {combos.map((combo) => {
+            const spotifyId = combo.spotifyUrl ? getSpotifyId(combo.spotifyUrl) : null;
+            
+            return (
+              <Card 
+                key={combo.id} 
+                onMouseEnter={() => handleMouseEnter(combo)}
+                onMouseLeave={handleMouseLeave}
+                className={`group overflow-hidden rounded-[2rem] bg-white/[0.02] border transition-all duration-500 transform hover:-translate-y-2 ${
+                  activeComboId === combo.id 
+                  ? 'border-primary shadow-[0_0_40px_rgba(255,0,122,0.2)] scale-[1.02]' 
+                  : 'border-white/5'
+                }`}
+              >
+                <div className="relative h-64 overflow-hidden">
+                  <img 
+                    src={combo.image} 
+                    alt={combo.name}
+                    className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110 grayscale group-hover:grayscale-0 brightness-75 group-hover:brightness-100"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent" />
+                  
+                  {activeComboId === combo.id && !spotifyId && (
+                    <div className="absolute inset-0 flex items-center justify-center animate-in fade-in zoom-in duration-300">
+                       <div className="p-4 bg-primary/20 backdrop-blur-md rounded-full border border-primary/40 animate-pulse">
+                          {combo.youtubeUrl ? <Youtube className="h-8 w-8 text-white" /> : <Music className="h-8 w-8 text-white" />}
+                       </div>
+                    </div>
+                  )}
+
+                  {spotifyId && (
+                    <div className="absolute inset-0 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+                      <iframe 
+                        src={`https://open.spotify.com/embed/track/${spotifyId}?utm_source=generator&theme=0`} 
+                        width="100%" 
+                        height="80" 
+                        frameBorder="0" 
+                        allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" 
+                        loading="lazy"
+                        className="rounded-xl border border-secondary/20 shadow-lg"
+                      ></iframe>
+                    </div>
+                  )}
                 </div>
                 
-                <Button 
-                  className={`w-full h-11 rounded-xl font-black tracking-widest transition-all text-[10px] italic ${
-                    activeComboId === combo.id 
-                    ? 'bg-primary text-white neon-glow-primary' 
-                    : 'bg-white/5 text-white hover:bg-white/10'
-                  }`}
-                  onClick={() => handleAdd(combo)}
-                >
-                  <Zap className="mr-2 h-4 w-4 fill-current" /> PEDIR AHORA
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
+                <CardContent className="p-6 space-y-4">
+                  <div className="space-y-1">
+                    <h3 className="text-xs font-black italic tracking-tighter uppercase truncate group-hover:text-primary transition-colors">
+                      {combo.name}
+                    </h3>
+                    <p className="text-xl font-black text-secondary neon-text-secondary">
+                      {formatCurrency(combo.price)}
+                    </p>
+                  </div>
+                  
+                  <Button 
+                    className={`w-full h-11 rounded-xl font-black tracking-widest transition-all text-[10px] italic ${
+                      activeComboId === combo.id 
+                      ? 'bg-primary text-white neon-glow-primary' 
+                      : 'bg-white/5 text-white hover:bg-white/10'
+                    }`}
+                    onClick={() => handleAdd(combo)}
+                  >
+                    <Zap className="mr-2 h-4 w-4 fill-current" /> PEDIR AHORA
+                  </Button>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       </main>
     </div>

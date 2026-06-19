@@ -33,7 +33,8 @@ import {
   Plus,
   Image as ImageIcon,
   Upload,
-  Settings2
+  Settings2,
+  Disc
 } from 'lucide-react';
 
 const INITIAL_INVENTORY: Product[] = [
@@ -162,12 +163,15 @@ function AdminContent() {
     }
 
     const isYt = audioUrl.includes('youtube.com') || audioUrl.includes('youtu.be');
+    const isSpotify = audioUrl.includes('spotify.com');
+    
     const updated = inventory.map(p => 
       p.id === selectedProductId 
         ? { 
             ...p, 
             youtubeUrl: isYt ? audioUrl : undefined, 
-            audioUrl: !isYt ? audioUrl : undefined,
+            spotifyUrl: isSpotify ? audioUrl : undefined,
+            audioUrl: (!isYt && !isSpotify) ? audioUrl : undefined,
             startTime: audioStartTime
           } 
         : p
@@ -178,7 +182,7 @@ function AdminContent() {
     setSelectedProductId("");
     setAudioUrl("");
     setAudioStartTime(0);
-    toast({ title: "AUDIO ASIGNADO", description: "La rumba ya tiene banda sonora." });
+    toast({ title: "MÚSICA ASIGNADA", description: "Configuración guardada correctamente." });
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -218,6 +222,8 @@ function AdminContent() {
       audioRef.current.src = item.audioUrl;
       audioRef.current.currentTime = item.startTime || 0;
       audioRef.current.play().catch(() => {});
+    } else if (item.spotifyUrl) {
+      toast({ title: "INFO SPOTIFY", description: "Spotify requiere interacción manual en el widget." });
     }
   };
 
@@ -256,7 +262,7 @@ function AdminContent() {
               className="bg-primary text-white font-black italic tracking-tighter h-10 px-6 rounded-xl hover:scale-105 transition-all neon-glow-primary"
               onClick={() => setIsAudioModalOpen(true)}
             >
-              <Music className="mr-2 h-4 w-4" /> ASIGNAR MÚSICA A COMBO
+              <Music className="mr-2 h-4 w-4" /> CONFIGURAR MÚSICA
             </Button>
           )}
         </div>
@@ -328,28 +334,45 @@ function AdminContent() {
 
         {activeTab === 'audio' && (
           <div className="space-y-6">
+             <div className="bg-primary/5 border border-primary/20 rounded-2xl p-6 mb-8">
+               <h3 className="text-primary font-black italic uppercase text-sm mb-2 flex items-center gap-2">
+                 <Disc className="h-5 w-5 animate-spin-slow" /> ¿CÓMO FUNCIONA EL AUDIO?
+               </h3>
+               <ul className="text-[10px] text-gray-400 font-bold uppercase space-y-2 tracking-widest">
+                 <li>• <span className="text-white">YouTube:</span> Ideal para rumbas, controlamos el inicio exacto.</li>
+                 <li>• <span className="text-white">Spotify:</span> Muestra un widget interactivo (requiere clic del usuario).</li>
+                 <li>• <span className="text-white">Directo (MP3):</span> Carga instantánea para efectos rápidos.</li>
+               </ul>
+             </div>
+
             <Card className="bg-white/[0.02] border border-white/5 rounded-[2rem] overflow-hidden">
               <Table>
                 <TableHeader className="bg-white/5">
                   <TableRow className="border-white/5">
                     <TableHead className="text-[8px] font-black uppercase p-4">PRODUCTO / COMBO</TableHead>
-                    <TableHead className="text-[8px] font-black uppercase p-4">URL (YOUTUBE O MP3)</TableHead>
+                    <TableHead className="text-[8px] font-black uppercase p-4">URL (YT, SPOTIFY O MP3)</TableHead>
                     <TableHead className="text-[8px] font-black uppercase p-4">INICIO (SEG)</TableHead>
                     <TableHead className="text-right p-4"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {inventory.filter(i => i.category.toLowerCase().includes('combo') || i.audioUrl || i.youtubeUrl).map((item) => (
+                  {inventory.filter(i => i.category.toLowerCase().includes('combo') || i.audioUrl || i.youtubeUrl || i.spotifyUrl).map((item) => (
                     <TableRow key={item.id} className="border-white/5 hover:bg-white/[0.02]">
                       <TableCell className="p-4 font-black italic text-xs uppercase">{item.name}</TableCell>
                       <TableCell className="p-4">
                         <Input 
                           className="bg-white/5 border-white/10 h-8 text-[10px] font-mono" 
-                          value={item.youtubeUrl || item.audioUrl || ''} 
+                          value={item.youtubeUrl || item.audioUrl || item.spotifyUrl || ''} 
                           onChange={(e) => {
                             const val = e.target.value;
                             const isYt = val.includes('youtube.com') || val.includes('youtu.be');
-                            const updated = inventory.map(p => p.id === item.id ? { ...p, youtubeUrl: isYt ? val : undefined, audioUrl: isYt ? undefined : val } : p);
+                            const isSpotify = val.includes('spotify.com');
+                            const updated = inventory.map(p => p.id === item.id ? { 
+                              ...p, 
+                              youtubeUrl: isYt ? val : undefined, 
+                              spotifyUrl: isSpotify ? val : undefined,
+                              audioUrl: (!isYt && !isSpotify) ? val : undefined 
+                            } : p);
                             handleSaveInventory(updated);
                           }}
                         />
@@ -455,18 +478,18 @@ function AdminContent() {
         <DialogContent className="bg-[#0a0a0a] border-white/10 text-white rounded-[2rem] max-w-lg">
           <DialogHeader>
             <DialogTitle className="text-xl font-black italic tracking-tighter uppercase flex items-center gap-2">
-              <Settings2 className="h-5 w-5 text-primary" /> CONFIGURAR AUDIO DE COMBO
+              <Settings2 className="h-5 w-5 text-primary" /> CONFIGURAR AUDIO DE PRODUCTO
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-6 py-4">
             <div className="space-y-2">
-              <Label className="text-[8px] font-black uppercase tracking-widest text-gray-500">Seleccionar Combo</Label>
+              <Label className="text-[8px] font-black uppercase tracking-widest text-gray-500">Seleccionar Ítem</Label>
               <Select onValueChange={setSelectedProductId} value={selectedProductId}>
                 <SelectTrigger className="bg-white/5 border-white/10 h-12 font-black italic text-xs uppercase">
-                  <SelectValue placeholder="ELIGE UN COMBO" />
+                  <SelectValue placeholder="ELIGE UN PRODUCTO" />
                 </SelectTrigger>
                 <SelectContent className="bg-[#0a0a0a] border-white/10 text-white">
-                  {combos.map((c) => (
+                  {inventory.map((c) => (
                     <SelectItem key={c.id} value={c.id} className="font-black italic text-xs uppercase focus:bg-primary/20">
                       {c.name}
                     </SelectItem>
@@ -476,21 +499,21 @@ function AdminContent() {
             </div>
 
             <div className="space-y-2">
-              <Label className="text-[8px] font-black uppercase tracking-widest text-gray-500">URL de YouTube o MP3</Label>
+              <Label className="text-[8px] font-black uppercase tracking-widest text-gray-500">URL de YT, Spotify o MP3</Label>
               <div className="relative">
-                <Youtube className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-primary" />
+                <Music className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-primary" />
                 <Input 
-                  placeholder="https://www.youtube.com/watch?v=..."
+                  placeholder="YouTube, Spotify o enlace MP3..."
                   value={audioUrl} 
                   onChange={(e) => setAudioUrl(e.target.value)}
                   className="bg-white/5 border-white/10 h-12 pl-10 font-black italic text-xs"
                 />
               </div>
-              <p className="text-[7px] text-gray-500 font-bold uppercase tracking-widest ml-1 italic">Pega un enlace de YouTube o una URL de audio directa.</p>
+              <p className="text-[7px] text-gray-500 font-bold uppercase tracking-widest ml-1 italic">Soporta enlaces de YouTube y Spotify Tracks.</p>
             </div>
 
             <div className="space-y-2">
-              <Label className="text-[8px] font-black uppercase tracking-widest text-gray-500">Segundo de Inicio</Label>
+              <Label className="text-[8px] font-black uppercase tracking-widest text-gray-500">Segundo de Inicio (YT/MP3)</Label>
               <div className="relative">
                 <Timer className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-secondary" />
                 <Input 

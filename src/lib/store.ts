@@ -11,6 +11,7 @@ export type Product = {
   image: string;
   audioUrl?: string; 
   youtubeUrl?: string;
+  spotifyUrl?: string; // Nuevo: Soporte para Spotify
   startTime?: number; // Segundo de inicio para el audio
 };
 
