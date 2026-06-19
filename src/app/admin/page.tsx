@@ -12,6 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { formatCurrency } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
 import { 
@@ -31,7 +32,8 @@ import {
   Package,
   Plus,
   Image as ImageIcon,
-  Upload
+  Upload,
+  Settings2
 } from 'lucide-react';
 
 const INITIAL_INVENTORY: Product[] = [
@@ -51,7 +53,13 @@ function AdminContent() {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [previewingId, setPreviewingId] = useState<string | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isAudioModalOpen, setIsAudioModalOpen] = useState(false);
   
+  // State para el modal de asignación de audio
+  const [selectedProductId, setSelectedProductId] = useState<string>("");
+  const [audioUrl, setAudioUrl] = useState("");
+  const [audioStartTime, setAudioStartTime] = useState(0);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const ytPlayerRef = useRef<any>(null);
   const [ytReady, setYtReady] = useState(false);
@@ -147,6 +155,32 @@ function AdminContent() {
     toast({ title: "PRODUCTO ELIMINADO", variant: "destructive" });
   };
 
+  const handleAssignAudio = () => {
+    if (!selectedProductId) {
+      toast({ title: "ERROR", description: "Selecciona un producto primero.", variant: "destructive" });
+      return;
+    }
+
+    const isYt = audioUrl.includes('youtube.com') || audioUrl.includes('youtu.be');
+    const updated = inventory.map(p => 
+      p.id === selectedProductId 
+        ? { 
+            ...p, 
+            youtubeUrl: isYt ? audioUrl : undefined, 
+            audioUrl: !isYt ? audioUrl : undefined,
+            startTime: audioStartTime
+          } 
+        : p
+    );
+
+    handleSaveInventory(updated);
+    setIsAudioModalOpen(false);
+    setSelectedProductId("");
+    setAudioUrl("");
+    setAudioStartTime(0);
+    toast({ title: "AUDIO ASIGNADO", description: "La rumba ya tiene banda sonora." });
+  };
+
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file && editingProduct) {
@@ -191,6 +225,7 @@ function AdminContent() {
   if (!isLoggedIn || role !== 'admin') return null;
 
   const isCreating = editingProduct && !inventory.some(p => p.id === editingProduct.id);
+  const combos = inventory.filter(p => p.category.toLowerCase().includes('combo'));
 
   return (
     <div className="min-h-screen bg-black text-white selection:bg-primary">
@@ -214,6 +249,14 @@ function AdminContent() {
               onClick={handleCreateClick}
             >
               <Plus className="mr-2 h-4 w-4" /> NUEVO PRODUCTO
+            </Button>
+          )}
+          {activeTab === 'audio' && (
+            <Button 
+              className="bg-primary text-white font-black italic tracking-tighter h-10 px-6 rounded-xl hover:scale-105 transition-all neon-glow-primary"
+              onClick={() => setIsAudioModalOpen(true)}
+            >
+              <Music className="mr-2 h-4 w-4" /> ASIGNAR MÚSICA A COMBO
             </Button>
           )}
         </div>
@@ -302,8 +345,8 @@ function AdminContent() {
                       <TableCell className="p-4">
                         <Input 
                           className="bg-white/5 border-white/10 h-8 text-[10px] font-mono" 
-                          defaultValue={item.youtubeUrl || item.audioUrl || ''} 
-                          onBlur={(e) => {
+                          value={item.youtubeUrl || item.audioUrl || ''} 
+                          onChange={(e) => {
                             const val = e.target.value;
                             const isYt = val.includes('youtube.com') || val.includes('youtu.be');
                             const updated = inventory.map(p => p.id === item.id ? { ...p, youtubeUrl: isYt ? val : undefined, audioUrl: isYt ? undefined : val } : p);
@@ -315,8 +358,8 @@ function AdminContent() {
                         <Input 
                           type="number"
                           className="bg-white/5 border-white/10 h-8 w-20 text-[10px] text-center" 
-                          defaultValue={item.startTime || 0}
-                          onBlur={(e) => {
+                          value={item.startTime || 0}
+                          onChange={(e) => {
                             const updated = inventory.map(p => p.id === item.id ? { ...p, startTime: parseInt(e.target.value) || 0 } : p);
                             handleSaveInventory(updated);
                           }}
@@ -402,6 +445,68 @@ function AdminContent() {
             <Button variant="ghost" className="rounded-xl font-black italic text-xs uppercase" onClick={() => setIsEditDialogOpen(false)}>CANCELAR</Button>
             <Button className="bg-primary text-white font-black italic text-xs uppercase rounded-xl px-8 neon-glow-primary" onClick={handleSaveEdit}>
               <Save className="mr-2 h-4 w-4" /> {isCreating ? 'CREAR PRODUCTO' : 'GUARDAR CAMBIOS'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* MODAL DE ASIGNACIÓN DE AUDIO */}
+      <Dialog open={isAudioModalOpen} onOpenChange={setIsAudioModalOpen}>
+        <DialogContent className="bg-[#0a0a0a] border-white/10 text-white rounded-[2rem] max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-black italic tracking-tighter uppercase flex items-center gap-2">
+              <Settings2 className="h-5 w-5 text-primary" /> CONFIGURAR AUDIO DE COMBO
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-6 py-4">
+            <div className="space-y-2">
+              <Label className="text-[8px] font-black uppercase tracking-widest text-gray-500">Seleccionar Combo</Label>
+              <Select onValueChange={setSelectedProductId} value={selectedProductId}>
+                <SelectTrigger className="bg-white/5 border-white/10 h-12 font-black italic text-xs uppercase">
+                  <SelectValue placeholder="ELIGE UN COMBO" />
+                </SelectTrigger>
+                <SelectContent className="bg-[#0a0a0a] border-white/10 text-white">
+                  {combos.map((c) => (
+                    <SelectItem key={c.id} value={c.id} className="font-black italic text-xs uppercase focus:bg-primary/20">
+                      {c.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-[8px] font-black uppercase tracking-widest text-gray-500">URL de YouTube o MP3</Label>
+              <div className="relative">
+                <Youtube className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-primary" />
+                <Input 
+                  placeholder="https://www.youtube.com/watch?v=..."
+                  value={audioUrl} 
+                  onChange={(e) => setAudioUrl(e.target.value)}
+                  className="bg-white/5 border-white/10 h-12 pl-10 font-black italic text-xs"
+                />
+              </div>
+              <p className="text-[7px] text-gray-500 font-bold uppercase tracking-widest ml-1 italic">Pega un enlace de YouTube o una URL de audio directa.</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-[8px] font-black uppercase tracking-widest text-gray-500">Segundo de Inicio</Label>
+              <div className="relative">
+                <Timer className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-secondary" />
+                <Input 
+                  type="number"
+                  placeholder="0"
+                  value={audioStartTime} 
+                  onChange={(e) => setAudioStartTime(parseInt(e.target.value) || 0)}
+                  className="bg-white/5 border-white/10 h-12 pl-10 font-black text-secondary"
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="ghost" className="rounded-xl font-black italic text-xs uppercase" onClick={() => setIsAudioModalOpen(false)}>CANCELAR</Button>
+            <Button className="bg-primary text-white font-black italic text-xs uppercase rounded-xl px-8 neon-glow-primary" onClick={handleAssignAudio}>
+              <Music className="mr-2 h-4 w-4" /> ASIGNAR SONIDO
             </Button>
           </DialogFooter>
         </DialogContent>
