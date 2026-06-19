@@ -10,6 +10,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { formatCurrency } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
 import { 
@@ -19,12 +21,17 @@ import {
   DollarSign,
   Clock,
   Music,
-  Upload,
-  Play,
-  Youtube,
+  Edit3,
+  Trash2,
   Save,
+  Play,
   Pause,
-  Timer
+  Youtube,
+  Timer,
+  Package,
+  Plus,
+  Image as ImageIcon,
+  Upload
 } from 'lucide-react';
 
 const INITIAL_INVENTORY: Product[] = [
@@ -39,9 +46,13 @@ function AdminContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const activeTab = searchParams.get('tab') || 'dashboard';
-  const [inventory, setInventory] = useState<Product[]>([]);
-  const [previewingId, setPreviewingId] = useState<string | null>(null);
   
+  const [inventory, setInventory] = useState<Product[]>([]);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [previewingId, setPreviewingId] = useState<string | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const ytPlayerRef = useRef<any>(null);
   const [ytReady, setYtReady] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -58,6 +69,7 @@ function AdminContent() {
       setInventory(JSON.parse(saved));
     } else {
       setInventory(INITIAL_INVENTORY);
+      localStorage.setItem('partyflow_inventory', JSON.stringify(INITIAL_INVENTORY));
     }
 
     audioRef.current = new Audio();
@@ -90,39 +102,45 @@ function AdminContent() {
     };
   }, []);
 
+  const handleSaveInventory = (newInventory: Product[]) => {
+    setInventory(newInventory);
+    localStorage.setItem('partyflow_inventory', JSON.stringify(newInventory));
+  };
+
+  const handleEditClick = (product: Product) => {
+    setEditingProduct({ ...product });
+    setIsEditDialogOpen(true);
+  };
+
+  const handleSaveEdit = () => {
+    if (!editingProduct) return;
+    const updatedInventory = inventory.map(p => p.id === editingProduct.id ? editingProduct : p);
+    handleSaveInventory(updatedInventory);
+    setIsEditDialogOpen(false);
+    toast({ title: "PRODUCTO ACTUALIZADO", description: `${editingProduct.name} ha sido modificado.` });
+  };
+
+  const handleDeleteProduct = (id: string) => {
+    const updatedInventory = inventory.filter(p => p.id !== id);
+    handleSaveInventory(updatedInventory);
+    toast({ title: "PRODUCTO ELIMINADO", variant: "destructive" });
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && editingProduct) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setEditingProduct({ ...editingProduct, image: reader.result as string });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const getYoutubeId = (url: string) => {
     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
     const match = url.match(regExp);
     return (match && match[2].length === 11) ? match[2] : null;
-  };
-
-  const handleUpdateAudio = (id: string, url: string) => {
-    setInventory(prev => prev.map(item => {
-      if (item.id === id) {
-        if (url.includes('youtube.com') || url.includes('youtu.be')) {
-          return { ...item, youtubeUrl: url, audioUrl: undefined };
-        }
-        return { ...item, audioUrl: url, youtubeUrl: undefined };
-      }
-      return item;
-    }));
-  };
-
-  const handleUpdateStartTime = (id: string, seconds: number) => {
-    setInventory(prev => prev.map(item => {
-      if (item.id === id) {
-        return { ...item, startTime: seconds };
-      }
-      return item;
-    }));
-  };
-
-  const handleSaveAudio = () => {
-    localStorage.setItem('partyflow_inventory', JSON.stringify(inventory));
-    toast({
-      title: "🚀 SINCRONIZACIÓN EXITOSA",
-      description: "Los enlaces y fragmentos de tiempo han sido vinculados al catálogo.",
-    });
   };
 
   const togglePreview = (item: Product) => {
@@ -138,10 +156,7 @@ function AdminContent() {
     if (item.youtubeUrl && ytPlayerRef.current && ytReady) {
       const vid = getYoutubeId(item.youtubeUrl);
       if (vid) {
-        ytPlayerRef.current.loadVideoById({
-          videoId: vid,
-          startSeconds: item.startTime || 0
-        });
+        ytPlayerRef.current.loadVideoById({ videoId: vid, startSeconds: item.startTime || 0 });
         ytPlayerRef.current.playVideo();
       }
     } else if (item.audioUrl && audioRef.current) {
@@ -149,11 +164,6 @@ function AdminContent() {
       audioRef.current.currentTime = item.startTime || 0;
       audioRef.current.play().catch(() => {});
     }
-
-    toast({
-      title: "🎧 VISTA PREVIA ACTIVA",
-      description: `Reproduciendo desde el segundo: ${item.startTime || 0}`,
-    });
   };
 
   if (!isInitialized) return <div className="min-h-screen bg-black flex items-center justify-center"><Loader2 className="h-12 w-12 text-primary animate-spin" /></div>;
@@ -163,137 +173,204 @@ function AdminContent() {
     <div className="min-h-screen bg-black text-white selection:bg-primary">
       <StaffNavigation />
       <div id="admin-yt-player" className="hidden"></div>
+      
       <main className="md:pl-16 container mx-auto px-6 py-6 max-w-[1200px] space-y-8 animate-in fade-in duration-500">
         
         <div className="flex justify-between items-end border-b border-white/5 pb-4">
           <div className="space-y-1">
             <h1 className="text-3xl font-black italic tracking-tighter uppercase leading-none">
               {activeTab === 'dashboard' && <><span className="text-primary neon-text-primary">COMMAND</span> CENTER</>}
-              {activeTab === 'inventory' && <><span className="text-secondary neon-text-secondary">STOCK</span> CONTROL</>}
+              {activeTab === 'catalog' && <><span className="text-secondary neon-text-secondary">CATALOG</span> CONTROL</>}
               {activeTab === 'audio' && <><span className="text-primary neon-text-primary">AUDIO</span> STUDIO</>}
             </h1>
             <p className="text-gray-500 font-bold uppercase text-[8px] tracking-[0.3em] pl-1">PartyFlow OS v4.0</p>
           </div>
+          {activeTab === 'catalog' && (
+            <Button className="bg-secondary text-black font-black italic tracking-tighter h-10 px-6 rounded-xl hover:scale-105 transition-all">
+              <Plus className="mr-2 h-4 w-4" /> NUEVO PRODUCTO
+            </Button>
+          )}
         </div>
 
         {activeTab === 'dashboard' && (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {[
-                { label: 'Ingresos Hoy', value: formatCurrency(12450000), trend: '+14%', icon: DollarSign, color: 'text-primary' },
-                { label: 'Ventas Live', value: '142', trend: 'Pico: 00:00', icon: Zap, color: 'text-secondary' },
-                { label: 'Entregas', value: '18 min', trend: '-2 min', icon: Clock, color: 'text-green-400' },
-                { label: 'Staff Online', value: '8', trend: 'Activos', icon: Users, color: 'text-accent' },
-              ].map((kpi, i) => (
-                <div key={i} className="bg-white/[0.02] border border-white/5 p-4 rounded-2xl space-y-2 hover:border-white/10 transition-all">
-                  <div className="flex justify-between">
-                    <kpi.icon className={`h-4 w-4 ${kpi.color}`} />
-                    <span className="text-[8px] font-black text-gray-600 uppercase">{kpi.trend}</span>
-                  </div>
-                  <div>
-                    <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest">{kpi.label}</p>
-                    <h4 className="text-xl font-black italic tracking-tighter">{kpi.value}</h4>
-                  </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[
+              { label: 'Ingresos Hoy', value: formatCurrency(12450000), trend: '+14%', icon: DollarSign, color: 'text-primary' },
+              { label: 'Ventas Live', value: '142', trend: 'Pico: 00:00', icon: Zap, color: 'text-secondary' },
+              { label: 'Entregas', value: '18 min', trend: '-2 min', icon: Clock, color: 'text-green-400' },
+              { label: 'Staff Online', value: '8', trend: 'Activos', icon: Users, color: 'text-accent' },
+            ].map((kpi, i) => (
+              <div key={i} className="bg-white/[0.02] border border-white/5 p-4 rounded-2xl space-y-2 hover:border-white/10 transition-all">
+                <div className="flex justify-between">
+                  <kpi.icon className={`h-4 w-4 ${kpi.color}`} />
+                  <span className="text-[8px] font-black text-gray-600 uppercase">{kpi.trend}</span>
                 </div>
-              ))}
-            </div>
+                <div>
+                  <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest">{kpi.label}</p>
+                  <h4 className="text-xl font-black italic tracking-tighter">{kpi.value}</h4>
+                </div>
+              </div>
+            ))}
           </div>
+        )}
+
+        {activeTab === 'catalog' && (
+          <Card className="bg-white/[0.02] border border-white/5 rounded-[2rem] overflow-hidden">
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader className="bg-white/5">
+                  <TableRow className="border-white/5">
+                    <TableHead className="text-[8px] font-black uppercase p-4">PRODUCTO</TableHead>
+                    <TableHead className="text-[8px] font-black uppercase p-4">CATEGORÍA</TableHead>
+                    <TableHead className="text-[8px] font-black uppercase p-4">PRECIO</TableHead>
+                    <TableHead className="text-right p-4">ACCIONES</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {inventory.map((item) => (
+                    <TableRow key={item.id} className="border-white/5 hover:bg-white/[0.02] transition-colors">
+                      <TableCell className="p-4">
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 rounded-lg overflow-hidden border border-white/10">
+                            <img src={item.image} className="w-full h-full object-cover" alt="" />
+                          </div>
+                          <span className="font-black italic text-xs uppercase">{item.name}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="p-4">
+                        <Badge variant="outline" className="text-[7px] border-white/10 text-gray-400 uppercase">{item.category}</Badge>
+                      </TableCell>
+                      <TableCell className="p-4 font-black text-xs text-secondary">{formatCurrency(item.price)}</TableCell>
+                      <TableCell className="p-4 text-right space-x-2">
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-500 hover:text-primary" onClick={() => handleEditClick(item)}>
+                          <Edit3 className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-500 hover:text-destructive" onClick={() => handleDeleteProduct(item.id)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
         )}
 
         {activeTab === 'audio' && (
-          <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
+          <div className="space-y-6">
             <Card className="bg-white/[0.02] border border-white/5 rounded-[2rem] overflow-hidden">
-              <CardHeader className="bg-white/5 p-6 border-b border-white/5">
-                <CardTitle className="text-lg font-black italic uppercase tracking-tighter flex items-center gap-2">
-                  <Music className="h-5 w-5 text-primary" /> SINCRONIZACIÓN MULTIMEDIA VIP
-                </CardTitle>
-                <CardDescription className="text-[9px] font-bold uppercase tracking-widest text-gray-500">
-                  Configura el enlace y el segundo exacto de inicio para cada combo
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="p-0">
-                <Table>
-                  <TableHeader className="bg-black/20">
-                    <TableRow className="border-white/5">
-                      <TableHead className="text-[8px] font-black uppercase p-4">PRODUCTO / COMBO</TableHead>
-                      <TableHead className="text-[8px] font-black uppercase p-4">URL (YOUTUBE O MP3)</TableHead>
-                      <TableHead className="text-[8px] font-black uppercase p-4">INICIO (SEG)</TableHead>
-                      <TableHead className="text-right p-4"></TableHead>
+              <Table>
+                <TableHeader className="bg-white/5">
+                  <TableRow className="border-white/5">
+                    <TableHead className="text-[8px] font-black uppercase p-4">PRODUCTO / COMBO</TableHead>
+                    <TableHead className="text-[8px] font-black uppercase p-4">URL (YOUTUBE O MP3)</TableHead>
+                    <TableHead className="text-[8px] font-black uppercase p-4">INICIO (SEG)</TableHead>
+                    <TableHead className="text-right p-4"></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {inventory.filter(i => i.category.toLowerCase().includes('combo') || i.audioUrl || i.youtubeUrl).map((item) => (
+                    <TableRow key={item.id} className="border-white/5 hover:bg-white/[0.02]">
+                      <TableCell className="p-4 font-black italic text-xs uppercase">{item.name}</TableCell>
+                      <TableCell className="p-4">
+                        <Input 
+                          className="bg-white/5 border-white/10 h-8 text-[10px] font-mono" 
+                          defaultValue={item.youtubeUrl || item.audioUrl || ''} 
+                          onBlur={(e) => {
+                            const val = e.target.value;
+                            const isYt = val.includes('youtube.com') || val.includes('youtu.be');
+                            const updated = inventory.map(p => p.id === item.id ? { ...p, youtubeUrl: isYt ? val : undefined, audioUrl: isYt ? undefined : val } : p);
+                            handleSaveInventory(updated);
+                          }}
+                        />
+                      </TableCell>
+                      <TableCell className="p-4">
+                        <Input 
+                          type="number"
+                          className="bg-white/5 border-white/10 h-8 w-20 text-[10px] text-center" 
+                          defaultValue={item.startTime || 0}
+                          onBlur={(e) => {
+                            const updated = inventory.map(p => p.id === item.id ? { ...p, startTime: parseInt(e.target.value) || 0 } : p);
+                            handleSaveInventory(updated);
+                          }}
+                        />
+                      </TableCell>
+                      <TableCell className="p-4 text-right">
+                        <Button variant="ghost" size="icon" className={`h-8 w-8 ${previewingId === item.id ? 'text-primary' : 'text-secondary'}`} onClick={() => togglePreview(item)}>
+                          {previewingId === item.id ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                        </Button>
+                      </TableCell>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {inventory.filter(i => i.category.toLowerCase().includes('combo') || i.audioUrl || i.youtubeUrl).map((item) => (
-                      <TableRow key={item.id} className="border-white/5 hover:bg-white/[0.02]">
-                        <TableCell className="p-4">
-                          <div className="flex items-center gap-3">
-                            <div className="h-10 w-10 rounded-lg overflow-hidden border border-white/10">
-                              <img src={item.image} className="w-full h-full object-cover grayscale" alt="" />
-                            </div>
-                            <div>
-                              <p className="font-black italic text-xs uppercase">{item.name}</p>
-                              <Badge className="text-[7px] bg-white/5 text-gray-500 border-none uppercase">{item.category}</Badge>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell className="p-4">
-                          <div className="relative group min-w-[300px]">
-                            <Input 
-                              className="bg-white/5 border-white/10 h-8 text-[10px] pr-10 font-mono text-gray-400 focus:text-primary transition-all" 
-                              defaultValue={item.youtubeUrl || item.audioUrl || ''} 
-                              placeholder="YouTube URL o MP3 URL"
-                              onBlur={(e) => handleUpdateAudio(item.id, e.target.value)}
-                            />
-                            {item.youtubeUrl ? (
-                              <Youtube className="absolute right-3 top-1/2 -translate-y-1/2 h-3 w-3 text-red-500" />
-                            ) : (
-                              <Music className="absolute right-3 top-1/2 -translate-y-1/2 h-3 w-3 text-primary" />
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell className="p-4">
-                          <div className="flex items-center gap-2">
-                             <Timer className="h-3 w-3 text-gray-500" />
-                             <Input 
-                               type="number"
-                               className="bg-white/5 border-white/10 h-8 w-20 text-[10px] font-mono text-center" 
-                               defaultValue={item.startTime || 0}
-                               onChange={(e) => handleUpdateStartTime(item.id, parseInt(e.target.value) || 0)}
-                             />
-                          </div>
-                        </TableCell>
-                        <TableCell className="p-4 text-right">
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className={`h-8 w-8 transition-all ${previewingId === item.id ? 'text-primary scale-125' : 'text-secondary hover:text-primary'}`}
-                            onClick={() => togglePreview(item)}
-                          >
-                            {previewingId === item.id ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
+                  ))}
+                </TableBody>
+              </Table>
             </Card>
-
-            <div className="p-6 bg-primary/5 border border-dashed border-primary/20 rounded-3xl text-center space-y-3">
-               <Music className="h-8 w-8 text-primary mx-auto opacity-50" />
-               <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">
-                 Los cambios se sincronizarán inmediatamente con la experiencia de usuario
-               </p>
-               <Button 
-                onClick={handleSaveAudio}
-                className="bg-primary h-12 px-12 rounded-xl font-black italic text-xs tracking-widest neon-glow-primary hover:scale-105 transition-transform"
-               >
-                 <Save className="mr-2 h-4 w-4" /> GUARDAR CONFIGURACIÓN STUDIO
-               </Button>
-            </div>
           </div>
         )}
-
       </main>
+
+      {/* MODAL DE EDICIÓN DE CATÁLOGO */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="bg-[#0a0a0a] border-white/10 text-white rounded-[2rem] max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-black italic tracking-tighter uppercase">EDITAR PRODUCTO</DialogTitle>
+          </DialogHeader>
+          {editingProduct && (
+            <div className="space-y-6 py-4">
+              <div 
+                className="relative h-48 w-full rounded-2xl overflow-hidden border border-dashed border-white/20 group cursor-pointer hover:border-primary/50 transition-all"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <img src={editingProduct.image} className="w-full h-full object-cover grayscale brightness-50" alt="" />
+                <div className="absolute inset-0 flex flex-col items-center justify-center space-y-2">
+                  <Upload className="h-8 w-8 text-primary group-hover:scale-110 transition-transform" />
+                  <span className="text-[10px] font-black uppercase tracking-widest text-white/50">CAMBIAR IMAGEN</span>
+                </div>
+                <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleImageChange} />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-[8px] font-black uppercase tracking-widest text-gray-500">Nombre</Label>
+                  <Input 
+                    value={editingProduct.name} 
+                    onChange={(e) => setEditingProduct({ ...editingProduct, name: e.target.value })}
+                    className="bg-white/5 border-white/10 h-10 font-black italic text-xs"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-[8px] font-black uppercase tracking-widest text-gray-500">Categoría</Label>
+                  <Input 
+                    value={editingProduct.category} 
+                    onChange={(e) => setEditingProduct({ ...editingProduct, category: e.target.value })}
+                    className="bg-white/5 border-white/10 h-10 font-black italic text-xs"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-[8px] font-black uppercase tracking-widest text-gray-500">Precio de Venta (COP)</Label>
+                <div className="relative">
+                  <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-secondary" />
+                  <Input 
+                    type="number"
+                    value={editingProduct.price} 
+                    onChange={(e) => setEditingProduct({ ...editingProduct, price: parseInt(e.target.value) || 0 })}
+                    className="bg-white/5 border-white/10 h-10 pl-10 font-black text-secondary"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter className="gap-2">
+            <Button variant="ghost" className="rounded-xl font-black italic text-xs uppercase" onClick={() => setIsEditDialogOpen(false)}>CANCELAR</Button>
+            <Button className="bg-primary text-white font-black italic text-xs uppercase rounded-xl px-8 neon-glow-primary" onClick={handleSaveEdit}>
+              <Save className="mr-2 h-4 w-4" /> GUARDAR CAMBIOS
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
