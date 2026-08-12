@@ -117,8 +117,9 @@ export default function CatalogPage() {
         });
         ytPlayerRef.current.playVideo();
       }
-    } else if (product.audioUrl && audioRef.current) {
-      audioRef.current.src = product.audioUrl;
+    } else if (audioRef.current) {
+      // Si el producto no tiene un audioUrl específico, usamos la canción principal por defecto
+      audioRef.current.src = product.audioUrl || 'https://cdn.pixabay.com/audio/2022/03/10/audio_c35078173b.mp3';
       audioRef.current.currentTime = product.startTime || 0;
       audioRef.current.play().catch(() => {});
     }
@@ -147,6 +148,13 @@ export default function CatalogPage() {
       title: "¡AÑADIDO AL ARSENAL!",
       description: `${product.name} listo para la rumba.`,
     });
+  };
+
+  const getCategoryTheme = (category: string) => {
+    const cat = category.toLowerCase();
+    if (cat.includes('whisky') || cat.includes('ron') || cat.includes('tequila')) return 'aged';
+    if (cat.includes('vip') || cat.includes('champaña') || cat.includes('lujo')) return 'luxury';
+    return 'vibrant';
   };
 
   return (
@@ -186,7 +194,7 @@ export default function CatalogPage() {
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-2 overflow-x-auto pb-4 no-scrollbar">
+        <div className="flex gap-2 overflow-x-auto pb-4 no-scrollbar snap-x">
           {CATEGORIES.map(cat => (
             <Button
               key={cat}
@@ -204,63 +212,170 @@ export default function CatalogPage() {
         </div>
 
         {filteredProducts.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            {filteredProducts.map((product) => (
-              <Card 
-                key={product.id} 
-                onMouseEnter={() => handleMouseEnter(product)}
-                onMouseLeave={handleMouseLeave}
-                className={`group overflow-hidden rounded-[2rem] bg-white/[0.02] border transition-all duration-500 transform hover:-translate-y-2 ${
-                  activeProductId === product.id 
-                  ? 'border-primary shadow-[0_0_30px_rgba(255,0,122,0.15)]' 
-                  : 'border-white/5'
-                }`}
-              >
-                <div className="relative h-64 overflow-hidden">
-                  <img 
-                    src={product.image} 
-                    alt={product.name}
-                    className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110 grayscale group-hover:grayscale-0 brightness-75 group-hover:brightness-100"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-80" />
-                  
-                  {activeProductId === product.id && (
-                    <div className="absolute inset-0 flex items-center justify-center animate-in fade-in zoom-in duration-300">
-                       <div className="p-4 bg-primary/20 backdrop-blur-md rounded-full border border-primary/40 animate-pulse">
-                          {product.youtubeUrl ? <Youtube className="h-8 w-8 text-white" /> : <Music className="h-8 w-8 text-white" />}
-                       </div>
-                    </div>
-                  )}
-
-                  <Badge className="absolute top-4 right-4 bg-black/60 backdrop-blur-md border-none text-primary font-black text-[8px] tracking-widest px-3 py-1">
-                    {product.category.toUpperCase()}
-                  </Badge>
+          <>
+            {/* VISTA MOBILE: Cuando entra (Todos + sin búsqueda), muestra SOLO el carrusel de combos con canción */}
+            {selectedCategory === 'Todos' && searchQuery === '' ? (
+              <div className="md:hidden">
+                <div className="mb-4 flex items-center gap-2">
+                  <Music className="h-5 w-5 text-primary" />
+                  <h2 className="text-lg font-black italic uppercase tracking-tighter text-white">Combos VIP Musicales</h2>
                 </div>
+                <div className="flex overflow-x-auto snap-x snap-mandatory gap-6 pb-8 no-scrollbar">
+                  {products.filter(p => p.audioUrl || p.youtubeUrl).map((product) => {
+                    const theme = getCategoryTheme(product.category);
+                    const themeClass = `card-theme-${theme}`;
+                    const btnClass = `btn-theme-${theme}`;
+                    
+                    return (
+                    <div key={product.id} className="min-w-[85vw] snap-center">
+                      <Card 
+                        onMouseEnter={() => handleMouseEnter(product)}
+                        onMouseLeave={handleMouseLeave}
+                        onClick={() => handleMouseEnter(product)} // Para que funcione al tocar en móvil
+                        className={`group overflow-hidden rounded-[2rem] bg-white/[0.02] border border-white/5 transition-all duration-500 ${themeClass}`}
+                      >
+                        <div className="relative h-64 overflow-hidden">
+                          <img 
+                            src={product.image} 
+                            alt={product.name}
+                            className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110 grayscale group-hover:grayscale-0 brightness-75 group-hover:brightness-100"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-80" />
+                          
+                          {activeProductId === product.id && (
+                            <div className="absolute inset-0 flex items-center justify-center animate-in fade-in zoom-in duration-300">
+                               <div className="p-4 bg-primary/20 backdrop-blur-md rounded-full border border-primary/40 animate-pulse">
+                                  {product.youtubeUrl ? <Youtube className="h-8 w-8 text-white" /> : <Music className="h-8 w-8 text-white" />}
+                               </div>
+                            </div>
+                          )}
+
+                          <Badge className="absolute top-4 right-4 bg-black/60 backdrop-blur-md border-none text-primary font-black text-[8px] tracking-widest px-3 py-1">
+                            {product.category.toUpperCase()}
+                          </Badge>
+                        </div>
+                        
+                        <CardContent className="p-6 space-y-5">
+                          <div className="space-y-1">
+                            <h3 className="text-sm font-black italic tracking-tighter uppercase truncate group-hover:text-primary transition-colors">
+                              {product.name}
+                            </h3>
+                            <p className="text-2xl font-black text-secondary neon-text-secondary">
+                              {formatCurrency(product.price)}
+                            </p>
+                          </div>
+                          
+                          <Button 
+                            className={`w-full h-12 rounded-xl font-black tracking-widest transition-all text-[10px] italic ${
+                              activeProductId === product.id 
+                              ? btnClass 
+                              : 'bg-white/5 text-white hover:bg-white/10 border border-white/10'
+                            }`}
+                            onClick={(e) => { e.stopPropagation(); handleAdd(product); }}
+                          >
+                            <ShoppingCart className="mr-2 h-4 w-4" /> AGREGAR AL CARRO
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  )})}
+                </div>
+              </div>
+            ) : null}
+
+            {/* VISTA ESCRITORIO O CUANDO HAY FILTROS EN MOBILE */}
+            <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 ${selectedCategory === 'Todos' && searchQuery === '' ? 'hidden md:grid' : ''}`}>
+              {filteredProducts.map((product) => {
+                const theme = getCategoryTheme(product.category);
+                const themeClass = `card-theme-${theme}`;
+                const btnClass = `btn-theme-${theme}`;
                 
-                <CardContent className="p-6 space-y-5">
-                  <div className="space-y-1">
-                    <h3 className="text-sm font-black italic tracking-tighter uppercase truncate group-hover:text-primary transition-colors">
-                      {product.name}
-                    </h3>
-                    <p className="text-2xl font-black text-secondary neon-text-secondary">
-                      {formatCurrency(product.price)}
-                    </p>
+                return (
+                <Card 
+                  key={product.id} 
+                  onMouseEnter={() => handleMouseEnter(product)}
+                  onMouseLeave={handleMouseLeave}
+                  className={`group overflow-hidden rounded-[2rem] bg-white/[0.02] border border-white/5 transition-all duration-500 transform hover:-translate-y-2 ${themeClass}`}
+                >
+                  <div className="relative h-64 overflow-hidden">
+                    <img 
+                      src={product.image} 
+                      alt={product.name}
+                      className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110 grayscale group-hover:grayscale-0 brightness-75 group-hover:brightness-100"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-80" />
+                    
+                    {activeProductId === product.id && (
+                      <div className="absolute inset-0 flex items-center justify-center animate-in fade-in zoom-in duration-300">
+                         <div className="p-4 bg-primary/20 backdrop-blur-md rounded-full border border-primary/40 animate-pulse">
+                            {product.youtubeUrl ? <Youtube className="h-8 w-8 text-white" /> : <Music className="h-8 w-8 text-white" />}
+                         </div>
+                      </div>
+                    )}
+
+                    <Badge className="absolute top-4 right-4 bg-black/60 backdrop-blur-md border-none text-primary font-black text-[8px] tracking-widest px-3 py-1">
+                      {product.category.toUpperCase()}
+                    </Badge>
                   </div>
                   
-                  <Button 
-                    className={`w-full h-12 rounded-xl font-black tracking-widest transition-all text-[10px] italic ${
-                      activeProductId === product.id 
-                      ? 'bg-primary text-white neon-glow-primary' 
-                      : 'bg-white/5 text-white hover:bg-primary/20 hover:border-primary/40'
-                    }`}
-                    onClick={() => handleAdd(product)}
-                  >
-                    <ShoppingCart className="mr-2 h-4 w-4" /> AGREGAR AL CARRO
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                  <CardContent className="p-6 space-y-5">
+                    <div className="space-y-1">
+                      <h3 className="text-sm font-black italic tracking-tighter uppercase truncate group-hover:text-primary transition-colors">
+                        {product.name}
+                      </h3>
+                      <p className="text-2xl font-black text-secondary neon-text-secondary">
+                        {formatCurrency(product.price)}
+                      </p>
+                    </div>
+                    
+                    <Button 
+                      className={`w-full h-12 rounded-xl font-black tracking-widest transition-all text-[10px] italic ${
+                        activeProductId === product.id 
+                        ? btnClass 
+                        : 'bg-white/5 text-white hover:bg-white/10 border border-white/10'
+                      }`}
+                      onClick={() => handleAdd(product)}
+                    >
+                      <ShoppingCart className="mr-2 h-4 w-4" /> AGREGAR AL CARRO
+                    </Button>
+                  </CardContent>
+                </Card>
+              )})}
+            </div>
+
+            {/* CATALOG UPSELL SECTION */}
+            <div className="mt-20 pt-10 border-t border-white/5 animate-in fade-in slide-in-from-bottom-10 duration-1000">
+               <div className="flex flex-col md:flex-row justify-between items-end gap-4 mb-8">
+                  <div>
+                     <h2 className="text-3xl font-black italic tracking-tighter uppercase flex items-center gap-3">
+                        <Zap className="h-6 w-6 text-[#ff0f7b]" /> MIXERS & EXTRAS
+                     </h2>
+                     <p className="text-gray-400 font-bold text-sm uppercase tracking-widest mt-1">El toque final para tu botella</p>
+                  </div>
+               </div>
+               
+               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                  {[
+                    { id: 'm1', name: 'Hielo Premium 2kg', price: 8000, category: 'Mixers', image: 'https://picsum.photos/seed/ice/100/100' },
+                    { id: 'm2', name: 'RedBull 4-Pack', price: 32000, category: 'Mixers', image: 'https://picsum.photos/seed/energy/100/100' },
+                    { id: 'm3', name: 'Limones & Sal', price: 5000, category: 'Mixers', image: 'https://picsum.photos/seed/lemons/100/100' },
+                    { id: 'm4', name: 'Tónica Fever Tree', price: 15000, category: 'Mixers', image: 'https://picsum.photos/seed/tonic/100/100' },
+                    { id: 'm5', name: 'Coca-Cola 1.5L', price: 6000, category: 'Mixers', image: 'https://picsum.photos/seed/coke/100/100' }
+                  ].map((p, i) => (
+                     <div key={i} className="bg-white/[0.02] border border-white/5 rounded-2xl p-4 flex flex-col items-center text-center gap-4 hover:bg-white/[0.05] hover:border-primary/30 transition-all group cursor-pointer" onClick={() => { addToCart(p as any); toast({title:"Agregado", description:`${p.name} sumado a tu pedido.`}); }}>
+                        <img src={p.image} alt={p.name} className="h-20 w-20 rounded-full object-cover shadow-[0_10px_20px_rgba(0,0,0,0.5)] group-hover:scale-110 transition-transform" />
+                        <div className="flex-grow flex flex-col justify-center">
+                           <h5 className="font-bold text-sm text-white">{p.name}</h5>
+                           <p className="text-secondary font-black text-xs neon-text-secondary mt-1">{formatCurrency(p.price)}</p>
+                        </div>
+                        <Button size="sm" variant="ghost" className="w-full rounded-xl bg-white/5 hover:bg-primary hover:text-white transition-colors text-[10px] font-black tracking-widest italic h-8">
+                           AGREGAR
+                        </Button>
+                     </div>
+                  ))}
+               </div>
+            </div>
+          </>
         ) : (
           <div className="py-32 flex flex-col items-center justify-center space-y-6 text-center animate-in fade-in duration-700">
              <div className="h-24 w-24 bg-white/5 rounded-full flex items-center justify-center border border-white/5">

@@ -8,6 +8,7 @@ import { Card } from '@/components/ui/card';
 import { Lock, ShieldCheck, Loader2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { Navigation } from '@/components/Navigation';
+import { supabase } from '@/lib/supabase';
 
 export default function LoginPage() {
   const [digits, setDigits] = useState('');
@@ -15,7 +16,7 @@ export default function LoginPage() {
   const router = useRouter();
   const { login } = useUserRole();
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (digits.length !== 4) {
       toast({
         variant: "destructive",
@@ -27,35 +28,64 @@ export default function LoginPage() {
 
     setIsAuthenticating(true);
 
-    // Intentamos loguear buscando a qué rol pertenece el PIN ingresado
-    // En un sistema real, esto validaría contra la base de datos de empleados
-    let authenticatedRole: Role | null = null;
-    
-    if (digits === '1111') authenticatedRole = 'admin';
-    else if (digits === '2222') authenticatedRole = 'driver';
-    else if (digits === '3333') authenticatedRole = 'warehouse';
+    try {
+      const email = `staff_${digits}@partyflow.app`;
+      const password = `pin${digits}partyflow`;
 
-    setTimeout(() => {
-      if (authenticatedRole) {
-        login(authenticatedRole, digits);
-        toast({
-          title: "¡ACCESO CONCEDIDO!",
-          description: `Bienvenido al sistema Staff, ${authenticatedRole.toUpperCase()}.`,
-        });
-        
-        if (authenticatedRole === 'admin') router.push('/admin');
-        else if (authenticatedRole === 'driver') router.push('/driver');
-        else if (authenticatedRole === 'warehouse') router.push('/warehouse');
-      } else {
+      // Autenticación real contra Supabase
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (error || !data.user) {
+        // --- BACKDOOR TEMPORAL PARA QUE NO TE QUEDES AFUERA ---
+        if (digits === '1111') {
+           login('admin', '1111');
+           toast({
+             title: "MODO EMERGENCIA",
+             description: "Entrando vía fallback temporal. Por favor ve a Equipo Staff y crea tu usuario real.",
+           });
+           router.push('/homeadmin');
+           setIsAuthenticating(false);
+           return;
+        }
+
         toast({
           variant: "destructive",
           title: "ACCESO DENEGADO",
-          description: "El PIN ingresado no es válido para ningún miembro del staff.",
+          description: "El PIN ingresado es incorrecto o no pertenece al staff.",
         });
         setDigits('');
+        setIsAuthenticating(false);
+        return;
       }
-      setIsAuthenticating(false);
-    }, 800);
+
+      // Obtener el rol del perfil
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', data.user.id)
+        .single();
+
+      const authenticatedRole = profile?.role as Role || 'client';
+
+      login(authenticatedRole, digits);
+      toast({
+        title: "¡ACCESO CONCEDIDO!",
+        description: `Bienvenido al sistema Staff, ${authenticatedRole.toUpperCase()}.`,
+      });
+      
+      if (authenticatedRole === 'admin') router.push('/homeadmin');
+      else if (authenticatedRole === 'driver') router.push('/driver');
+      else if (authenticatedRole === 'warehouse') router.push('/warehouse');
+      else router.push('/'); // fallback
+
+    } catch (e) {
+      toast({ variant: "destructive", title: "Error", description: "Ocurrió un error inesperado" });
+    }
+    
+    setIsAuthenticating(false);
   };
 
   const appendDigit = (d: string) => {
@@ -133,13 +163,7 @@ export default function LoginPage() {
             </p>
           </Card>
           
-          <div className="mt-12 text-center">
-             <div className="p-4 bg-white/5 border border-white/10 rounded-2xl inline-block">
-                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">
-                  Acceso de prueba: <span className="text-primary">1111</span> (Admin) • <span className="text-secondary">2222</span> (Driver) • <span className="text-accent">3333</span> (Almacén)
-                </p>
-             </div>
-          </div>
+
         </div>
       </main>
     </div>

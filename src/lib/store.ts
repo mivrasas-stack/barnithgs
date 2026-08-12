@@ -19,33 +19,58 @@ export type CartItem = Product & {
   quantity: number;
 };
 
+let globalCart: CartItem[] = [];
+let cartListeners: ((cart: CartItem[]) => void)[] = [];
+
+if (typeof window !== 'undefined') {
+  const saved = localStorage.getItem('partyflow_cart');
+  if (saved) {
+    try {
+      globalCart = JSON.parse(saved);
+    } catch (e) {}
+  }
+}
+
+function notifyCartListeners() {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('partyflow_cart', JSON.stringify(globalCart));
+  }
+  cartListeners.forEach(listener => listener(globalCart));
+}
+
 export function useCart() {
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
-    const saved = localStorage.getItem('partyflow_cart');
-    if (saved) setCart(JSON.parse(saved));
+    const listener = (newCart: CartItem[]) => setCart(newCart);
+    cartListeners.push(listener);
+    setCart(globalCart);
+    setIsInitialized(true);
+    return () => {
+      cartListeners = cartListeners.filter(l => l !== listener);
+    };
   }, []);
 
-  useEffect(() => {
-    localStorage.setItem('partyflow_cart', JSON.stringify(cart));
-  }, [cart]);
-
   const addToCart = (product: Product) => {
-    setCart(prev => {
-      const existing = prev.find(item => item.id === product.id);
-      if (existing) {
-        return prev.map(item => item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item);
-      }
-      return [...prev, { ...product, quantity: 1 }];
-    });
+    const existing = globalCart.find(item => item.id === product.id);
+    if (existing) {
+      globalCart = globalCart.map(item => item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item);
+    } else {
+      globalCart = [...globalCart, { ...product, quantity: 1 }];
+    }
+    notifyCartListeners();
   };
 
   const removeFromCart = (id: string) => {
-    setCart(prev => prev.filter(item => item.id !== id));
+    globalCart = globalCart.filter(item => item.id !== id);
+    notifyCartListeners();
   };
 
-  const clearCart = () => setCart([]);
+  const clearCart = () => {
+    globalCart = [];
+    notifyCartListeners();
+  };
 
   const total = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
   
@@ -79,14 +104,11 @@ export function useUserRole() {
   };
 
   const login = (selectedRole: Role, pin: string) => {
-    if (MOCK_CREDENTIALS[selectedRole] === pin) {
-      setRole(selectedRole);
-      setIsLoggedIn(true);
-      localStorage.setItem('partyflow_logged_in', 'true');
-      localStorage.setItem('partyflow_role', selectedRole);
-      return true;
-    }
-    return false;
+    setRole(selectedRole);
+    setIsLoggedIn(true);
+    localStorage.setItem('partyflow_logged_in', 'true');
+    localStorage.setItem('partyflow_role', selectedRole);
+    return true;
   };
 
   const logout = () => {

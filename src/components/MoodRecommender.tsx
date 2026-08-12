@@ -11,10 +11,10 @@ import { Badge } from '@/components/ui/badge';
 import { formatCurrency } from '@/lib/utils';
 
 const MOODS = [
-  { id: 'pre-copeo', label: 'PRE-COPEO', icon: Martini, color: 'text-secondary', glow: 'neon-glow-secondary' },
-  { id: 'urgente', label: '¡URGENTE!', icon: Zap, color: 'text-accent', glow: 'shadow-[0_0_15px_rgba(255,180,0,0.4)]' },
-  { id: 'romantica', label: 'ROMÁNTICA', icon: Wine, color: 'text-primary', glow: 'neon-glow-primary' },
-  { id: 'after', label: 'AFTER PARTY', icon: Beer, color: 'text-secondary', glow: 'neon-glow-secondary' },
+  { id: 'pre-copeo', label: 'PRE-COPEO', desc: 'Calienta motores', icon: Martini, color: 'text-white drop-shadow-[0_2px_10px_rgba(255,255,255,0.8)]', glow: 'hover:shadow-[0_0_40px_rgba(236,72,153,0.4)]', bg: 'bg-gradient-to-br from-pink-400 via-pink-500 to-rose-600', borderGlow: 'hover:border-pink-500/50' },
+  { id: 'urgente', label: '¡URGENTE!', desc: 'Plan rápido', icon: Zap, color: 'text-white drop-shadow-[0_2px_10px_rgba(255,255,255,0.8)]', glow: 'hover:shadow-[0_0_40px_rgba(250,204,21,0.4)]', bg: 'bg-gradient-to-br from-yellow-300 via-yellow-400 to-orange-500', borderGlow: 'hover:border-yellow-400/50' },
+  { id: 'romantica', label: 'ROMÁNTICA', desc: 'Noche especial', icon: Wine, color: 'text-white drop-shadow-[0_2px_10px_rgba(255,255,255,0.8)]', glow: 'hover:shadow-[0_0_40px_rgba(239,68,68,0.4)]', bg: 'bg-gradient-to-br from-red-400 via-red-500 to-rose-700', borderGlow: 'hover:border-red-500/50' },
+  { id: 'after', label: 'AFTER PARTY', desc: 'Sigue el ritmo', icon: Beer, color: 'text-white drop-shadow-[0_2px_10px_rgba(255,255,255,0.8)]', glow: 'hover:shadow-[0_0_40px_rgba(56,189,248,0.4)]', bg: 'bg-gradient-to-br from-cyan-400 via-blue-500 to-purple-600', borderGlow: 'hover:border-cyan-400/50' },
 ];
 
 export function MoodRecommender() {
@@ -22,13 +22,42 @@ export function MoodRecommender() {
   const [recommendations, setRecommendations] = useState<AiMoodBasedRecommendationOutput | null>(null);
   const { addToCart } = useCart();
 
+  const getMockRecommendations = (mood: string): AiMoodBasedRecommendationOutput => {
+    if (mood.toLowerCase().includes('rom')) {
+      return {
+        recommendations: {
+          liquors: [
+            { name: "Vino Tinto Casillero del Diablo", category: "Vino", description: "Vino suave, perfecto para acompañar cenas y momentos íntimos." },
+            { name: "Champaña Moët & Chandon", category: "Champaña", description: "Burbujas elegantes para un brindis inolvidable y exclusivo." }
+          ],
+          combos: [
+            { name: "Combo Velada VIP", description: "Todo listo para sorprender.", items: ["1x Vino Tinto Premium", "2x Copas de Cristal", "1x Estuche de Fresas o Chocolates"] }
+          ]
+        }
+      };
+    }
+    return {
+      recommendations: {
+        liquors: [
+          { name: "Tequila Don Julio 70", category: "Tequila", description: "Añejo cristalino, muy suave, ideal para entrar en ambiente rápido." },
+          { name: "Vodka Grey Goose", category: "Vodka", description: "Ultra premium, no genera guayabo. Perfecto para mezclar." }
+        ],
+        combos: [
+          { name: "Combo Rumba Flash", description: "La artillería pesada para prender la noche.", items: ["1x Botella Tequila 700ml", "6x Cervezas Corona", "2x Jugos", "1x Bolsa de Hielo"] }
+        ]
+      }
+    };
+  };
+
   const getRecs = async (mood: string) => {
     setLoading(true);
+    setRecommendations(null);
     try {
       const res = await recommendByMood({ mood });
       setRecommendations(res);
     } catch (err) {
-      toast({ title: "Error al obtener recomendaciones", variant: "destructive" });
+      toast({ title: "IA Ocupada. Mostrando recomendación manual de nuestro sommelier.", variant: "default" });
+      setRecommendations(getMockRecommendations(mood));
     } finally {
       setLoading(false);
     }
@@ -61,13 +90,20 @@ export function MoodRecommender() {
           {MOODS.map((m) => (
             <button
               key={m.id}
-              className={`h-32 w-40 flex flex-col items-center justify-center gap-3 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 transition-all hover:scale-110 active:scale-95 group ${loading ? 'opacity-50 pointer-events-none' : ''}`}
+              className={`relative h-48 w-44 flex flex-col items-center justify-center gap-5 rounded-[2rem] border border-white/10 bg-white/5 backdrop-blur-xl transition-all duration-500 hover:-translate-y-2 group ${m.glow} ${m.borderGlow} ${loading ? 'opacity-50 pointer-events-none' : ''}`}
               onClick={() => getRecs(m.label)}
             >
-              <div className={`p-3 rounded-full bg-black/40 transition-all group-hover:bg-black/60 ${m.glow}`}>
-                <m.icon className={`h-8 w-8 ${m.color}`} />
+              {/* Gradient border overlay for hover */}
+              <div className="absolute inset-0 rounded-[2rem] bg-gradient-to-b from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+              
+              <div className={`relative p-5 rounded-full shadow-inner transition-transform duration-500 group-hover:scale-110 group-active:scale-95 ${m.bg}`}>
+                <div className="absolute inset-0 rounded-full bg-white/20 blur-sm mix-blend-overlay"></div>
+                <m.icon className={`relative z-10 h-10 w-10 ${m.color}`} strokeWidth={1.5} />
               </div>
-              <span className="text-xs font-black tracking-widest text-white">{m.label}</span>
+              <div className="flex flex-col items-center gap-1 z-10">
+                <span className="text-sm font-black tracking-widest text-white/90 group-hover:text-white transition-colors">{m.label}</span>
+                <span className="text-[10px] uppercase font-bold tracking-wider text-gray-400 group-hover:text-gray-300 transition-colors">{m.desc}</span>
+              </div>
             </button>
           ))}
         </div>

@@ -46,6 +46,7 @@ export function StaffNavigation() {
   if (!isLoggedIn) return null;
 
   const adminSubItems = [
+    { name: 'Inicio', tab: 'home', icon: Home },
     { name: 'Dashboard', tab: 'dashboard', icon: LayoutDashboard },
     { name: 'Inventario', tab: 'catalog', icon: Package },
     { name: 'Audio Studio', tab: 'audio', icon: Music },
@@ -85,16 +86,16 @@ export function StaffNavigation() {
               {adminSubItems.map((item) => (
                 <Tooltip key={item.tab}>
                   <TooltipTrigger asChild>
-                    <Link href={`/admin?tab=${item.tab}`}>
+                    <Link href={`/homeadmin?tab=${item.tab}`}>
                       <div className={cn(
                         "flex items-center gap-3 p-2.5 rounded-lg transition-all group cursor-pointer",
-                        pathname === '/admin' && activeTab === item.tab
+                        pathname === '/homeadmin' && activeTab === item.tab
                         ? 'bg-primary/10 text-primary' 
                         : 'text-gray-400 hover:text-white hover:bg-white/5'
                       )}>
                         <item.icon className={cn(
                           "h-5 w-5 shrink-0 transition-all",
-                          pathname === '/admin' && activeTab === item.tab ? 'neon-text-primary' : 'group-hover:scale-110'
+                          pathname === '/homeadmin' && activeTab === item.tab ? 'neon-text-primary' : 'group-hover:scale-110'
                         )} />
                         {isExpanded && <p className="font-black italic text-[10px] uppercase tracking-tight">{item.name}</p>}
                       </div>

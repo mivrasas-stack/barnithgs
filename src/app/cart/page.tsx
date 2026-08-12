@@ -74,6 +74,32 @@ export default function CartPage() {
                    </div>
                 </div>
               ))}
+
+              {/* UPSELL SECTION IN CART */}
+              <div className="mt-12 pt-8 border-t border-white/10">
+                 <h3 className="text-xl font-black italic text-gray-300 mb-6 flex items-center gap-2">
+                    <Zap className="h-5 w-5 text-[#ff0f7b]" /> ANTES DE PAGAR, ¿NO OLVIDAS ESTO?
+                 </h3>
+                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    {[
+                      { id: 'u1', name: 'Hielo 2kg', price: 8000, category: 'Extras', image: 'https://picsum.photos/seed/ice/100/100' },
+                      { id: 'u2', name: 'Limones & Sal', price: 5000, category: 'Extras', image: 'https://picsum.photos/seed/lemons/100/100' },
+                      { id: 'u3', name: 'RedBull', price: 9000, category: 'Extras', image: 'https://picsum.photos/seed/energy/100/100' },
+                      { id: 'u4', name: 'Agua Tónica', price: 15000, category: 'Extras', image: 'https://picsum.photos/seed/tonic/100/100' }
+                    ].map((p, i) => (
+                       <div key={i} className="apple-frost p-4 rounded-2xl flex flex-col items-center text-center gap-3 border border-white/5 hover:border-primary/30 transition-colors group cursor-pointer" onClick={() => { addToCart(p as any); toast({title:"Agregado", description:`${p.name} sumado a tu pedido.`}); }}>
+                          <img src={p.image} alt={p.name} className="h-16 w-16 rounded-full object-cover shadow-lg group-hover:scale-110 transition-transform" />
+                          <div className="space-y-1">
+                             <h4 className="font-bold text-sm text-white leading-tight">{p.name}</h4>
+                             <p className="text-primary font-black text-sm">+{formatCurrency(p.price)}</p>
+                          </div>
+                          <Button size="sm" variant="outline" className="w-full h-8 rounded-full border-white/10 text-xs font-bold hover:bg-primary/20 hover:text-primary transition-all">
+                             SUMAR
+                          </Button>
+                       </div>
+                    ))}
+                 </div>
+              </div>
             </div>
 
             {/* Resumen de Compra */}
@@ -89,12 +115,12 @@ export default function CartPage() {
                      </div>
                      <div className="flex justify-between text-secondary font-black uppercase text-xs tracking-widest">
                         <span>Envío Flash (15 min)</span>
-                        <span>GRATIS</span>
+                        <span>{formatCurrency(15000)}</span>
                      </div>
                      <div className="h-[1px] bg-white/10 w-full" />
-                     <div className="flex justify-between items-end">
-                        <span className="text-xl font-black italic">TOTAL</span>
-                        <span className="text-4xl font-black text-primary neon-text-primary italic">{formatCurrency(total)}</span>
+                     <div className="flex flex-wrap justify-between items-end gap-x-2 gap-y-1">
+                        <span className="text-xl font-black italic shrink-0">TOTAL</span>
+                        <span className="text-3xl lg:text-2xl xl:text-4xl font-black text-primary neon-text-primary italic text-right break-words">{formatCurrency(total + 15000)}</span>
                      </div>
                   </div>
 

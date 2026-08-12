@@ -4,26 +4,45 @@
 
 @layer base {
   :root {
-    --background: 0 0% 0%;
-    --foreground: 0 0% 100%;
-    --card: 0 0% 5%;
-    --card-foreground: 0 0% 100%;
-    --popover: 0 0% 0%;
-    --popover-foreground: 0 0% 100%;
-    --primary: 331 100% 60%;
+    /* Apple Dark Mode Palette */
+    --background: 0 0% 0%; /* Pure black for OLED screens */
+    --foreground: 0 0% 98%;
+    
+    /* Subtle grays for cards */
+    --card: 0 0% 11%;
+    --card-foreground: 0 0% 98%;
+    
+    --popover: 0 0% 11%;
+    --popover-foreground: 0 0% 98%;
+    
+    /* Gold as primary accent */
+    --primary: 43 74% 49%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 180 100% 50%;
-    --secondary-foreground: 0 0% 0%;
+    
+    /* Neon Red for secondary */
+    --secondary: 350 100% 55%;
+    --secondary-foreground: 0 0% 100%;
+    
+    /* System Grays */
     --muted: 0 0% 15%;
-    --muted-foreground: 0 0% 70%;
-    --accent: 45 100% 55%;
-    --accent-foreground: 0 0% 0%;
-    --destructive: 0 84% 60%;
+    --muted-foreground: 0 0% 60%;
+    
+    --accent: 0 0% 18%;
+    --accent-foreground: 0 0% 98%;
+    
+    --destructive: 0 84% 60%; /* iOS Red */
     --destructive-foreground: 0 0% 100%;
-    --border: 0 0% 20%;
-    --input: 0 0% 20%;
-    --ring: 331 100% 60%;
-    --radius: 1rem;
+    
+    --border: 0 0% 18%;
+    --input: 0 0% 15%;
+    --ring: 43 74% 49%;
+    
+    --radius: 1.2rem;
+
+    /* Category Dynamic Colors */
+    --theme-vibrant: 330 100% 50%; /* Fuchsia base */
+    --theme-aged: 35 100% 50%;    /* Amber/Gold base */
+    --theme-luxury: 43 0% 80%;    /* Silver/Gold metallic feel */
   }
 }
 
@@ -32,12 +51,10 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
-    font-feature-settings: "rlig" 1, "calt" 1;
-    background-image: 
-      radial-gradient(circle at 10% 20%, rgba(255, 0, 122, 0.05) 0%, transparent 40%),
-      radial-gradient(circle at 90% 80%, rgba(0, 255, 255, 0.05) 0%, transparent 40%);
-    background-attachment: fixed;
+    @apply bg-background text-foreground antialiased;
+    /* Font setup for an Apple feel - using system fonts */
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    letter-spacing: -0.01em;
   }
 }
 
@@ -51,40 +68,119 @@
   }
 }
 
-.neon-glow-primary {
-  box-shadow: 0 0 20px hsl(var(--primary) / 0.6);
-  border-color: hsl(var(--primary) / 0.5);
+/* Apple Frost / Acrylic Effect - Enhanced */
+.apple-frost {
+  background: rgba(15, 15, 18, 0.4);
+  backdrop-filter: saturate(180%) blur(24px);
+  -webkit-backdrop-filter: saturate(180%) blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
 }
 
-.neon-glow-secondary {
-  box-shadow: 0 0 20px hsl(var(--secondary) / 0.6);
-  border-color: hsl(var(--secondary) / 0.5);
+.apple-frost-heavy {
+  background: rgba(10, 10, 12, 0.6);
+  backdrop-filter: saturate(200%) blur(40px);
+  -webkit-backdrop-filter: saturate(200%) blur(40px);
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
-.neon-text-primary {
-  text-shadow: 0 0 10px hsl(var(--primary) / 0.8);
-}
-
-.neon-text-secondary {
-  text-shadow: 0 0 10px hsl(var(--secondary) / 0.8);
-}
-
-.glass-morphism {
-  background: rgba(0, 0, 0, 0.75);
+/* Category Permanent Themes - Premium Overhaul */
+.card-theme-vibrant {
+  border-color: rgba(255, 0, 128, 0.2);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+  background: linear-gradient(145deg, rgba(35, 20, 30, 0.4) 0%, rgba(10, 10, 10, 0.8) 100%);
   backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+}
+.card-theme-vibrant:hover, .card-theme-vibrant:focus-within {
+  border-color: rgba(255, 0, 128, 0.5);
+  box-shadow: 0 20px 40px -10px rgba(255, 0, 128, 0.2), inset 0 0 40px rgba(255, 0, 128, 0.05);
+  transform: translateY(-4px);
 }
 
-.card-neon-border {
-  position: relative;
-  background: hsl(var(--card));
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  transition: all 0.3s ease;
+.card-theme-aged {
+  border-color: rgba(255, 165, 0, 0.2);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+  background: linear-gradient(145deg, rgba(35, 30, 20, 0.4) 0%, rgba(10, 10, 10, 0.8) 100%);
+  backdrop-filter: blur(16px);
+  transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+}
+.card-theme-aged:hover, .card-theme-aged:focus-within {
+  border-color: rgba(255, 165, 0, 0.6);
+  box-shadow: 0 20px 40px -10px rgba(255, 165, 0, 0.25), inset 0 0 40px rgba(255, 165, 0, 0.05);
+  transform: translateY(-4px);
 }
 
-.card-neon-border:hover {
-  border-color: hsl(var(--primary));
-  box-shadow: 0 0 15px hsl(var(--primary) / 0.3);
-  transform: translateY(-5px);
+.card-theme-luxury {
+  border-color: rgba(212, 175, 55, 0.2);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+  background: linear-gradient(145deg, rgba(20, 20, 18, 0.6) 0%, rgba(5, 5, 5, 0.9) 100%);
+  backdrop-filter: blur(16px);
+  transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+}
+.card-theme-luxury:hover, .card-theme-luxury:focus-within {
+  border-color: rgba(212, 175, 55, 0.6);
+  box-shadow: 0 20px 40px -10px rgba(212, 175, 55, 0.15), inset 0 0 40px rgba(212, 175, 55, 0.05);
+  transform: translateY(-4px);
+}
+
+/* Button Category Themes - Ultra Premium */
+.btn-theme-vibrant {
+  background: linear-gradient(135deg, #ff0f7b, #f89b29);
+  color: white;
+  border: none;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  box-shadow: 0 4px 15px rgba(255, 15, 123, 0.3);
+  transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+.btn-theme-vibrant:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 8px 25px rgba(255, 15, 123, 0.6);
+}
+
+.btn-theme-aged {
+  background: linear-gradient(135deg, #d4af37, #8b4513);
+  color: white;
+  border: none;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  box-shadow: 0 4px 15px rgba(212, 175, 55, 0.2);
+  transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+.btn-theme-aged:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 8px 25px rgba(212, 175, 55, 0.5);
+}
+
+.btn-theme-luxury {
+  background: linear-gradient(135deg, #2a2a2a, #0a0a0a);
+  color: #d4af37;
+  border: 1px solid rgba(212, 175, 55, 0.5);
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+.btn-theme-luxury:hover {
+  transform: translateY(-2px) scale(1.01);
+  box-shadow: 0 10px 30px rgba(212, 175, 55, 0.2);
+  border-color: #d4af37;
+  background: linear-gradient(135deg, #333, #111);
+}
+
+/* Minimalist Card - Premium */
+.apple-card {
+  background: linear-gradient(to bottom right, rgba(30, 30, 32, 0.4), rgba(15, 15, 18, 0.2));
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 1.5rem;
+  backdrop-filter: blur(20px);
+  transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+.apple-card:hover {
+  background: linear-gradient(to bottom right, rgba(40, 40, 42, 0.5), rgba(20, 20, 22, 0.3));
+  border-color: rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.5);
 }
