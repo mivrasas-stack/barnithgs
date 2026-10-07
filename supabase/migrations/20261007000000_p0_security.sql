@@ -101,3 +101,12 @@ $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 REVOKE EXECUTE ON FUNCTION public.reserve_stock(UUID, UUID, INTEGER, INTEGER) FROM public;
 REVOKE EXECUTE ON FUNCTION public.reserve_stock(UUID, UUID, INTEGER, INTEGER) FROM authenticated;
 REVOKE EXECUTE ON FUNCTION public.reserve_stock(UUID, UUID, INTEGER, INTEGER) FROM anon;
+ALTER TABLE public.stock_reservations ENABLE ROW LEVEL SECURITY;
+
+-- ProtecciÃ³n total
+REVOKE ALL ON public.stock_reservations FROM public;
+REVOKE ALL ON public.stock_reservations FROM anon;
+REVOKE ALL ON public.stock_reservations FROM authenticated;
+
+-- Foreign Keys (si existen las tablas product y carts en tu esquema)
+-- Asumiendo esquema: ALTER TABLE public.stock_reservations ADD CONSTRAINT fk_product FOREIGN KEY (product_id) REFERENCES public.products(id) ON DELETE CASCADE;

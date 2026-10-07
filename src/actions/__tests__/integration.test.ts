@@ -9,7 +9,7 @@ const mockProfilesSelect = jest.fn();
 const mockProfilesInsert = jest.fn();
 const mockProfilesUpdate = jest.fn();
 const mockInviteUser = jest.fn();
-const mockDeleteUser = jest.fn();
+const mockDeleteUser = jest.fn().mockResolvedValue({ error: null });
 
 // Mock dependencies
 jest.mock('@/lib/supabase/server', () => ({

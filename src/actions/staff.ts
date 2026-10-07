@@ -43,7 +43,10 @@ async function createNewStaffUser(
 
   // Rollback on failure
   if (profileError) {
-    await supabaseAdmin.auth.admin.deleteUser(newUser.user.id);
+    const { error: deleteErr } = await supabaseAdmin.auth.admin.deleteUser(newUser.user.id);
+    if (deleteErr) {
+      console.error(`ALERTA DE SEGURIDAD: Falló el rollback del usuario ${newUser.user.id}. Requiere conciliación manual. Error:`, deleteErr);
+    }
     return { error: `Error creando perfil: ${profileError.message}` };
   }
 

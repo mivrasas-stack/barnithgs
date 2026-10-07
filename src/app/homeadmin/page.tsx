@@ -130,16 +130,12 @@ function AdminContent() {
           id: p.id,
           name: p.full_name,
           role: p.role,
-          pin: p.pin || '****',
           email: p.email || ''
         }));
         setStaffList(formattedStaff);
       } else {
         // Fallback for initial load if DB is empty or disconnected
-        const initStaff = [
-          { id: '1', name: 'Administrador Principal', role: 'admin', pin: '1111' },
-          { id: '2', name: 'Repartidor VIP', role: 'driver', pin: '2222' },
-          { id: '3', name: 'Almacén Central', role: 'warehouse', pin: '3333' }
+        const initStaff: any[] = [
         ];
         setStaffList(initStaff);
       }
@@ -226,7 +222,6 @@ function AdminContent() {
       id: editingStaff.id.startsWith('staff-') ? editingStaff.id : editingStaff.id,
       name: editingStaff.name,
       role: editingStaff.role,
-      pin: editingStaff.pin,
       email: editingStaff.email
     });
 
@@ -387,7 +382,6 @@ function AdminContent() {
               <Button 
                 className="apple-btn-primary h-10 px-6 rounded-full font-medium shadow-lg hover:shadow-primary/20"
                 onClick={() => {
-                  setEditingStaff({ id: `staff-${Date.now()}`, name: '', role: 'driver', pin: '', email: '' });
                   setIsStaffModalOpen(true);
                 }}
               >
@@ -896,7 +890,6 @@ function AdminContent() {
                   type="text"
                   maxLength={4}
                   value={editingStaff.pin} 
-                  onChange={(e) => setEditingStaff({ ...editingStaff, pin: e.target.value.replace(/\D/g, '') })}
                   className="bg-black/40 border-white/10 h-12 rounded-xl px-4 font-mono text-lg text-center tracking-[0.5em] focus:border-primary focus:ring-1 focus:ring-primary shadow-inner"
                   placeholder="1234"
                 />
