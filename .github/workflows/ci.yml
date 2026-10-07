@@ -31,14 +31,13 @@ jobs:
         uses: supabase/setup-cli@v1
         with:
           version: latest
+      
       - name: Start Local Supabase
         run: supabase start
         
       - name: Export Local Credentials
         run: |
-          echo "NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321" >> $GITHUB_ENV
-          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$(supabase status -o json | jq -r .ANON_KEY)" >> $GITHUB_ENV
-          echo "SUPABASE_SERVICE_ROLE_KEY=$(supabase status -o json | jq -r .SERVICE_ROLE_KEY)" >> $GITHUB_ENV
+          supabase status -o env --override-name api.url=NEXT_PUBLIC_SUPABASE_URL --override-name anon.key=NEXT_PUBLIC_SUPABASE_ANON_KEY --override-name service_role.key=SUPABASE_SERVICE_ROLE_KEY >> $GITHUB_ENV
 
       - name: Run Jest Security & Integration Tests
         run: npx jest
