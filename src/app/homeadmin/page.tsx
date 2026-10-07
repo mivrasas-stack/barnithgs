@@ -212,10 +212,7 @@ function AdminContent() {
 
   const handleSaveStaff = async () => {
     if (!editingStaff) return;
-    if (editingStaff.pin.length !== 4) {
-      toast({ title: "Error", description: "El PIN debe tener 4 dígitos", variant: "destructive" });
-      return;
-    }
+    
 
     // Call Server Action
     const result = await createOrUpdateStaffMember({
@@ -781,7 +778,7 @@ function AdminContent() {
                   <TableRow className="border-b border-white/10 hover:bg-transparent">
                     <TableHead className="text-xs font-medium text-white/50 h-12">Nombre y Apellido</TableHead>
                     <TableHead className="text-xs font-medium text-white/50 h-12">Rol / Puesto</TableHead>
-                    <TableHead className="text-xs font-medium text-white/50 h-12">PIN de Acceso</TableHead>
+                    
                     <TableHead className="text-right h-12 text-xs font-medium text-white/50">Acciones</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -804,11 +801,7 @@ function AdminContent() {
                           {member.role === 'admin' ? 'Administrador' : member.role === 'driver' ? 'Repartidor' : 'Almacén'}
                         </Badge>
                       </TableCell>
-                      <TableCell className="py-4">
-                        <div className="bg-black/40 px-3 py-1.5 rounded-lg w-fit font-mono text-sm text-white/70 tracking-widest border border-white/5 shadow-inner">
-                          {member.pin}
-                        </div>
-                      </TableCell>
+                      
                       <TableCell className="py-4 text-right">
                         <div className="flex justify-end gap-2">
                           <Button variant="ghost" size="icon" className="h-8 w-8 text-white/60 hover:text-white rounded-full bg-white/5 hover:bg-white/10" onClick={() => {
