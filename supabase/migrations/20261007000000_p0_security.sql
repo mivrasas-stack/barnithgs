@@ -9,7 +9,7 @@ ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
 -- Función segura para verificar si un usuario es admin, con SCHEMA EXPLÍCITO y permisos mínimos
 CREATE OR REPLACE FUNCTION public.is_admin()
 RETURNS BOOLEAN AS $$
-  SELECT role = 'admin' FROM public.profiles WHERE id = auth.uid();
+  SELECT COALESCE((SELECT role = 'admin' FROM public.profiles WHERE id = auth.uid()), false);
 $$ LANGUAGE sql SECURITY DEFINER SET search_path = public;
 
 -- Revocar permisos de ejecución a todos por seguridad extrema

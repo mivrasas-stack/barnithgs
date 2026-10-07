@@ -130,16 +130,22 @@ describe('Real Database Integration & RLS (No Mocks)', () => {
         throw new Error(`Fallo en inserción de perfil para ${role}: ${profileError.message}`);
       }
 
-      const userClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-        auth: { persistSession: false }
-      });
-      const { error: signInErr } = await userClient.auth.signInWithPassword({
+      const { data: authData, error: signInErr } = await anonClient.auth.signInWithPassword({
         email,
         password: 'SecurePassword123!'
       });
-      if (signInErr) {
-        throw new Error(`Fallo en login de ${role}: ${signInErr.message}`);
+      if (signInErr || !authData.session) {
+        throw new Error(`Fallo en login de ${role}: ${signInErr?.message}`);
       }
+
+      const userClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+        global: {
+          headers: {
+            Authorization: `Bearer ${authData.session.access_token}`
+          }
+        },
+        auth: { persistSession: false, autoRefreshToken: false }
+      });
 
       return { user: data.user, client: userClient };
     }
