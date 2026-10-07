@@ -79,44 +79,43 @@ export function useCart() {
 
 export type Role = 'client' | 'admin' | 'driver' | 'warehouse';
 
-const MOCK_CREDENTIALS: Record<string, string> = {
-  admin: '1111',
-  driver: '2222',
-  warehouse: '3333',
-};
+import { createClient } from '@/lib/supabase/client';
 
 export function useUserRole() {
   const [role, setRole] = useState<Role>('client');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
+  const supabase = createClient();
 
   useEffect(() => {
-    const savedRole = localStorage.getItem('partyflow_role') as Role;
-    const authStatus = localStorage.getItem('partyflow_logged_in') === 'true';
-    if (savedRole) setRole(savedRole);
-    setIsLoggedIn(authStatus);
-    setIsInitialized(true);
-  }, []);
+    async function fetchSession() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        setIsLoggedIn(true);
+        setRole(session.user.user_metadata.role || 'client');
+      }
+      setIsInitialized(true);
+    }
+    fetchSession();
 
-  const changeRole = (newRole: Role) => {
-    setRole(newRole);
-    localStorage.setItem('partyflow_role', newRole);
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session) {
+        setIsLoggedIn(true);
+        setRole(session.user.user_metadata.role || 'client');
+      } else {
+        setIsLoggedIn(false);
+        setRole('client');
+      }
+    });
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, [supabase]);
+
+  const logout = async () => {
+    await supabase.auth.signOut();
   };
 
-  const login = (selectedRole: Role, pin: string) => {
-    setRole(selectedRole);
-    setIsLoggedIn(true);
-    localStorage.setItem('partyflow_logged_in', 'true');
-    localStorage.setItem('partyflow_role', selectedRole);
-    return true;
-  };
-
-  const logout = () => {
-    setIsLoggedIn(false);
-    setRole('client');
-    localStorage.setItem('partyflow_logged_in', 'false');
-    localStorage.setItem('partyflow_role', 'client');
-  };
-
-  return { role, changeRole, isLoggedIn, isInitialized, login, logout, mockCredentials: MOCK_CREDENTIALS };
+  return { role, isLoggedIn, isInitialized, logout };
 }

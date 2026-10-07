@@ -1,6 +1,7 @@
 'use server';
 
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { requireRole } from '@/lib/supabase/server';
 
 export type StaffMemberInput = {
   id?: string;
@@ -81,6 +82,7 @@ async function updateExistingStaffUser(
 
 export async function createOrUpdateStaffMember(data: StaffMemberInput): Promise<StaffActionResult> {
   try {
+    await requireRole(['admin']);
     const pin = data.pin && data.pin.length === 4 ? data.pin : generateAutomaticPin();
     const email = data.email && data.email.trim().length > 0 
       ? data.email.trim() 
@@ -101,6 +103,7 @@ export async function createOrUpdateStaffMember(data: StaffMemberInput): Promise
 
 export async function deleteStaffMember(id: string): Promise<{ success?: boolean; error?: string }> {
   try {
+    await requireRole(['admin']);
     const { error } = await supabaseAdmin.auth.admin.deleteUser(id);
     if (error) return { error: error.message };
     return { success: true };

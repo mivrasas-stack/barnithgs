@@ -2,10 +2,12 @@
 
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { revalidatePath } from 'next/cache';
+import { requireRole } from '@/lib/supabase/server';
 
 // --- GESTIÓN DE CAJAS / TURNOS ---
 
 export async function getOpenRegister() {
+  await requireRole(['admin']);
   const { data, error } = await supabaseAdmin
     .from('cash_registers')
     .select('*')
@@ -19,6 +21,7 @@ export async function getOpenRegister() {
 }
 
 export async function openShift(adminId: string, initialBalance: number) {
+  const { user } = await requireRole(['admin']);
   // Verificar si ya hay una caja abierta
   const current = await getOpenRegister();
   if (current.data) return { error: 'Ya existe un turno abierto.' };
@@ -26,7 +29,7 @@ export async function openShift(adminId: string, initialBalance: number) {
   const { data, error } = await supabaseAdmin
     .from('cash_registers')
     .insert([
-      { opened_by: adminId, initial_balance: initialBalance }
+      { opened_by: user.id, initial_balance: initialBalance }
     ])
     .select()
     .single();
