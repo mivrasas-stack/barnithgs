@@ -2,21 +2,17 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useUserRole, useCart } from '@/lib/store';
+import { useCart } from '@/lib/store';
 import { Button } from '@/components/ui/button';
 import { 
   ShoppingCart, 
   Menu, 
-  Beer,
-  Lock,
   Star
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 export function Navigation() {
   const { cart } = useCart();
-  const { isLoggedIn } = useUserRole();
   const itemCount = cart.reduce((acc, item) => acc + item.quantity, 0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -52,17 +48,6 @@ export function Navigation() {
             </Link>
           </Button>
 
-          <div className="h-8 w-[1px] bg-white/10 hidden md:block" />
-
-          <Button asChild
-            variant="outline" 
-            className={`hidden md:flex border-white/20 text-white font-semibold tracking-widest px-6 rounded-full h-12 hover:bg-white/10 hover:border-white/40 transition-all ${isLoggedIn ? 'border-primary/50 text-primary bg-primary/5' : ''}`}
-          >
-            <Link href="/login">
-              <Lock className="mr-2 h-4 w-4" /> {isLoggedIn ? 'PANEL STAFF' : 'ACCESO VIP'}
-            </Link>
-          </Button>
-
           <Button 
             variant="ghost" 
             size="icon" 
@@ -81,17 +66,6 @@ export function Navigation() {
             <Link href="/catalog" onClick={() => setIsMobileMenuOpen(false)} className="text-lg font-bold tracking-widest uppercase text-white hover:text-primary">Colección</Link>
             <Link href="/moods" onClick={() => setIsMobileMenuOpen(false)} className="text-lg font-bold tracking-widest uppercase text-white hover:text-primary">Experiencias</Link>
             <Link href="/combos" onClick={() => setIsMobileMenuOpen(false)} className="text-lg font-bold tracking-widest uppercase text-white hover:text-primary">Combos VIP</Link>
-            
-            <div className="h-[1px] w-full bg-white/10 my-2" />
-            
-            <Button asChild
-              variant="outline" 
-              className={`w-full border-white/20 text-white font-semibold tracking-widest h-14 rounded-xl ${isLoggedIn ? 'border-primary/50 text-primary bg-primary/5' : ''}`}
-            >
-              <Link href="/login" onClick={() => setIsMobileMenuOpen(false)}>
-                <Lock className="mr-2 h-5 w-5" /> {isLoggedIn ? 'PANEL STAFF' : 'ACCESO VIP'}
-              </Link>
-            </Button>
           </div>
         </div>
       )}

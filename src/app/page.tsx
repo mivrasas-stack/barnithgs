@@ -226,8 +226,10 @@ export default function Home() {
                     <p className="text-xl text-gray-300 font-light leading-relaxed">
                       Monitorea tu entrega en tiempo real con precisión militar. Desde nuestra cava hasta tus manos, sabrás exactamente dónde está tu pedido.
                     </p>
-                    <Button size="lg" className="bg-white text-black hover:bg-gray-200 font-bold h-14 px-10 rounded-full transition-colors shadow-[0_0_20px_rgba(255,255,255,0.2)]">
-                      VER ESTADO DEL PEDIDO
+                    <Button size="lg" className="bg-white text-black hover:bg-gray-200 font-bold h-14 px-10 rounded-full transition-colors shadow-[0_0_20px_rgba(255,255,255,0.2)]" asChild>
+                      <Link href="/portal/login">
+                        VER ESTADO DEL PEDIDO
+                      </Link>
                     </Button>
                   </div>
                   <div className="relative h-[450px] rounded-[2rem] overflow-hidden border border-white/10 shadow-2xl">

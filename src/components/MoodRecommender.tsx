@@ -110,12 +110,29 @@ export function MoodRecommender() {
       </div>
 
       {loading && (
-        <div className="flex flex-col items-center justify-center py-20 gap-6">
-          <div className="relative">
-             <div className="absolute inset-0 bg-primary/20 blur-xl animate-pulse" />
-             <Loader2 className="h-16 w-16 animate-spin text-primary relative z-10" />
+        <div className="flex flex-col items-center justify-center py-24 gap-10">
+          <div className="relative flex items-center justify-center w-32 h-32">
+             <div className="absolute inset-0 bg-primary/30 rounded-full blur-[40px] animate-pulse" />
+             
+             <div className="absolute w-24 h-24 border-t-4 border-r-4 border-primary rounded-full animate-spin" style={{ animationDuration: '3s' }} />
+             <div className="absolute w-20 h-20 border-b-4 border-l-4 border-primary/60 rounded-full animate-spin" style={{ animationDuration: '2s', animationDirection: 'reverse' }} />
+             <div className="absolute w-16 h-16 border-t-4 border-l-4 border-white/50 rounded-full animate-spin" style={{ animationDuration: '1.5s' }} />
+             
+             <Sparkles className="h-8 w-8 text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.8)] animate-pulse relative z-10" />
           </div>
-          <p className="text-xl font-black tracking-widest text-primary animate-pulse uppercase">Consultando al oráculo de la rumba...</p>
+          
+          <div className="relative flex flex-col items-center gap-3">
+            <h3 className="text-2xl md:text-3xl font-black tracking-[0.2em] text-transparent bg-clip-text bg-gradient-to-r from-primary via-yellow-200 to-primary animate-pulse uppercase text-center drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]">
+              Consultando al Oráculo
+            </h3>
+            <div className="flex items-center gap-3 opacity-80">
+              <span className="h-[2px] w-12 bg-gradient-to-r from-transparent to-primary"></span>
+              <p className="text-xs md:text-sm font-bold tracking-[0.4em] text-white uppercase">
+                De la Rumba...
+              </p>
+              <span className="h-[2px] w-12 bg-gradient-to-l from-transparent to-primary"></span>
+            </div>
+          </div>
         </div>
       )}
 

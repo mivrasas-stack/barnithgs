@@ -10,12 +10,16 @@ import { Card, CardContent } from '@/components/ui/card';
 import { MapPin, Truck, Bell, Navigation as NavIcon, CheckCircle2, Loader2, Signal } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { formatCurrency } from '@/lib/utils';
+import { DeliveryMap } from '@/components/DeliveryMap';
+import { router as osrmRouter } from '@/lib/geo/osrm';
 
 export default function DriverPage() {
   const { isLoggedIn, role, isInitialized } = useUserRole();
   const router = useRouter();
   const [isOnline, setIsOnline] = useState(false);
   const [activeOrder, setActiveOrder] = useState<any>(null);
+  const [routeGeoJSON, setRouteGeoJSON] = useState<any>(null);
+  const [routeInfo, setRouteInfo] = useState<{distance: number, eta: number} | null>(null);
 
   useEffect(() => {
     if (isInitialized && (!isLoggedIn || (role !== 'driver' && role !== 'admin'))) {
@@ -33,26 +37,43 @@ export default function DriverPage() {
 
   if (!isLoggedIn || (role !== 'driver' && role !== 'admin')) return null;
 
-  const simulateNewOrder = () => {
+  const simulateNewOrder = async () => {
     if (!isOnline) {
       toast({ title: "Desconectado", description: "Conéctate para recibir pedidos." });
       return;
     }
+    
+    // Coordenadas mockeadas para Colombia (Bogotá: Zona T -> Parque 93)
+    const origin: [number, number] = [-74.0543, 4.6677]; // Lng, Lat
+    const destination: [number, number] = [-74.0494, 4.6766];
+
+    try {
+      const route = await osrmRouter.getRoute(origin, destination);
+      setRouteGeoJSON(route.geometry);
+      setRouteInfo({ distance: route.distance, eta: route.eta });
+    } catch (e) {
+      toast({ title: "Error de Enrutamiento", description: "No se pudo trazar la ruta OSRM.", variant: "destructive" });
+    }
+
     const order = {
       id: 'ORD-1234',
-      pickup: 'Central Hub',
-      delivery: '777 Appletree Way, Cupertino',
+      pickup: 'Sede Zona T',
+      delivery: 'Parque 93, Edificio 4',
       items: '2x Vodka Premium 1L, 3x Cranberry Juice, 1x Ice Bag',
-      total: 245000
+      total: 245000,
+      originLng: origin[0], originLat: origin[1],
+      destLng: destination[0], destLat: destination[1]
     };
     setActiveOrder(order);
-    toast({ title: "Nueva Asignación", description: "Se requiere recolección en Central." });
+    toast({ title: "Nueva Asignación", description: "Se requiere recolección en Zona T." });
   };
 
   const completeStep = (step: string) => {
     toast({ title: "Estado Actualizado", description: step });
     if (step === 'Entrega Confirmada') {
       setActiveOrder(null);
+      setRouteGeoJSON(null);
+      setRouteInfo(null);
     }
   };
 
@@ -109,15 +130,25 @@ export default function DriverPage() {
         ) : (
           <Card className="apple-frost rounded-3xl border-0 overflow-hidden shadow-lg">
              <CardContent className="p-0">
-                {/* Map Simulation - Clean iOS Maps style */}
-                <div className="h-64 w-full bg-[#1c1c1e] relative overflow-hidden flex items-center justify-center">
-                  <div className="absolute inset-0 opacity-20" style={{
-                    backgroundImage: 'radial-gradient(circle at 50% 50%, rgba(255,255,255,0.1) 1px, transparent 1px)',
-                    backgroundSize: '20px 20px'
-                  }}></div>
-                  <div className="relative z-10 text-center space-y-2">
-                    <NavIcon className="h-10 w-10 text-red-500 mx-auto" />
-                    <span className="text-xs font-semibold uppercase tracking-wider text-red-500 bg-red-500/10 px-3 py-1 rounded-full">Ruta Activa</span>
+                {/* Map Simulation - Interactive MapLibre */}
+                <div className="h-64 md:h-96 w-full relative">
+                  <DeliveryMap 
+                    routeGeoJSON={routeGeoJSON}
+                    markers={activeOrder ? [
+                      { id: 'store', type: 'store', lng: activeOrder.originLng, lat: activeOrder.originLat },
+                      { id: 'customer', type: 'customer', lng: activeOrder.destLng, lat: activeOrder.destLat },
+                      { id: 'driver', type: 'driver', lng: activeOrder.originLng, lat: activeOrder.originLat }
+                    ] : []}
+                  />
+                  <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 flex gap-2 pointer-events-none">
+                    <span className="text-xs font-semibold uppercase tracking-wider text-black bg-white px-4 py-2 rounded-full shadow-lg flex items-center gap-2">
+                       <NavIcon className="h-4 w-4" /> Ruta Activa
+                    </span>
+                    {routeInfo && (
+                      <span className="text-xs font-semibold uppercase tracking-wider text-white bg-primary px-4 py-2 rounded-full shadow-lg flex items-center gap-2">
+                        {Math.round(routeInfo.eta / 60)} MIN • {(routeInfo.distance / 1000).toFixed(1)} KM
+                      </span>
+                    )}
                   </div>
                 </div>
 

@@ -19,7 +19,7 @@ import { formatCurrency } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
 import { 
   Users, Zap, Loader2, DollarSign, Clock, Music, Edit3, Trash2, Play, Pause,
-  Package, Plus, Upload, Settings2, Disc, Flame, ChevronRight, TrendingUp, BarChart3, History, LogOut, Truck, Box, Calculator
+  Package, Plus, Upload, Settings2, Disc, Flame, ChevronRight, TrendingUp, BarChart3, History, LogOut, Truck, Box, Calculator, Activity
 } from 'lucide-react';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
@@ -130,7 +130,8 @@ function AdminContent() {
           id: p.id,
           name: p.full_name,
           role: p.role,
-          pin: p.pin || '****'
+          pin: p.pin || '****',
+          email: p.email || ''
         }));
         setStaffList(formattedStaff);
       } else {
@@ -225,7 +226,8 @@ function AdminContent() {
       id: editingStaff.id.startsWith('staff-') ? editingStaff.id : editingStaff.id,
       name: editingStaff.name,
       role: editingStaff.role,
-      pin: editingStaff.pin
+      pin: editingStaff.pin,
+      email: editingStaff.email
     });
 
     if (result.error) {
@@ -344,37 +346,27 @@ function AdminContent() {
         <div id="admin-yt-player"></div>
       </div>
       
-      <main className={`${activeTab !== 'home' ? 'md:pl-16 ' : ''}container mx-auto px-4 md:px-8 py-8 md:py-12 max-w-[1200px] space-y-10 transition-all duration-300 relative z-10`}>
+      <main className={`${activeTab !== 'home' ? 'md:pl-16 py-8 md:py-12' : 'py-4 md:py-6'} container mx-auto px-4 md:px-8 max-w-[1200px] space-y-6 md:space-y-8 transition-all duration-300 relative z-10`}>
         
-        {/* Header - Apple Style */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 pb-4">
-          <div className="space-y-1">
-            <h1 className="text-3xl md:text-4xl font-semibold tracking-tight text-white">
-              {activeTab === 'home' && 'Bienvenido, Administrador Principal'}
-              {activeTab === 'dashboard' && 'Panel de Control'}
-              {activeTab === 'catalog' && 'Catálogo'}
-              {activeTab === 'audio' && 'Estudio de Audio'}
-              {activeTab === 'staff' && 'Equipo Staff'}
-              {activeTab === 'accounting' && 'Contabilidad'}
-            </h1>
-            <p className="text-sm font-medium text-white/50">
-              {activeTab === 'home' ? 'Gestión central del sistema' : 'Administración de PartyFlow'}
-            </p>
-          </div>
-          
-          <div className="flex items-center gap-3">
-            {activeTab === 'home' && (
-              <Button 
-                variant="outline"
-                className="h-10 px-6 rounded-full font-medium border-white/20 text-white hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/50 transition-colors"
-                onClick={() => {
-                  logout();
-                  router.push('/');
-                }}
-              >
-                <LogOut className="mr-2 h-4 w-4" /> Cerrar Sesión
-              </Button>
-            )}
+        {/* Header - Apple Style (Solo para pestañas internas) */}
+        {activeTab !== 'home' && (
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 pb-4">
+            <div className="space-y-1">
+              <h1 className="text-3xl md:text-4xl font-semibold tracking-tight text-white">
+                {activeTab === 'dashboard' && 'Panel de Control'}
+                {activeTab === 'catalog' && 'Catálogo e Inventario'}
+                {activeTab === 'audio' && 'Estudio de Audio'}
+                {activeTab === 'staff' && 'Equipo Staff'}
+                {activeTab === 'accounting' && 'Contabilidad'}
+                {activeTab === 'deliveries' && 'Gestión de Entregas'}
+                {activeTab === 'history' && 'Auditoría del Sistema'}
+              </h1>
+              <p className="text-sm font-medium text-white/50">
+                Administración de PartyFlow
+              </p>
+            </div>
+            
+            <div className="flex items-center gap-3">
             {activeTab === 'catalog' && (
             <Button 
               className="apple-btn-primary h-10 px-6 rounded-full font-medium"
@@ -395,53 +387,124 @@ function AdminContent() {
               <Button 
                 className="apple-btn-primary h-10 px-6 rounded-full font-medium shadow-lg hover:shadow-primary/20"
                 onClick={() => {
-                  setEditingStaff({ id: `staff-${Date.now()}`, name: '', role: 'driver', pin: '' });
+                  setEditingStaff({ id: `staff-${Date.now()}`, name: '', role: 'driver', pin: '', email: '' });
                   setIsStaffModalOpen(true);
                 }}
               >
                 <Plus className="mr-2 h-4 w-4" /> Agregar Personal
               </Button>
             )}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Home Hub - Premium UI */}
         {activeTab === 'home' && (
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 relative">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            
+            {/* Giant Welcome Hero */}
+            <div className="relative py-6 lg:py-8 flex flex-col items-start space-y-6">
+               <div className="absolute top-0 left-0 w-[400px] h-[400px] bg-primary/10 blur-[120px] rounded-full pointer-events-none" />
+               <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-blue-500/10 blur-[150px] rounded-full pointer-events-none" />
+               
+               <div className="w-full flex justify-between items-center relative z-20">
+                 <div className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs font-medium text-white/80 backdrop-blur-xl shadow-2xl">
+                    <span className="flex h-2 w-2 rounded-full bg-green-500 mr-2 animate-pulse shadow-[0_0_10px_rgba(34,197,94,0.8)]"></span>
+                    Sistema Operativo En Línea
+                 </div>
+                 
+                 <Button 
+                    variant="outline"
+                    className="h-8 px-4 rounded-full font-medium border-white/10 bg-black/40 backdrop-blur-md text-white/70 hover:bg-red-500/20 hover:text-red-400 hover:border-red-500/50 transition-all duration-300 text-xs"
+                    onClick={() => {
+                      logout();
+                      router.push('/');
+                    }}
+                  >
+                    <LogOut className="mr-2 h-3 w-3" /> Cerrar Sesión
+                  </Button>
+               </div>
+               
+               <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tighter text-white leading-[1.05]">
+                 Bienvenido,<br/>
+                 <span className="bg-gradient-to-r from-primary via-purple-500 to-blue-500 bg-clip-text text-transparent animate-gradient-x">Administrador.</span>
+               </h1>
+               
+               <p className="text-base md:text-xl text-white/50 max-w-3xl font-medium leading-relaxed tracking-wide">
+                 Tienes el control total de la operación. Supervisa métricas, gestiona el inventario y audita el rendimiento en tiempo real.
+               </p>
+               
+               <div className="pt-2 flex flex-wrap gap-3 relative z-10">
+                  <Button 
+                    className="h-12 px-6 rounded-full font-bold bg-white text-black hover:bg-white/90 hover:scale-105 transition-transform duration-300 shadow-[0_0_30px_rgba(255,255,255,0.2)] text-sm"
+                    onClick={() => router.push('/homeadmin?tab=dashboard')}
+                  >
+                    <Activity className="mr-2 h-4 w-4" /> Ver Rendimiento
+                  </Button>
+               </div>
+            </div>
+
+            {/* Modules List Layout (No Bento Boxes) */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 relative z-10">
               {ADMIN_SECTIONS.map((sec, i) => (
-                <Card 
-                  key={i} 
-                  className={`group relative overflow-hidden rounded-[2rem] bg-black/40 backdrop-blur-2xl border border-white/5 transition-all duration-500 cursor-pointer hover:-translate-y-2 ${sec.borderHover} ${sec.shadowHover}`}
+                <div 
+                  key={i}
                   onClick={() => router.push(sec.href ? sec.href : `/homeadmin?tab=${sec.tab}`)}
+                  className={`group relative flex items-center gap-4 p-4 md:p-5 rounded-[1.25rem] bg-white/[0.02] border border-white/5 hover:bg-white/[0.04] transition-all duration-500 cursor-pointer overflow-hidden ${sec.borderHover}`}
                 >
-                  {/* Hover animated gradient background */}
-                  <div className={`absolute inset-0 bg-gradient-to-br ${sec.bgGradient} opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none`} />
+                  <div className={`absolute inset-0 bg-gradient-to-r ${sec.bgGradient} opacity-0 group-hover:opacity-10 transition-opacity duration-700 pointer-events-none`} />
                   
-                  <CardContent className="p-8 flex flex-col items-center justify-center text-center space-y-6 h-64 relative z-10">
-                    <div className="relative">
-                      {/* Decorative ping effect behind icon */}
-                      <div className={`absolute inset-0 rounded-2xl blur-xl opacity-0 group-hover:opacity-30 transition-opacity duration-500 ${sec.color.replace('text-', 'bg-')}`} />
-                      
-                      <div className={`p-5 rounded-2xl bg-white/5 border border-white/10 group-hover:scale-110 group-hover:-rotate-3 transition-all duration-500 shadow-2xl relative z-10 ${sec.color}`}>
-                        <sec.icon className="h-10 w-10" strokeWidth={1.5} />
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-2 relative z-10">
-                      <h3 className="text-xl font-bold text-white group-hover:text-white/90 transition-colors tracking-tight">{sec.name}</h3>
-                      <p className="text-xs font-medium text-white/40 leading-relaxed max-w-[200px] mx-auto group-hover:text-white/70 transition-colors line-clamp-2">{sec.desc}</p>
-                    </div>
-                    
-                    {/* Hover reveal action text */}
-                    <div className="absolute bottom-6 opacity-0 group-hover:opacity-100 translate-y-4 group-hover:translate-y-0 transition-all duration-500 text-white/50 group-hover:text-white flex items-center gap-1 text-[10px] font-black uppercase tracking-widest z-10">
-                      <span>Ingresar</span>
-                      <ChevronRight className="h-3 w-3 group-hover:translate-x-1 transition-transform" />
-                    </div>
-                  </CardContent>
-                </Card>
+                  <div className={`relative z-10 flex items-center justify-center h-12 w-12 min-w-12 rounded-xl bg-black/50 border border-white/10 shadow-inner group-hover:scale-110 group-hover:-rotate-3 transition-transform duration-500 ${sec.color}`}>
+                     <sec.icon className="h-5 w-5 md:h-6 md:w-6" strokeWidth={1.5} />
+                  </div>
+                  
+                  <div className="relative z-10 flex-1 space-y-1">
+                     <h3 className="text-lg md:text-xl font-bold text-white/90 group-hover:text-white transition-colors tracking-tight leading-tight">{sec.name}</h3>
+                     <p className="text-xs text-white/40 group-hover:text-white/70 transition-colors line-clamp-1 md:line-clamp-2 leading-relaxed">{sec.desc}</p>
+                  </div>
+
+                  <div className="relative z-10 opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-500 text-white/30 group-hover:text-white">
+                     <ChevronRight className="h-5 w-5" />
+                  </div>
+                </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* Módulo de Entregas (Placeholder) */}
+        {activeTab === 'deliveries' && (
+          <div className="animate-in fade-in slide-in-from-bottom-4 space-y-6">
+            <Card className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl p-12 text-center flex flex-col items-center justify-center">
+              <div className="h-20 w-20 rounded-full bg-green-500/10 flex items-center justify-center mb-6">
+                <Truck className="h-10 w-10 text-green-500" />
+              </div>
+              <h2 className="text-2xl font-bold text-white mb-2">Monitor de Entregas</h2>
+              <p className="text-white/50 max-w-md mx-auto mb-8">
+                Aquí podrás visualizar en tiempo real (mapa y estado) todas las órdenes activas, asignar repartidores y gestionar las rutas.
+              </p>
+              <Button disabled variant="outline" className="border-white/10 bg-white/5">
+                Próximamente...
+              </Button>
+            </Card>
+          </div>
+        )}
+
+        {/* Módulo de Auditoría (Placeholder) */}
+        {activeTab === 'history' && (
+          <div className="animate-in fade-in slide-in-from-bottom-4 space-y-6">
+            <Card className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl p-12 text-center flex flex-col items-center justify-center">
+              <div className="h-20 w-20 rounded-full bg-red-500/10 flex items-center justify-center mb-6">
+                <History className="h-10 w-10 text-red-500" />
+              </div>
+              <h2 className="text-2xl font-bold text-white mb-2">Registro de Auditoría</h2>
+              <p className="text-white/50 max-w-md mx-auto mb-8">
+                Historial completo de todas las acciones del sistema. Eliminaciones, ediciones de inventario, y registros de acceso del personal.
+              </p>
+              <Button disabled variant="outline" className="border-white/10 bg-white/5">
+                Próximamente...
+              </Button>
+            </Card>
           </div>
         )}
 
@@ -802,6 +865,16 @@ function AdminContent() {
                   onChange={(e) => setEditingStaff({ ...editingStaff, name: e.target.value })}
                   className="bg-black/40 border-white/10 h-12 rounded-xl px-4 font-medium text-base focus:border-primary focus:ring-1 focus:ring-primary shadow-inner"
                   placeholder="Ej: Carlos Ramírez"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold text-white/70 uppercase tracking-wider">Email (Para verificación OTP)</Label>
+                <Input 
+                  type="email"
+                  value={editingStaff.email} 
+                  onChange={(e) => setEditingStaff({ ...editingStaff, email: e.target.value })}
+                  className="bg-black/40 border-white/10 h-12 rounded-xl px-4 font-medium text-base focus:border-primary focus:ring-1 focus:ring-primary shadow-inner"
+                  placeholder="ejemplo@partyflow.app"
                 />
               </div>
               <div className="space-y-2">

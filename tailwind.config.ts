@@ -66,12 +66,19 @@ export default {
         'pulse-neon': {
           '0%, 100%': { opacity: '1', filter: 'brightness(1)' },
           '50%': { opacity: '0.8', filter: 'brightness(1.2)' },
+        },
+        blob: {
+          '0%': { transform: 'translate(0px, 0px) scale(1)' },
+          '33%': { transform: 'translate(30px, -50px) scale(1.1)' },
+          '66%': { transform: 'translate(-20px, 20px) scale(0.9)' },
+          '100%': { transform: 'translate(0px, 0px) scale(1)' },
         }
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
         'pulse-neon': 'pulse-neon 2s ease-in-out infinite',
+        blob: 'blob 7s infinite',
       },
     },
   },

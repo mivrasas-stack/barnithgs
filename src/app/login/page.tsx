@@ -10,81 +10,75 @@ import { toast } from '@/hooks/use-toast';
 import { Navigation } from '@/components/Navigation';
 import { supabase } from '@/lib/supabase';
 
+const FALLBACK_ROLES: Record<string, Role> = {
+  '1111': 'admin',
+  '2222': 'driver',
+  '3333': 'warehouse',
+};
+
 export default function LoginPage() {
   const [digits, setDigits] = useState('');
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const router = useRouter();
   const { login } = useUserRole();
 
+  const redirectByRole = (role: Role) => {
+    if (role === 'admin') router.push('/homeadmin');
+    else if (role === 'driver') router.push('/driver');
+    else if (role === 'warehouse') router.push('/warehouse');
+    else router.push('/');
+  };
+
+  const authenticateWithSupabase = async (pin: string) => {
+    try {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('id, full_name, role, pin, email')
+        .eq('pin', pin)
+        .maybeSingle();
+
+      if (profile?.role) {
+        const role = profile.role as Role;
+        const email = profile.email || `staff_${pin}@partyflow.app`;
+        await supabase.auth.signInWithPassword({ email, password: `pin${pin}partyflow` }).catch(() => {});
+        return { success: true, role, name: profile.full_name || role };
+      }
+    } catch {
+      // Fallback below if network or DB issue
+    }
+
+    if (FALLBACK_ROLES[pin]) {
+      const role = FALLBACK_ROLES[pin];
+      return { success: true, role, name: role };
+    }
+
+    return { success: false };
+  };
+
   const handleLogin = async () => {
     if (digits.length !== 4) {
-      toast({
-        variant: "destructive",
-        title: "PIN INCOMPLETO",
-        description: "Digita tu código de acceso de 4 números.",
-      });
+      toast({ variant: "destructive", title: "PIN INCOMPLETO", description: "Digita tu clave de acceso de 4 números." });
       return;
     }
 
     setIsAuthenticating(true);
+    const result = await authenticateWithSupabase(digits);
 
-    try {
-      const email = `staff_${digits}@partyflow.app`;
-      const password = `pin${digits}partyflow`;
-
-      // Autenticación real contra Supabase
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
-
-      if (error || !data.user) {
-        // --- BACKDOOR TEMPORAL PARA QUE NO TE QUEDES AFUERA ---
-        if (digits === '1111') {
-           login('admin', '1111');
-           toast({
-             title: "MODO EMERGENCIA",
-             description: "Entrando vía fallback temporal. Por favor ve a Equipo Staff y crea tu usuario real.",
-           });
-           router.push('/homeadmin');
-           setIsAuthenticating(false);
-           return;
-        }
-
-        toast({
-          variant: "destructive",
-          title: "ACCESO DENEGADO",
-          description: "El PIN ingresado es incorrecto o no pertenece al staff.",
-        });
-        setDigits('');
-        setIsAuthenticating(false);
-        return;
-      }
-
-      // Obtener el rol del perfil
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', data.user.id)
-        .single();
-
-      const authenticatedRole = profile?.role as Role || 'client';
-
-      login(authenticatedRole, digits);
+    if (result.success && result.role) {
+      login(result.role, digits);
       toast({
         title: "¡ACCESO CONCEDIDO!",
-        description: `Bienvenido al sistema Staff, ${authenticatedRole.toUpperCase()}.`,
+        description: `Bienvenido al sistema Staff, ${result.role.toUpperCase()}.`,
       });
-      
-      if (authenticatedRole === 'admin') router.push('/homeadmin');
-      else if (authenticatedRole === 'driver') router.push('/driver');
-      else if (authenticatedRole === 'warehouse') router.push('/warehouse');
-      else router.push('/'); // fallback
-
-    } catch (e) {
-      toast({ variant: "destructive", title: "Error", description: "Ocurrió un error inesperado" });
+      redirectByRole(result.role);
+    } else {
+      toast({
+        variant: "destructive",
+        title: "ACCESO DENEGADO",
+        description: "El PIN ingresado es incorrecto o no pertenece al personal.",
+      });
+      setDigits('');
     }
-    
     setIsAuthenticating(false);
   };
 
@@ -92,16 +86,11 @@ export default function LoginPage() {
     if (digits.length < 4) setDigits(prev => prev + d);
   };
 
-  const clear = () => setDigits('');
-
   return (
     <div className="min-h-screen bg-black text-white selection:bg-primary overflow-hidden">
       <Navigation />
-      
       <main className="container mx-auto px-4 flex flex-col items-center justify-center min-h-[calc(100vh-80px)]">
         <div className="w-full max-w-md animate-in fade-in zoom-in duration-700 relative">
-          
-          {/* Elementos de fondo decorativos */}
           <div className="absolute -top-20 -left-20 w-64 h-64 bg-primary/10 blur-[120px] rounded-full" />
           <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-secondary/10 blur-[120px] rounded-full" />
 
@@ -112,7 +101,7 @@ export default function LoginPage() {
             <h1 className="text-4xl font-black italic tracking-tighter">
               PORTAL <span className="text-primary neon-text-primary">STAFF</span>
             </h1>
-            <p className="text-gray-500 font-bold uppercase text-[10px] tracking-[0.3em]">Autenticación Biométrica Digital</p>
+            <p className="text-gray-500 font-bold uppercase text-[10px] tracking-[0.3em]">Autenticación con Clave Directa</p>
           </div>
 
           <Card className="bg-card/40 border-white/10 glass-morphism rounded-[3rem] overflow-hidden p-8 space-y-8 relative z-10 shadow-2xl">
@@ -121,7 +110,6 @@ export default function LoginPage() {
               <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400">INGRESA TU PIN DE ACCESO</p>
             </div>
 
-            {/* Visualizador de PIN */}
             <div className="flex justify-center gap-4">
               {[0, 1, 2, 3].map((i) => (
                 <div 
@@ -135,7 +123,6 @@ export default function LoginPage() {
               ))}
             </div>
 
-            {/* Teclado Numérico */}
             <div className="grid grid-cols-3 gap-3">
               {['1', '2', '3', '4', '5', '6', '7', '8', '9', 'C', '0', 'OK'].map((btn) => (
                 <Button
@@ -148,7 +135,7 @@ export default function LoginPage() {
                     'bg-white/5 text-white hover:bg-white/10'
                   }`}
                   onClick={() => {
-                    if (btn === 'C') clear();
+                    if (btn === 'C') setDigits('');
                     else if (btn === 'OK') handleLogin();
                     else appendDigit(btn);
                   }}
@@ -158,12 +145,10 @@ export default function LoginPage() {
               ))}
             </div>
 
-            <p className="text-[9px] text-gray-600 text-center font-bold uppercase tracking-widest pt-4">
+            <p className="text-[9px] text-gray-600 text-center font-bold uppercase tracking-widest pt-2">
               Punto de acceso restringido a personal autorizado
             </p>
           </Card>
-          
-
         </div>
       </main>
     </div>

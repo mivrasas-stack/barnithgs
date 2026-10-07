@@ -1,65 +1,111 @@
-'use server'
+'use server';
 
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
-export async function createOrUpdateStaffMember(data: { id?: string, name: string, role: string, pin: string }) {
+export type StaffMemberInput = {
+  id?: string;
+  name: string;
+  role: string;
+  pin?: string;
+  email?: string;
+};
+
+export type StaffActionResult = {
+  success?: boolean;
+  error?: string;
+  pin?: string;
+};
+
+function generateAutomaticPin(): string {
+  return Math.floor(1000 + Math.random() * 9000).toString();
+}
+
+async function createNewStaffUser(
+  name: string,
+  role: string,
+  pin: string,
+  email: string
+): Promise<StaffActionResult> {
+  const password = `pin${pin}partyflow`;
+  const { data: newUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: true,
+    user_metadata: { full_name: name, role, pin }
+  });
+
+  if (authError) {
+    if (authError.message.includes('already been registered')) {
+      return { error: 'El email ya está en uso por otra persona.' };
+    }
+    return { error: authError.message };
+  }
+
+  await supabaseAdmin.from('profiles').update({
+    full_name: name,
+    role,
+    pin,
+    email
+  }).eq('id', newUser.user.id);
+
+  return { success: true, pin };
+}
+
+async function updateExistingStaffUser(
+  id: string,
+  name: string,
+  role: string,
+  pin: string,
+  email: string
+): Promise<StaffActionResult> {
+  const password = `pin${pin}partyflow`;
+  const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(id, {
+    email,
+    password,
+    user_metadata: { full_name: name, role, pin }
+  });
+
+  if (updateError) {
+    return { error: updateError.message };
+  }
+
+  await supabaseAdmin.from('profiles').update({
+    full_name: name,
+    role,
+    pin,
+    email
+  }).eq('id', id);
+
+  return { success: true, pin };
+}
+
+export async function createOrUpdateStaffMember(data: StaffMemberInput): Promise<StaffActionResult> {
   try {
-    const email = `staff_${data.pin}@partyflow.app`;
-    const password = `pin${data.pin}partyflow`;
+    const pin = data.pin && data.pin.length === 4 ? data.pin : generateAutomaticPin();
+    const email = data.email && data.email.trim().length > 0 
+      ? data.email.trim() 
+      : `staff_${pin}@partyflow.app`;
 
     if (data.id && data.id.startsWith('staff-')) {
-      // Es un usuario nuevo que vino del UI de "Equipo Staff"
-      const { data: newUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
-        email,
-        password,
-        email_confirm: true,
-        user_metadata: { full_name: data.name, role: data.role, pin: data.pin }
-      });
-
-      if (authError) {
-        if (authError.message.includes('already been registered')) {
-          return { error: 'El PIN ya está en uso por otra persona.' };
-        }
-        return { error: authError.message };
-      }
-
-      // El trigger en la base de datos (Supabase) creará el perfil automáticamente
-      // pero actualizamos el PIN en metadata por si acaso
-      return { success: true };
+      return await createNewStaffUser(data.name, data.role, pin, email);
     } else if (data.id) {
-      // Actualizar usuario existente
-      const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(data.id, {
-        email,
-        password,
-        user_metadata: { full_name: data.name, role: data.role, pin: data.pin }
-      });
-
-      if (updateError) {
-        return { error: updateError.message };
-      }
-
-      // También actualizamos la tabla profiles manualmente por si el role o nombre cambió
-      await supabaseAdmin.from('profiles').update({
-        full_name: data.name,
-        role: data.role,
-        pin: data.pin
-      }).eq('id', data.id);
-
-      return { success: true };
+      return await updateExistingStaffUser(data.id, data.name, data.role, pin, email);
     }
 
-    return { error: 'Invalid data' };
-  } catch (error: any) {
-    return { error: error.message };
+    return { error: 'Datos de personal inválidos.' };
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Error inesperado';
+    return { error: message };
   }
 }
 
-export async function deleteStaffMember(id: string) {
+export async function deleteStaffMember(id: string): Promise<{ success?: boolean; error?: string }> {
   try {
     const { error } = await supabaseAdmin.auth.admin.deleteUser(id);
     if (error) return { error: error.message };
     return { success: true };
-  } catch (error: any) {
-    return { error: error.message };
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Error inesperado';
+    return { error: message };
   }
 }
