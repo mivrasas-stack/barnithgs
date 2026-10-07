@@ -22,29 +22,77 @@ describe('Real Database Integration & RLS (No Mocks)', () => {
   });
 
   describe('Concurrencia de Inventario (reserve_stock)', () => {
-    it('debe impedir sobreventas cuando múltiples peticiones reservan simultáneamente', async () => {
+    it('debe impedir sobreventas cuando 3 carritos diferentes intentan reservar la única unidad en stock simultáneamente', async () => {
       const productId = '10000000-0000-0000-0000-000000000001';
-      const cartId = '20000000-0000-0000-0000-000000000002';
-      
-      // 1. Setup de producto y stock físico único (1 unidad)
-      await (adminClient.from('products') as any).upsert({ id: productId, name: 'Atomic Test Product', price: 100 });
-      await (adminClient.from('inventory') as any).upsert({ product_id: productId, physical_quantity: 1 });
-      await (adminClient.from('stock_reservations') as any).delete().eq('product_id', productId);
+      const cartId1 = '20000000-0000-0000-0000-000000000001';
+      const cartId2 = '20000000-0000-0000-0000-000000000002';
+      const cartId3 = '20000000-0000-0000-0000-000000000003';
 
-      // 2. Ejecutar 3 reservas concurrentes de 1 unidad cada una
-      const attempts = await Promise.all([
-        (adminClient as any).rpc('reserve_stock', { p_product_id: productId, p_cart_id: cartId, p_quantity: 1 }),
-        (adminClient as any).rpc('reserve_stock', { p_product_id: productId, p_cart_id: cartId, p_quantity: 1 }),
-        (adminClient as any).rpc('reserve_stock', { p_product_id: productId, p_cart_id: cartId, p_quantity: 1 })
-      ]);
+      try {
+        // 1. Preparación y validación de operaciones preparatorias
+        const { error: prodErr } = await (adminClient.from('products') as any).upsert({ 
+          id: productId, 
+          name: 'Atomic Beer Case', 
+          price: 150000 
+        });
+        expect(prodErr).toBeNull();
 
-      const successes = attempts.filter(a => a.data === true);
-      // Gracias al bloqueo FOR UPDATE a nivel de fila en PostgreSQL, exactamente 1 debe tener éxito
-      expect(successes.length).toBe(1);
+        const { error: invErr } = await (adminClient.from('inventory') as any).upsert({ 
+          product_id: productId, 
+          physical_quantity: 1 
+        });
+        expect(invErr).toBeNull();
 
-      // 3. Limpieza garantizada
-      await (adminClient.from('stock_reservations') as any).delete().eq('product_id', productId);
-      await (adminClient.from('products') as any).delete().eq('id', productId);
+        const { error: cleanResErr } = await (adminClient.from('stock_reservations') as any).delete().eq('product_id', productId);
+        expect(cleanResErr).toBeNull();
+
+        // 2. Disparar 3 reservas simultáneas desde 3 carritos distintos
+        const attempts = await Promise.all([
+          (adminClient as any).rpc('reserve_stock', { p_product_id: productId, p_cart_id: cartId1, p_quantity: 1 }),
+          (adminClient as any).rpc('reserve_stock', { p_product_id: productId, p_cart_id: cartId2, p_quantity: 1 }),
+          (adminClient as any).rpc('reserve_stock', { p_product_id: productId, p_cart_id: cartId3, p_quantity: 1 })
+        ]);
+
+        // Verificar resultados individuales
+        const successes = attempts.filter(a => a.data === true);
+        const failures = attempts.filter(a => a.data === false);
+
+        expect(successes.length).toBe(1);
+        expect(failures.length).toBe(2);
+
+        // 3. Comprobación de estado final en base de datos: inventario físico y reservas activas
+        const { data: finalReservations, error: resQueryErr } = await (adminClient.from('stock_reservations') as any)
+          .select('*')
+          .eq('product_id', productId);
+        expect(resQueryErr).toBeNull();
+        expect(finalReservations).toHaveLength(1);
+        expect(finalReservations[0].quantity).toBe(1);
+
+        // El carrito ganador debe ser uno de los tres
+        expect([cartId1, cartId2, cartId3]).toContain(finalReservations[0].cart_id);
+
+        const { data: finalInventory, error: invQueryErr } = await (adminClient.from('inventory') as any)
+          .select('physical_quantity')
+          .eq('product_id', productId)
+          .single();
+        expect(invQueryErr).toBeNull();
+        // El stock físico no se descuenta hasta el checkout final, se mantiene en 1
+        expect(finalInventory.physical_quantity).toBe(1);
+
+        // Un cuarto intento subsiguiente de cualquier carrito debe fallar inmediatamente
+        const fourthAttempt = await (adminClient as any).rpc('reserve_stock', { 
+          p_product_id: productId, 
+          p_cart_id: '20000000-0000-0000-0000-000000000004', 
+          p_quantity: 1 
+        });
+        expect(fourthAttempt.data).toBe(false);
+
+      } finally {
+        // Limpieza garantizada incluso ante fallo de aserciones
+        await (adminClient.from('stock_reservations') as any).delete().eq('product_id', productId);
+        await (adminClient.from('inventory') as any).delete().eq('product_id', productId);
+        await (adminClient.from('products') as any).delete().eq('id', productId);
+      }
     });
   });
 
@@ -52,6 +100,7 @@ describe('Real Database Integration & RLS (No Mocks)', () => {
     const createdUserIds: string[] = [];
 
     afterAll(async () => {
+      // Limpieza exhaustiva de usuarios de prueba en Supabase Auth
       for (const id of createdUserIds) {
         try {
           await adminClient.auth.admin.deleteUser(id);
@@ -69,13 +118,17 @@ describe('Real Database Integration & RLS (No Mocks)', () => {
       if (error || !data.user) throw new Error(`Fallo al crear usuario ${role}: ${error?.message}`);
       createdUserIds.push(data.user.id);
 
-      await (adminClient.from('profiles') as any).insert({
+      // Comprobación explícita de inserción de perfil
+      const { error: profileError } = await (adminClient.from('profiles') as any).insert({
         id: data.user.id,
         full_name: `Test ${role}`,
         name: `Test ${role}`,
         role,
         email
       });
+      if (profileError) {
+        throw new Error(`Fallo en inserción de perfil para ${role}: ${profileError.message}`);
+      }
 
       const userClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
         auth: { persistSession: false }
@@ -84,7 +137,9 @@ describe('Real Database Integration & RLS (No Mocks)', () => {
         email,
         password: 'SecurePassword123!'
       });
-      if (signInErr) throw new Error(`Fallo en login de ${role}: ${signInErr.message}`);
+      if (signInErr) {
+        throw new Error(`Fallo en login de ${role}: ${signInErr.message}`);
+      }
 
       return { user: data.user, client: userClient };
     }
