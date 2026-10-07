@@ -15,6 +15,7 @@ $$ LANGUAGE sql SECURITY DEFINER SET search_path = public;
 -- Revocar permisos de ejecución a todos por seguridad extrema
 REVOKE EXECUTE ON FUNCTION public.is_admin() FROM public;
 GRANT EXECUTE ON FUNCTION public.is_admin() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.is_admin() TO service_role;
 
 -- Políticas para profiles
 DROP POLICY IF EXISTS "Profiles are viewable by self" ON public.profiles;
@@ -43,6 +44,7 @@ REVOKE ALL ON public.profiles FROM authenticated;
 -- Otorgar solo lo estrictamente necesario a authenticated:
 -- Permitimos SELECT, pero NO permitimos INSERT/DELETE a usuarios normales (el backend con service_role los creará)
 GRANT SELECT ON public.profiles TO authenticated;
+GRANT ALL ON public.profiles TO service_role;
 
 -- IMPORTANTE: No permitimos UPDATE de columnas sensibles como 'role'. 
 -- El service_role puede hacer UPDATE de cualquier columna, pero 'authenticated' solo si se lo permitimos (aquí NO lo permitimos).
@@ -101,12 +103,14 @@ $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 REVOKE EXECUTE ON FUNCTION public.reserve_stock(UUID, UUID, INTEGER, INTEGER) FROM public;
 REVOKE EXECUTE ON FUNCTION public.reserve_stock(UUID, UUID, INTEGER, INTEGER) FROM authenticated;
 REVOKE EXECUTE ON FUNCTION public.reserve_stock(UUID, UUID, INTEGER, INTEGER) FROM anon;
+GRANT EXECUTE ON FUNCTION public.reserve_stock(UUID, UUID, INTEGER, INTEGER) TO service_role;
 ALTER TABLE public.stock_reservations ENABLE ROW LEVEL SECURITY;
 
--- ProtecciÃ³n total
+-- Protección total
 REVOKE ALL ON public.stock_reservations FROM public;
 REVOKE ALL ON public.stock_reservations FROM anon;
 REVOKE ALL ON public.stock_reservations FROM authenticated;
+GRANT ALL ON public.stock_reservations TO service_role;
 
 -- Foreign Keys (validación e integridad transaccional)
 DO $$ 
