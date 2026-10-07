@@ -20,7 +20,7 @@ export async function getOpenRegister() {
   return { data };
 }
 
-export async function openShift(adminId: string, initialBalance: number) {
+export async function openShift(initialBalance: number) {
   const { user } = await requireRole(['admin']);
   // Verificar si ya hay una caja abierta
   const current = await getOpenRegister();
@@ -57,7 +57,7 @@ export async function getClosedShifts(limit = 10) {
   return { data };
 }
 
-export async function closeShift(registerId: string, adminId: string, actualBalance: number, expectedBalance: number) {
+export async function closeShift(registerId: string, actualBalance: number, expectedBalance: number) {
   const { user } = await requireRole(['admin']);
   const variance = actualBalance - expectedBalance;
 
@@ -85,7 +85,6 @@ export async function closeShift(registerId: string, adminId: string, actualBala
 
 export async function addTransaction(
   registerId: string, 
-  adminId: string, 
   type: 'income' | 'expense', 
   amount: number, 
   category: string, 

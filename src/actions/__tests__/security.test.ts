@@ -68,8 +68,8 @@ describe('P0 Security - Server Actions Authorization', () => {
     // Simulate successful insert
     adminMocks.mSingle.mockResolvedValueOnce({ data: { id: 'new-reg' } });
 
-    // Hacker tries to open a shift pretending to be "hacker-id"
-    await openShift('hacker-id', 100);
+    // Hacker tries to open a shift with 100
+    await openShift(100);
 
     // Verify insert was called with the actual authenticated user ID, NOT the client's payload
     expect(adminMocks.mInsert).toHaveBeenCalledWith([

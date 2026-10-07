@@ -7,7 +7,7 @@ export type StaffMemberInput = {
   id?: string;
   name: string;
   role: string;
-  email: string; // Made email required since we use invitations now
+  email: string;
 };
 
 export type StaffActionResult = {
@@ -15,30 +15,37 @@ export type StaffActionResult = {
   error?: string;
 };
 
+const ALLOWED_ROLES = ['admin', 'driver', 'warehouse'];
+
 async function createNewStaffUser(
   name: string,
   role: string,
   email: string
 ): Promise<StaffActionResult> {
-  // Use secure invitation instead of hardcoded passwords
   const { data: newUser, error: authError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
-    data: { full_name: name } // We don't put role here anymore for security
+    data: { full_name: name }
   });
 
-  if (authError) {
-    if (authError.message.includes('already been registered')) {
+  if (authError || !newUser?.user?.id) {
+    if (authError?.message?.includes('already been registered')) {
       return { error: 'El email ya está en uso por otra persona.' };
     }
-    return { error: authError.message };
+    return { error: authError?.message || 'Error desconocido creando el usuario.' };
   }
 
   // Set the authoritative role in the secure profiles table
-  await supabaseAdmin.from('profiles').insert({
+  const { error: profileError } = await supabaseAdmin.from('profiles').insert({
     id: newUser.user.id,
     full_name: name,
     role: role,
     email: email
   });
+
+  // Rollback on failure
+  if (profileError) {
+    await supabaseAdmin.auth.admin.deleteUser(newUser.user.id);
+    return { error: `Error creando perfil: ${profileError.message}` };
+  }
 
   return { success: true };
 }
@@ -51,18 +58,22 @@ async function updateExistingStaffUser(
 ): Promise<StaffActionResult> {
   const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(id, {
     email,
-    user_metadata: { full_name: name } // Don't put role here
+    user_metadata: { full_name: name }
   });
 
   if (updateError) {
     return { error: updateError.message };
   }
 
-  await supabaseAdmin.from('profiles').update({
+  const { error: profileError } = await supabaseAdmin.from('profiles').update({
     full_name: name,
     role,
     email
   }).eq('id', id);
+
+  if (profileError) {
+    return { error: `Error actualizando perfil: ${profileError.message}` };
+  }
 
   return { success: true };
 }
@@ -73,6 +84,10 @@ export async function createOrUpdateStaffMember(data: StaffMemberInput): Promise
     
     if (!data.email || data.email.trim().length === 0) {
       return { error: 'El email es obligatorio para invitaciones seguras.' };
+    }
+
+    if (!ALLOWED_ROLES.includes(data.role)) {
+      return { error: 'Rol inválido. Roles permitidos: ' + ALLOWED_ROLES.join(', ') };
     }
 
     if (data.id && data.id.startsWith('staff-')) {

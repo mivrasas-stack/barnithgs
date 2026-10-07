@@ -96,7 +96,7 @@ export function AccountingView() {
     const { data: { user } } = await supabase.auth.getUser();
     if(!user) return;
     
-    const res = await openShift(user.id, Number(shiftAmount));
+    const res = await openShift(Number(shiftAmount));
     if (res.error) {
       toast({ variant: "destructive", title: "Error", description: res.error });
     } else {
@@ -114,7 +114,7 @@ export function AccountingView() {
     // Calculate expected (In real life, sum up cash orders + initial - cash expenses)
     const expected = Number(currentShift.initial_balance); // Simplified for now
     
-    const res = await closeShift(currentShift.id, user.id, Number(shiftAmount), expected);
+    const res = await closeShift(currentShift.id, Number(shiftAmount), expected);
     if (res.error) {
       toast({ variant: "destructive", title: "Error", description: res.error });
     } else {
@@ -136,7 +136,7 @@ export function AccountingView() {
     const { data: { user } } = await supabase.auth.getUser();
     if(!user) return;
 
-    const res = await addTransaction(currentShift ? currentShift.id : null, user.id, txType, Number(txAmount), txCategory, txDesc, txMethod);
+    const res = await addTransaction(currentShift ? currentShift.id : null, txType, Number(txAmount), txCategory, txDesc, txMethod);
     if (res.error) {
       toast({ variant: "destructive", title: "Error", description: res.error });
     } else {

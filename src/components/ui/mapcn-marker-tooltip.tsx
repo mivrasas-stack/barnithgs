@@ -270,7 +270,7 @@ function MapMarker({ longitude, latitude, children, onClick, onMouseEnter, onMou
   useEffect(() => {
     if (!map) return;
     marker.addTo(map);
-    return () => marker.remove();
+    return () => { marker.remove(); };
   }, [map, marker]);
 
   if (marker.getLngLat().lng !== longitude || marker.getLngLat().lat !== latitude) marker.setLngLat([longitude, latitude]);
