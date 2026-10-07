@@ -41,13 +41,11 @@ jobs:
         
       - name: Export Local Credentials
         run: |
-          supabase status -o env > supabase.env
-          echo "NEXT_PUBLIC_SUPABASE_URL=$(grep '^API_URL=' supabase.env | cut -d '=' -f2- | tr -d '\"')" >> $GITHUB_ENV
-          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$(grep '^ANON_KEY=' supabase.env | cut -d '=' -f2- | tr -d '\"')" >> $GITHUB_ENV
-          echo "SUPABASE_SERVICE_ROLE_KEY=$(grep '^SERVICE_ROLE_KEY=' supabase.env | cut -d '=' -f2- | tr -d '\"')" >> $GITHUB_ENV
+          supabase status -o json > supabase.json
+          node -e "const fs = require('fs'); const data = JSON.parse(fs.readFileSync('supabase.json', 'utf8')); const env = ['NEXT_PUBLIC_SUPABASE_URL=' + data.API_URL.trim(), 'NEXT_PUBLIC_SUPABASE_ANON_KEY=' + data.ANON_KEY.trim(), 'SUPABASE_SERVICE_ROLE_KEY=' + data.SERVICE_ROLE_KEY.trim()].join('\n') + '\n'; fs.appendFileSync(process.env.GITHUB_ENV, env);"
 
       - name: Run Jest Security & Integration Tests
-        run: npx jest --verbose
+        run: npx jest --verbose --runInBand
 
       - name: Build Next.js
         run: npm run build
