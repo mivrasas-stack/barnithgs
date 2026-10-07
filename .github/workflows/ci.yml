@@ -27,17 +27,24 @@ jobs:
       - name: ESLint Check
         run: npm run lint
 
-      - name: Setup Local Supabase
+      - name: Setup Local Supabase CLI
         uses: supabase/setup-cli@v1
         with:
           version: latest
-      
+
+      - name: Prepare Isolated Test Schema for CI
+        run: |
+          cp supabase/tests/fixtures/test_schema.sql supabase/migrations/00000000000000_test_schema.sql
+
       - name: Start Local Supabase
         run: supabase start
         
       - name: Export Local Credentials
         run: |
-          supabase status -o env --override-name api.url=NEXT_PUBLIC_SUPABASE_URL --override-name anon.key=NEXT_PUBLIC_SUPABASE_ANON_KEY --override-name service_role.key=SUPABASE_SERVICE_ROLE_KEY >> $GITHUB_ENV
+          supabase status -o env > supabase.env
+          echo "NEXT_PUBLIC_SUPABASE_URL=$(grep '^API_URL=' supabase.env | cut -d '=' -f2- | tr -d '\"')" >> $GITHUB_ENV
+          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$(grep '^ANON_KEY=' supabase.env | cut -d '=' -f2- | tr -d '\"')" >> $GITHUB_ENV
+          echo "SUPABASE_SERVICE_ROLE_KEY=$(grep '^SERVICE_ROLE_KEY=' supabase.env | cut -d '=' -f2- | tr -d '\"')" >> $GITHUB_ENV
 
       - name: Run Jest Security & Integration Tests
         run: npx jest

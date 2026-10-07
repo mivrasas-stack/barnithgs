@@ -108,5 +108,13 @@ REVOKE ALL ON public.stock_reservations FROM public;
 REVOKE ALL ON public.stock_reservations FROM anon;
 REVOKE ALL ON public.stock_reservations FROM authenticated;
 
--- Foreign Keys (si existen las tablas product y carts en tu esquema)
-ALTER TABLE public.stock_reservations ADD CONSTRAINT fk_product FOREIGN KEY (product_id) REFERENCES public.products(id) ON DELETE CASCADE;
+-- Foreign Keys (validación e integridad transaccional)
+DO $$ 
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'fk_product'
+  ) THEN
+    ALTER TABLE public.stock_reservations 
+    ADD CONSTRAINT fk_product FOREIGN KEY (product_id) REFERENCES public.products(id) ON DELETE CASCADE;
+  END IF;
+END $$;
