@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 // aislada de Supabase usando testcontainers o el emulador local de Supabase.
 // NO se utilizan mocks. Todo ocurre en la red contra el motor de PostgreSQL.
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://localhost:54328';
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://localhost:54321';
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'fake-anon-key';
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || 'fake-service-key';
 
@@ -13,8 +13,8 @@ describe('Real Database Integration & RLS (No Mocks)', () => {
   let anonClient: ReturnType<typeof createClient>;
 
   beforeAll(() => {
-    if (SUPABASE_ANON_KEY === 'fake-anon-key') { 
-      console.warn('Saltando pruebas de DB porque no hay credenciales reales'); 
+    if (SUPABASE_ANON_KEY === 'fake-anon-key' || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) { 
+      throw new Error('Missing real database credentials for integration test. Start Supabase locally.'); 
     }
     // Cliente privilegiado para setup
     adminClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
@@ -27,7 +27,6 @@ describe('Real Database Integration & RLS (No Mocks)', () => {
   });
 
   it('debe impedir que un usuario anónimo invoque reserve_stock', async () => {
-    if (SUPABASE_ANON_KEY === 'fake-anon-key') return;
     const { data, error } = await anonClient.rpc('reserve_stock' as any, {
       p_product_id: '00000000-0000-0000-0000-000000000000',
       p_cart_id: '00000000-0000-0000-0000-000000000000',
@@ -40,7 +39,6 @@ describe('Real Database Integration & RLS (No Mocks)', () => {
   });
 
   it('debe impedir que un cliente autenticado lea o escriba en stock_reservations directamente', async () => {
-    if (SUPABASE_ANON_KEY === 'fake-anon-key') return;
     // Creamos un usuario de prueba rápido usando el admin
     const email = `test-client-${Date.now()}@partyflow.app`;
     const { data: { user } } = await adminClient.auth.admin.createUser({
@@ -71,7 +69,6 @@ describe('Real Database Integration & RLS (No Mocks)', () => {
   });
 
   it('debe impedir que un usuario modifique su propia columna role en profiles', async () => {
-    if (SUPABASE_ANON_KEY === 'fake-anon-key') return;
     const email = `test-role-${Date.now()}@partyflow.app`;
     const { data: { user } } = await adminClient.auth.admin.createUser({
       email,

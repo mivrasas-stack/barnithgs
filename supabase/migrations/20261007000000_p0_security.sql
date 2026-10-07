@@ -109,4 +109,4 @@ REVOKE ALL ON public.stock_reservations FROM anon;
 REVOKE ALL ON public.stock_reservations FROM authenticated;
 
 -- Foreign Keys (si existen las tablas product y carts en tu esquema)
--- Asumiendo esquema: ALTER TABLE public.stock_reservations ADD CONSTRAINT fk_product FOREIGN KEY (product_id) REFERENCES public.products(id) ON DELETE CASCADE;
+ALTER TABLE public.stock_reservations ADD CONSTRAINT fk_product FOREIGN KEY (product_id) REFERENCES public.products(id) ON DELETE CASCADE;

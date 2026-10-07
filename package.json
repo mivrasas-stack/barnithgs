@@ -60,11 +60,14 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.3.7",
     "@testing-library/jest-dom": "^7.0.1",
     "@types/jest": "^30.0.0",
     "@types/node": "^20",
     "@types/react": "^19.2.1",
     "@types/react-dom": "^19.2.1",
+    "eslint": "^8.57.0",
+    "eslint-config-next": "^15.0.0",
     "genkit-cli": "^1.28.0",
     "jest": "^30.5.2",
     "postcss": "^8",
