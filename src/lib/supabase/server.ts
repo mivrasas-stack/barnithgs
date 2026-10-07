@@ -1,4 +1,4 @@
-import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
 export async function createClient() {
@@ -28,22 +28,34 @@ export async function createClient() {
 
 export async function requireAuth() {
   const supabase = await createClient();
-  const { data: { session }, error } = await supabase.auth.getSession();
+  // getUser() validates the token on the server, getSession() only reads the cookie locally
+  const { data: { user }, error } = await supabase.auth.getUser();
   
-  if (error || !session) {
+  if (error || !user) {
     throw new Error('Unauthorized');
   }
   
-  return { session, user: session.user };
+  return { user, supabase };
 }
 
 export async function requireRole(allowedRoles: string[]) {
-  const { session, user } = await requireAuth();
-  const role = user.user_metadata?.role;
+  const { user, supabase } = await requireAuth();
   
-  if (!allowedRoles.includes(role)) {
+  // NEVER trust user_metadata for authorization, users can modify it via the client
+  // Always query the secure profiles table protected by RLS / service_role
+  const { data: profile, error } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single();
+    
+  if (error || !profile) {
+    throw new Error('Profile not found');
+  }
+  
+  if (!allowedRoles.includes(profile.role)) {
     throw new Error('Forbidden: Insufficient permissions');
   }
   
-  return { session, user, role };
+  return { user, role: profile.role };
 }

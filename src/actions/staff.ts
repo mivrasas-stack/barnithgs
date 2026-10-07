@@ -7,32 +7,22 @@ export type StaffMemberInput = {
   id?: string;
   name: string;
   role: string;
-  pin?: string;
-  email?: string;
+  email: string; // Made email required since we use invitations now
 };
 
 export type StaffActionResult = {
   success?: boolean;
   error?: string;
-  pin?: string;
 };
-
-function generateAutomaticPin(): string {
-  return Math.floor(1000 + Math.random() * 9000).toString();
-}
 
 async function createNewStaffUser(
   name: string,
   role: string,
-  pin: string,
   email: string
 ): Promise<StaffActionResult> {
-  const password = `pin${pin}partyflow`;
-  const { data: newUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
-    email,
-    password,
-    email_confirm: true,
-    user_metadata: { full_name: name, role, pin }
+  // Use secure invitation instead of hardcoded passwords
+  const { data: newUser, error: authError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
+    data: { full_name: name } // We don't put role here anymore for security
   });
 
   if (authError) {
@@ -42,28 +32,26 @@ async function createNewStaffUser(
     return { error: authError.message };
   }
 
-  await supabaseAdmin.from('profiles').update({
+  // Set the authoritative role in the secure profiles table
+  await supabaseAdmin.from('profiles').insert({
+    id: newUser.user.id,
     full_name: name,
-    role,
-    pin,
-    email
-  }).eq('id', newUser.user.id);
+    role: role,
+    email: email
+  });
 
-  return { success: true, pin };
+  return { success: true };
 }
 
 async function updateExistingStaffUser(
   id: string,
   name: string,
   role: string,
-  pin: string,
   email: string
 ): Promise<StaffActionResult> {
-  const password = `pin${pin}partyflow`;
   const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(id, {
     email,
-    password,
-    user_metadata: { full_name: name, role, pin }
+    user_metadata: { full_name: name } // Don't put role here
   });
 
   if (updateError) {
@@ -73,25 +61,24 @@ async function updateExistingStaffUser(
   await supabaseAdmin.from('profiles').update({
     full_name: name,
     role,
-    pin,
     email
   }).eq('id', id);
 
-  return { success: true, pin };
+  return { success: true };
 }
 
 export async function createOrUpdateStaffMember(data: StaffMemberInput): Promise<StaffActionResult> {
   try {
     await requireRole(['admin']);
-    const pin = data.pin && data.pin.length === 4 ? data.pin : generateAutomaticPin();
-    const email = data.email && data.email.trim().length > 0 
-      ? data.email.trim() 
-      : `staff_${pin}@partyflow.app`;
+    
+    if (!data.email || data.email.trim().length === 0) {
+      return { error: 'El email es obligatorio para invitaciones seguras.' };
+    }
 
     if (data.id && data.id.startsWith('staff-')) {
-      return await createNewStaffUser(data.name, data.role, pin, email);
+      return await createNewStaffUser(data.name, data.role, data.email);
     } else if (data.id) {
-      return await updateExistingStaffUser(data.id, data.name, data.role, pin, email);
+      return await updateExistingStaffUser(data.id, data.name, data.role, data.email);
     }
 
     return { error: 'Datos de personal inválidos.' };

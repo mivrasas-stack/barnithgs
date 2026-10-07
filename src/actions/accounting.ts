@@ -41,6 +41,7 @@ export async function openShift(adminId: string, initialBalance: number) {
 }
 
 export async function getClosedShifts(limit = 10) {
+  await requireRole(['admin']);
   const { data, error } = await supabaseAdmin
     .from('cash_registers')
     .select(`
@@ -57,13 +58,14 @@ export async function getClosedShifts(limit = 10) {
 }
 
 export async function closeShift(registerId: string, adminId: string, actualBalance: number, expectedBalance: number) {
+  const { user } = await requireRole(['admin']);
   const variance = actualBalance - expectedBalance;
 
   const { data, error } = await supabaseAdmin
     .from('cash_registers')
     .update({
       status: 'closed',
-      closed_by: adminId,
+      closed_by: user.id,
       closed_at: new Date().toISOString(),
       actual_balance: actualBalance,
       expected_balance: expectedBalance,
@@ -90,12 +92,13 @@ export async function addTransaction(
   description: string,
   paymentMethod: 'cash' | 'transfer'
 ) {
+  const { user } = await requireRole(['admin']);
   const { data, error } = await supabaseAdmin
     .from('transactions')
     .insert([
       {
         cash_register_id: registerId,
-        created_by: adminId,
+        created_by: user.id,
         type,
         amount,
         category,
@@ -115,6 +118,7 @@ export async function addTransaction(
 // --- MÉTRICAS Y REPORTES ---
 
 export async function getAccountingMetrics() {
+  await requireRole(['admin']);
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
   
