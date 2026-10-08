@@ -9,6 +9,66 @@ const SUPABASE_URL = (process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://localhost:
 const SUPABASE_ANON_KEY = (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'fake-anon-key').trim();
 const SUPABASE_SERVICE_ROLE_KEY = (process.env.SUPABASE_SERVICE_ROLE_KEY || 'fake-service-key').trim();
 
+type QueryResult<T> = Promise<{ data: T; error: { message: string; code?: string } | null }>;
+
+interface TableHandler {
+  select: (cols?: string) => {
+    eq: (col: string, val: unknown) => {
+      eq: (col2: string, val2: unknown) => {
+        single: () => QueryResult<Record<string, unknown>>;
+      };
+      single: () => QueryResult<Record<string, unknown>>;
+    } & QueryResult<Record<string, unknown>[]>;
+    in: (col: string, vals: unknown[]) => QueryResult<Record<string, unknown>[]>;
+  } & QueryResult<Record<string, unknown>[]>;
+  insert: (values: unknown) => QueryResult<unknown>;
+  upsert: (values: unknown) => QueryResult<unknown>;
+  update: (values: unknown) => {
+    eq: (col: string, val: unknown) => {
+      eq: (col2: string, val2: unknown) => QueryResult<unknown>;
+    } & QueryResult<unknown>;
+  };
+  delete: () => {
+    eq: (col: string, val: unknown) => QueryResult<unknown>;
+    in: (col: string, vals: unknown[]) => QueryResult<unknown>;
+  };
+}
+
+interface TestDbClient {
+  rpc: (fn: string, params?: Record<string, unknown>) => QueryResult<unknown>;
+  from: (table: string) => TableHandler;
+}
+
+async function createAuthUserClient(
+  admin: ReturnType<typeof createClient>,
+  anon: ReturnType<typeof createClient>
+): Promise<{ client: TestDbClient; userId: string }> {
+  const email = `test-auth-${Date.now()}-${Math.random().toString(36).slice(2, 6)}@partyflow.app`;
+  const { data, error } = await admin.auth.admin.createUser({
+    email,
+    password: 'SecurePassword123!',
+    email_confirm: true
+  });
+  if (error || !data.user) {
+    throw new Error(`Failed to create test auth user: ${error?.message}`);
+  }
+
+  const { data: authData, error: signInErr } = await anon.auth.signInWithPassword({
+    email,
+    password: 'SecurePassword123!'
+  });
+  if (signInErr || !authData.session) {
+    throw new Error(`Failed to sign in test auth user: ${signInErr?.message}`);
+  }
+
+  const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    global: { headers: { Authorization: `Bearer ${authData.session.access_token}` } },
+    auth: { persistSession: false, autoRefreshToken: false }
+  });
+
+  return { client: client as unknown as TestDbClient, userId: data.user.id };
+}
+
 describe('P1 Etapa 2: Inventario por Variante, Bodega, Concurrencia y RLS', () => {
   let adminClient: ReturnType<typeof createClient>;
   let anonClient: ReturnType<typeof createClient>;
@@ -212,5 +272,191 @@ describe('P1 Etapa 2: Inventario por Variante, Bodega, Concurrencia y RLS', () =
     const { error: resErr } = await (anonClient.from('stock_reservations') as any).select('*');
     expect(resErr).toBeDefined();
     expect(resErr?.code).toBe('42501');
+  });
+
+  it('un usuario autenticado no puede ejecutar las RPC privilegiadas de reservas (42501)', async () => {
+    const { client: authClient, userId } = await createAuthUserClient(adminClient, anonClient);
+    const dummyId = '00000000-0000-0000-0000-000000000099';
+    try {
+      const calls = [
+        authClient.rpc('reserve_variant_stock', { p_variant_id: dummyId, p_warehouse_id: WAREHOUSE_ID, p_cart_id: dummyId, p_quantity: 1 }),
+        authClient.rpc('reserve_stock', { p_product_id: dummyId, p_cart_id: dummyId, p_quantity: 1 }),
+        authClient.rpc('renew_reservation', { p_reservation_id: dummyId, p_extension_minutes: 15 }),
+        authClient.rpc('release_reservation', { p_reservation_id: dummyId }),
+        authClient.rpc('consume_reservation', { p_reservation_id: dummyId }),
+      ];
+      const results = await Promise.all(calls);
+      for (const res of results) {
+        expect(res.error).toBeDefined();
+        expect(res.error?.code).toBe('42501');
+      }
+    } finally {
+      await adminClient.auth.admin.deleteUser(userId);
+    }
+  });
+
+  it('rechaza reservas con cantidades invalidas o TTL fuera de los limites permitidos', async () => {
+    const prodId = '70000000-0000-0000-0000-000000000010';
+    const varId = '80000000-0000-0000-0000-000000000010';
+    const cartId = '90000000-0000-0000-0000-000000000010';
+    const db = adminClient as unknown as TestDbClient;
+    try {
+      await db.from('products').upsert({ id: prodId, name: 'Gin TTL Test', is_active: true });
+      await db.from('product_variants').upsert({ id: varId, product_id: prodId, sku: 'SKU-GIN-TTL', presentation_label: '750ml', price_in_cents: 1000, is_active: true });
+      await db.from('inventory').update({ physical_quantity: 50, safety_stock: 0 }).eq('variant_id', varId).eq('warehouse_id', WAREHOUSE_ID);
+
+      const overTtl = await db.rpc('reserve_variant_stock', { p_variant_id: varId, p_warehouse_id: WAREHOUSE_ID, p_cart_id: cartId, p_quantity: 1, p_ttl_minutes: 16 });
+      const zeroTtl = await db.rpc('reserve_variant_stock', { p_variant_id: varId, p_warehouse_id: WAREHOUSE_ID, p_cart_id: cartId, p_quantity: 1, p_ttl_minutes: 0 });
+      const zeroQty = await db.rpc('reserve_variant_stock', { p_variant_id: varId, p_warehouse_id: WAREHOUSE_ID, p_cart_id: cartId, p_quantity: 0, p_ttl_minutes: 15 });
+      const overQty = await db.rpc('reserve_variant_stock', { p_variant_id: varId, p_warehouse_id: WAREHOUSE_ID, p_cart_id: cartId, p_quantity: 100, p_ttl_minutes: 15 });
+
+      expect(overTtl.data).toBe(false);
+      expect(zeroTtl.data).toBe(false);
+      expect(zeroQty.data).toBe(false);
+      expect(overQty.data).toBe(false);
+    } finally {
+      await db.from('inventory').delete().eq('variant_id', varId);
+      await db.from('product_variants').delete().eq('id', varId);
+      await db.from('products').delete().eq('id', prodId);
+    }
+  });
+
+  it('rechaza renovaciones con extension superior a 15m o duracion total mayor a 30m', async () => {
+    const prodId = '70000000-0000-0000-0000-000000000014';
+    const varId = '80000000-0000-0000-0000-000000000014';
+    const cartId = '90000000-0000-0000-0000-000000000014';
+    const db = adminClient as unknown as TestDbClient;
+    try {
+      await db.from('products').upsert({ id: prodId, name: 'Tequila 30m Test', is_active: true });
+      await db.from('product_variants').upsert({ id: varId, product_id: prodId, sku: 'SKU-TEQ-30M', presentation_label: '750ml', price_in_cents: 1000, is_active: true });
+      await db.from('inventory').update({ physical_quantity: 10, safety_stock: 0 }).eq('variant_id', varId).eq('warehouse_id', WAREHOUSE_ID);
+      await db.rpc('reserve_variant_stock', { p_variant_id: varId, p_warehouse_id: WAREHOUSE_ID, p_cart_id: cartId, p_quantity: 1, p_ttl_minutes: 15 });
+
+      const { data: resRow } = await db.from('stock_reservations').select('id').eq('cart_id', cartId).single();
+      const overExt = await db.rpc('renew_reservation', { p_reservation_id: resRow.id, p_extension_minutes: 16 });
+      expect(overExt.data).toBe(false);
+
+      const oldCreated = new Date(Date.now() - 20 * 60 * 1000).toISOString();
+      await db.from('stock_reservations').update({ created_at: oldCreated }).eq('id', resRow.id);
+      const over30m = await db.rpc('renew_reservation', { p_reservation_id: resRow.id, p_extension_minutes: 15 });
+      expect(over30m.data).toBe(false);
+    } finally {
+      await db.from('stock_reservations').delete().eq('variant_id', varId);
+      await db.from('inventory').delete().eq('variant_id', varId);
+      await db.from('product_variants').delete().eq('id', varId);
+      await db.from('products').delete().eq('id', prodId);
+    }
+  });
+
+  it('no se pueden consumir cantidades superiores al stock fisico y no descuenta inventario', async () => {
+    const prodId = '70000000-0000-0000-0000-000000000011';
+    const varId = '80000000-0000-0000-0000-000000000011';
+    const cartId = '90000000-0000-0000-0000-000000000011';
+    const db = adminClient as unknown as TestDbClient;
+    try {
+      await db.from('products').upsert({ id: prodId, name: 'Whisky Underflow Test', is_active: true });
+      await db.from('product_variants').upsert({ id: varId, product_id: prodId, sku: 'SKU-WH-UND', presentation_label: '750ml', price_in_cents: 2000, is_active: true });
+      await db.from('inventory').update({ physical_quantity: 10, safety_stock: 0 }).eq('variant_id', varId).eq('warehouse_id', WAREHOUSE_ID);
+      await db.rpc('reserve_variant_stock', { p_variant_id: varId, p_warehouse_id: WAREHOUSE_ID, p_cart_id: cartId, p_quantity: 5 });
+
+      const { data: resRow } = await db.from('stock_reservations').select('id').eq('cart_id', cartId).single();
+      await db.from('inventory').update({ physical_quantity: 2 }).eq('variant_id', varId).eq('warehouse_id', WAREHOUSE_ID);
+
+      const consumeRes = await db.rpc('consume_reservation', { p_reservation_id: resRow.id });
+      expect(consumeRes.data).toBe(false);
+
+      const { data: invRow } = await db.from('inventory').select('physical_quantity').eq('variant_id', varId).single();
+      expect(invRow.physical_quantity).toBe(2);
+      const { data: resAfter } = await db.from('stock_reservations').select('status').eq('id', resRow.id).single();
+      expect(resAfter.status).toBe('active');
+    } finally {
+      await db.from('stock_reservations').delete().eq('variant_id', varId);
+      await db.from('inventory').delete().eq('variant_id', varId);
+      await db.from('product_variants').delete().eq('id', varId);
+      await db.from('products').delete().eq('id', prodId);
+    }
+  });
+
+  it('un segundo consumo de la misma reserva no descuenta inventario dos veces', async () => {
+    const prodId = '70000000-0000-0000-0000-000000000012';
+    const varId = '80000000-0000-0000-0000-000000000012';
+    const cartId = '90000000-0000-0000-0000-000000000012';
+    const db = adminClient as unknown as TestDbClient;
+    try {
+      await db.from('products').upsert({ id: prodId, name: 'Double Consume Test', is_active: true });
+      await db.from('product_variants').upsert({ id: varId, product_id: prodId, sku: 'SKU-DBL-CONS', presentation_label: '750ml', price_in_cents: 1200, is_active: true });
+      await db.from('inventory').update({ physical_quantity: 10, safety_stock: 0 }).eq('variant_id', varId).eq('warehouse_id', WAREHOUSE_ID);
+      await db.rpc('reserve_variant_stock', { p_variant_id: varId, p_warehouse_id: WAREHOUSE_ID, p_cart_id: cartId, p_quantity: 3 });
+
+      const { data: resRow } = await db.from('stock_reservations').select('id').eq('cart_id', cartId).single();
+      const firstConsume = await db.rpc('consume_reservation', { p_reservation_id: resRow.id });
+      expect(firstConsume.data).toBe(true);
+
+      const secondConsume = await db.rpc('consume_reservation', { p_reservation_id: resRow.id });
+      expect(secondConsume.data).toBe(false);
+
+      const { data: invRow } = await db.from('inventory').select('physical_quantity').eq('variant_id', varId).single();
+      expect(invRow.physical_quantity).toBe(7);
+    } finally {
+      await db.from('stock_reservations').delete().eq('variant_id', varId);
+      await db.from('inventory').delete().eq('variant_id', varId);
+      await db.from('product_variants').delete().eq('id', varId);
+      await db.from('products').delete().eq('id', prodId);
+    }
+  });
+
+  it('rechaza combinaciones incompatibles de product_id y variant_id en inventory y reservations', async () => {
+    const prodA = '70000000-0000-0000-0000-000000000021';
+    const prodB = '70000000-0000-0000-0000-000000000022';
+    const varA = '80000000-0000-0000-0000-000000000021';
+    const varB = '80000000-0000-0000-0000-000000000022';
+    const cartId = '90000000-0000-0000-0000-000000000021';
+    const db = adminClient as unknown as TestDbClient;
+    try {
+      await db.from('products').upsert([{ id: prodA, name: 'Product Alpha', is_active: true }, { id: prodB, name: 'Product Beta', is_active: true }]);
+      await db.from('product_variants').upsert([
+        { id: varA, product_id: prodA, sku: 'SKU-ALPHA', presentation_label: 'A', price_in_cents: 1000, is_active: true },
+        { id: varB, product_id: prodB, sku: 'SKU-BETA', presentation_label: 'B', price_in_cents: 2000, is_active: true }
+      ]);
+
+      const { error: invErr } = await db.from('inventory').insert({ variant_id: varA, product_id: prodB, warehouse_id: WAREHOUSE_ID, physical_quantity: 5 });
+      expect(invErr).toBeDefined();
+      expect(invErr?.message).toContain('INCONSISTENT_PRODUCT_VARIANT');
+
+      const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
+      const { error: resErr } = await db.from('stock_reservations').insert({ variant_id: varA, product_id: prodB, warehouse_id: WAREHOUSE_ID, cart_id: cartId, quantity: 1, expires_at: expiresAt });
+      expect(resErr).toBeDefined();
+      expect(resErr?.message).toContain('INCONSISTENT_PRODUCT_VARIANT');
+    } finally {
+      await db.from('stock_reservations').delete().in('variant_id', [varA, varB]);
+      await db.from('inventory').delete().in('variant_id', [varA, varB]);
+      await db.from('product_variants').delete().in('id', [varA, varB]);
+      await db.from('products').delete().in('id', [prodA, prodB]);
+    }
+  });
+
+  it('preserva stock fisico integro y enlaza variante generada automaticamente para productos legados', async () => {
+    const legacyProdId = '70000000-0000-0000-0000-000000000030';
+    let createdVarId: string | null = null;
+    const db = adminClient as unknown as TestDbClient;
+    try {
+      await db.from('products').upsert({ id: legacyProdId, name: 'Legacy Brandy', is_active: true });
+      const { error: invErr } = await db.from('inventory').insert({ product_id: legacyProdId, warehouse_id: WAREHOUSE_ID, physical_quantity: 42 });
+      expect(invErr).toBeNull();
+
+      const { data: variants } = await db.from('product_variants').select('*').eq('product_id', legacyProdId);
+      expect(variants).toHaveLength(1);
+      createdVarId = String(variants[0].id);
+
+      const { data: invRow } = await db.from('inventory').select('*').eq('variant_id', createdVarId).eq('warehouse_id', WAREHOUSE_ID).single();
+      expect(invRow.physical_quantity).toBe(42);
+      expect(invRow.product_id).toBe(legacyProdId);
+    } finally {
+      if (createdVarId) {
+        await db.from('inventory').delete().eq('variant_id', createdVarId);
+        await db.from('product_variants').delete().eq('id', createdVarId);
+      }
+      await db.from('products').delete().eq('id', legacyProdId);
+    }
   });
 });
