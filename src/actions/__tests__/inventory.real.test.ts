@@ -452,4 +452,69 @@ describe('P1 Etapa 2: Inventario por Variante, Bodega, Concurrencia y RLS', () =
       await db.from('products').delete().eq('id', legacyProdId);
     }
   });
+
+  it('fuerza un error en la fase final del consumo y verifica rollback completo de inventario', async () => {
+    const prodId = '70000000-0000-0000-0000-000000000050';
+    const varId = '80000000-0000-0000-0000-000000000050';
+    const faultCart = 'ffffffff-ffff-ffff-ffff-ffffffffffff';
+    const db = adminClient as unknown as TestDbClient;
+    try {
+      await db.from('products').upsert({ id: prodId, name: 'Rollback Whisky', is_active: true });
+      await db.from('product_variants').upsert({ id: varId, product_id: prodId, sku: 'SKU-ROLL-WH', presentation_label: '750ml', price_in_cents: 5000, is_active: true });
+      await db.from('inventory').update({ physical_quantity: 10, safety_stock: 0 }).eq('variant_id', varId).eq('warehouse_id', WAREHOUSE_ID);
+
+      await db.rpc('reserve_variant_stock', { p_variant_id: varId, p_warehouse_id: WAREHOUSE_ID, p_cart_id: faultCart, p_quantity: 4 });
+      const { data: resRow } = await db.from('stock_reservations').select('id').eq('cart_id', faultCart).single();
+
+      const consumeRes = await db.rpc('consume_reservation', { p_reservation_id: resRow.id });
+      expect(consumeRes.error).toBeDefined();
+      expect(consumeRes.error?.message).toContain('SIMULATED_FINAL_PHASE_FAILURE');
+
+      const { data: invRow } = await db.from('inventory').select('physical_quantity').eq('variant_id', varId).single();
+      expect(Number(invRow.physical_quantity)).toBe(10);
+      const { data: resAfter } = await db.from('stock_reservations').select('status').eq('id', resRow.id).single();
+      expect(resAfter.status).toBe('active');
+    } finally {
+      await db.from('stock_reservations').delete().eq('variant_id', varId);
+      await db.from('inventory').delete().eq('variant_id', varId);
+      await db.from('product_variants').delete().eq('id', varId);
+      await db.from('products').delete().eq('id', prodId);
+    }
+  });
+
+  it('concurrencia mixta: combina reservas nuevas, consumos simultaneos y liberaciones sin dobles descuentos ni stock negativo', async () => {
+    const prodId = '70000000-0000-0000-0000-000000000060';
+    const varId = '80000000-0000-0000-0000-000000000060';
+    const [cartA, cartB, cartC, cartD] = ['90000000-0000-0000-0000-000000000061', '90000000-0000-0000-0000-000000000062', '90000000-0000-0000-0000-000000000063', '90000000-0000-0000-0000-000000000064'];
+    const db = adminClient as unknown as TestDbClient;
+    try {
+      await db.from('products').upsert({ id: prodId, name: 'Mixed Concurrency Tequila', is_active: true });
+      await db.from('product_variants').upsert({ id: varId, product_id: prodId, sku: 'SKU-MIX-CONC', presentation_label: '750ml', price_in_cents: 8000, is_active: true });
+      await db.from('inventory').update({ physical_quantity: 10, safety_stock: 0 }).eq('variant_id', varId).eq('warehouse_id', WAREHOUSE_ID);
+      await db.rpc('reserve_variant_stock', { p_variant_id: varId, p_warehouse_id: WAREHOUSE_ID, p_cart_id: cartA, p_quantity: 3 });
+      await db.rpc('reserve_variant_stock', { p_variant_id: varId, p_warehouse_id: WAREHOUSE_ID, p_cart_id: cartB, p_quantity: 4 });
+
+      const { data: resA } = await db.from('stock_reservations').select('id').eq('cart_id', cartA).single();
+      const { data: resB } = await db.from('stock_reservations').select('id').eq('cart_id', cartB).single();
+
+      const ops = await Promise.all([
+        db.rpc('consume_reservation', { p_reservation_id: resA.id }),
+        db.rpc('consume_reservation', { p_reservation_id: resA.id }),
+        db.rpc('release_reservation', { p_reservation_id: resB.id }),
+        db.rpc('reserve_variant_stock', { p_variant_id: varId, p_warehouse_id: WAREHOUSE_ID, p_cart_id: cartC, p_quantity: 5 }),
+        db.rpc('reserve_variant_stock', { p_variant_id: varId, p_warehouse_id: WAREHOUSE_ID, p_cart_id: cartD, p_quantity: 2 }),
+      ]);
+
+      const consumeWins = [ops[0], ops[1]].filter(o => o.data === true);
+      expect(consumeWins).toHaveLength(1);
+      const { data: invRow } = await db.from('inventory').select('physical_quantity').eq('variant_id', varId).single();
+      expect(Number(invRow.physical_quantity)).toBe(7);
+      expect(Number(invRow.physical_quantity)).toBeGreaterThanOrEqual(0);
+    } finally {
+      await db.from('stock_reservations').delete().eq('variant_id', varId);
+      await db.from('inventory').delete().eq('variant_id', varId);
+      await db.from('product_variants').delete().eq('id', varId);
+      await db.from('products').delete().eq('id', prodId);
+    }
+  });
 });

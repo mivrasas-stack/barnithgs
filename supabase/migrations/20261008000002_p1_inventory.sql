@@ -365,39 +365,62 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
--- 5.4 Consume reservation on payment capture and deduct physical stock
+-- ==============================================================================
+-- CANONICAL LOCK HIERARCHY & DEADLOCK PREVENTION
+-- 1. Level 1 (Root Resource): public.inventory (variant_id, warehouse_id)
+-- 2. Level 2 (Leaf Resource): public.stock_reservations (id)
+--
+-- Rules:
+-- - reserve_variant_stock: Locks inventory (Level 1) FOR UPDATE, inserts into stock_reservations (Level 2).
+-- - consume_reservation: Locks inventory (Level 1) FOR UPDATE, then locks stock_reservations (Level 2) FOR UPDATE.
+-- - release_reservation: Single-table update on stock_reservations (Level 2). Never requests Level 1 lock.
+-- By acquiring multi-table locks in strict top-down order (inventory -> stock_reservations),
+-- circular lock wait cycles (deadlocks) are mathematically eliminated.
+-- ==============================================================================
+
+-- 5.4 Consume reservation on payment capture and deduct physical stock (ACID Atomic)
 CREATE OR REPLACE FUNCTION public.consume_reservation(
   p_reservation_id UUID
 ) RETURNS BOOLEAN AS $$
 DECLARE
   v_res RECORD;
   v_physical_qty INTEGER;
+  v_res_status TEXT;
   v_updated_rows INTEGER;
 BEGIN
-  -- 1. Pessimistic lock on reservation
+  -- 1. Snapshot reservation metadata without lock to identify target inventory row
   SELECT id, variant_id, warehouse_id, quantity, status
   INTO v_res
   FROM public.stock_reservations
-  WHERE id = p_reservation_id
-  FOR UPDATE;
+  WHERE id = p_reservation_id;
 
   IF NOT FOUND OR v_res.status != 'active' THEN
     RETURN FALSE;
   END IF;
 
-  -- 2. Pessimistic lock on inventory row
+  -- 2. Acquire Level 1 lock FIRST: Lock inventory row (Canonical Order: inventory -> stock_reservations)
   SELECT physical_quantity
   INTO v_physical_qty
   FROM public.inventory
   WHERE variant_id = v_res.variant_id AND warehouse_id = v_res.warehouse_id
   FOR UPDATE;
 
-  -- Verify inventory exists and has sufficient physical quantity
   IF NOT FOUND OR v_physical_qty < v_res.quantity THEN
     RETURN FALSE;
   END IF;
 
-  -- 3. Atomic deduction without GREATEST(0, ...), strictly requiring physical_quantity >= v_res.quantity
+  -- 3. Acquire Level 2 lock SECOND: Lock reservation row
+  SELECT status
+  INTO v_res_status
+  FROM public.stock_reservations
+  WHERE id = p_reservation_id
+  FOR UPDATE;
+
+  IF v_res_status != 'active' THEN
+    RETURN FALSE;
+  END IF;
+
+  -- 4. Atomic inventory deduction (strictly requiring physical_quantity >= v_res.quantity)
   UPDATE public.inventory
   SET physical_quantity = physical_quantity - v_res.quantity,
       updated_at = now()
@@ -407,22 +430,40 @@ BEGIN
 
   GET DIAGNOSTICS v_updated_rows = ROW_COUNT;
   IF v_updated_rows != 1 THEN
-    RETURN FALSE;
+    RAISE EXCEPTION 'CONSUME_FAILED: Inventory deduction affected % rows instead of 1 for variant %', v_updated_rows, v_res.variant_id;
   END IF;
 
-  -- 4. Mark reservation as consumed
+  -- 5. Mark reservation as consumed; any failure here MUST raise exception to rollback Step 4
   UPDATE public.stock_reservations
   SET status = 'consumed'
   WHERE id = p_reservation_id AND status = 'active';
 
   GET DIAGNOSTICS v_updated_rows = ROW_COUNT;
   IF v_updated_rows != 1 THEN
-    RETURN FALSE;
+    RAISE EXCEPTION 'CONSUME_FAILED: Reservation status update affected % rows instead of 1 for reservation %', v_updated_rows, p_reservation_id;
   END IF;
 
   RETURN TRUE;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+-- 5.4.1 Test Fault-Injection Hook for Verification of Full ACID Rollback
+CREATE OR REPLACE FUNCTION public.handle_stock_reservation_update_safety()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- Induced error for integration test verifying transaction rollback
+  IF NEW.status = 'consumed' AND NEW.cart_id = 'ffffffff-ffff-ffff-ffff-ffffffffffff' THEN
+    RAISE EXCEPTION 'SIMULATED_FINAL_PHASE_FAILURE: Induced error during reservation status transition';
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_stock_reservation_update_safety ON public.stock_reservations;
+CREATE TRIGGER trg_stock_reservation_update_safety
+BEFORE UPDATE OF status ON public.stock_reservations
+FOR EACH ROW EXECUTE FUNCTION public.handle_stock_reservation_update_safety();
 
 -- 5.5 Backward-compatible reserve_stock(product_id, cart_id, quantity, ttl)
 CREATE OR REPLACE FUNCTION public.reserve_stock(
