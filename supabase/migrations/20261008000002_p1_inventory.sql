@@ -447,24 +447,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
--- 5.4.1 Test Fault-Injection Hook for Verification of Full ACID Rollback
-CREATE OR REPLACE FUNCTION public.handle_stock_reservation_update_safety()
-RETURNS TRIGGER AS $$
-BEGIN
-  -- Induced error for integration test verifying transaction rollback
-  IF NEW.status = 'consumed' AND NEW.cart_id = 'ffffffff-ffff-ffff-ffff-ffffffffffff' THEN
-    RAISE EXCEPTION 'SIMULATED_FINAL_PHASE_FAILURE: Induced error during reservation status transition';
-  END IF;
-
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-DROP TRIGGER IF EXISTS trg_stock_reservation_update_safety ON public.stock_reservations;
-CREATE TRIGGER trg_stock_reservation_update_safety
-BEFORE UPDATE OF status ON public.stock_reservations
-FOR EACH ROW EXECUTE FUNCTION public.handle_stock_reservation_update_safety();
-
 -- 5.5 Backward-compatible reserve_stock(product_id, cart_id, quantity, ttl)
 CREATE OR REPLACE FUNCTION public.reserve_stock(
   p_product_id UUID, 

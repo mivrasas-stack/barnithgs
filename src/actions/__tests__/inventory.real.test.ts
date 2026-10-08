@@ -16,7 +16,7 @@ interface TableHandler {
     eq: (col: string, val: unknown) => {
       eq: (col2: string, val2: unknown) => {
         single: () => QueryResult<Record<string, unknown>>;
-      };
+      } & QueryResult<Record<string, unknown>[]>;
       single: () => QueryResult<Record<string, unknown>>;
     } & QueryResult<Record<string, unknown>[]>;
     in: (col: string, vals: unknown[]) => QueryResult<Record<string, unknown>[]>;
@@ -505,11 +505,83 @@ describe('P1 Etapa 2: Inventario por Variante, Bodega, Concurrencia y RLS', () =
         db.rpc('reserve_variant_stock', { p_variant_id: varId, p_warehouse_id: WAREHOUSE_ID, p_cart_id: cartD, p_quantity: 2 }),
       ]);
 
+      // 1. Verificación individual del resultado de cada operación
+      expect(ops[0].error).toBeNull();
+      expect(ops[1].error).toBeNull();
       const consumeWins = [ops[0], ops[1]].filter(o => o.data === true);
+      const consumeLosses = [ops[0], ops[1]].filter(o => o.data === false);
       expect(consumeWins).toHaveLength(1);
-      const { data: invRow } = await db.from('inventory').select('physical_quantity').eq('variant_id', varId).single();
-      expect(Number(invRow.physical_quantity)).toBe(7);
-      expect(Number(invRow.physical_quantity)).toBeGreaterThanOrEqual(0);
+      expect(consumeLosses).toHaveLength(1);
+
+      expect(ops[2].error).toBeNull();
+      expect(ops[2].data).toBe(true);
+
+      expect(ops[3].error).toBeNull();
+      expect(ops[4].error).toBeNull();
+      expect(typeof ops[3].data).toBe('boolean');
+      expect(typeof ops[4].data).toBe('boolean');
+
+      // 2. Verificación exhaustiva de los estados finales de las reservas
+      const { data: finalResA } = await db.from('stock_reservations').select('id, status, quantity').eq('id', resA.id).single();
+      expect(finalResA.status).toBe('consumed');
+      expect(Number(finalResA.quantity)).toBe(3);
+
+      const { data: finalResB } = await db.from('stock_reservations').select('id, status, quantity').eq('id', resB.id).single();
+      expect(finalResB.status).toBe('cancelled');
+      expect(Number(finalResB.quantity)).toBe(4);
+
+      const { data: resCList } = await db.from('stock_reservations').select('id, status, quantity').eq('cart_id', cartC);
+      if (ops[3].data === true) {
+        expect(resCList).toHaveLength(1);
+        expect(resCList[0].status).toBe('active');
+        expect(Number(resCList[0].quantity)).toBe(5);
+      } else {
+        const activeC = (resCList || []).filter(r => r.status === 'active');
+        expect(activeC).toHaveLength(0);
+      }
+
+      const { data: resDList } = await db.from('stock_reservations').select('id, status, quantity').eq('cart_id', cartD);
+      if (ops[4].data === true) {
+        expect(resDList).toHaveLength(1);
+        expect(resDList[0].status).toBe('active');
+        expect(Number(resDList[0].quantity)).toBe(2);
+      } else {
+        const activeD = (resDList || []).filter(r => r.status === 'active');
+        expect(activeD).toHaveLength(0);
+      }
+
+      // 3. Verificación de la suma de reservas activas
+      const { data: allActiveReservations } = await db
+        .from('stock_reservations')
+        .select('id, quantity, status')
+        .eq('variant_id', varId)
+        .eq('status', 'active');
+
+      const totalActiveReserved = (allActiveReservations || []).reduce(
+        (acc: number, r: Record<string, unknown>) => acc + Number(r.quantity ?? 0),
+        0
+      );
+
+      let expectedActiveSum = 0;
+      if (ops[3].data === true) expectedActiveSum += 5;
+      if (ops[4].data === true) expectedActiveSum += 2;
+      expect(totalActiveReserved).toBe(expectedActiveSum);
+
+      // 4. Verificación de que el inventario disponible nunca sea negativo
+      const { data: finalInv } = await db
+        .from('inventory')
+        .select('physical_quantity, safety_stock')
+        .eq('variant_id', varId)
+        .eq('warehouse_id', WAREHOUSE_ID)
+        .single();
+
+      const physicalQuantity = Number(finalInv?.physical_quantity ?? 0);
+      const safetyStock = Number(finalInv?.safety_stock ?? 0);
+      const availableInventory = physicalQuantity - safetyStock - totalActiveReserved;
+
+      expect(physicalQuantity).toBe(7);
+      expect(physicalQuantity).toBeGreaterThanOrEqual(0);
+      expect(availableInventory).toBeGreaterThanOrEqual(0);
     } finally {
       await db.from('stock_reservations').delete().eq('variant_id', varId);
       await db.from('inventory').delete().eq('variant_id', varId);
@@ -517,4 +589,15 @@ describe('P1 Etapa 2: Inventario por Variante, Bodega, Concurrencia y RLS', () =
       await db.from('products').delete().eq('id', prodId);
     }
   });
+
+  afterAll(async () => {
+    if (adminClient) {
+      try {
+        await (adminClient as unknown as TestDbClient).rpc('teardown_test_fault_injection');
+      } catch {
+        // Ignored if test fixture was already torn down or not present
+      }
+    }
+  });
 });
+

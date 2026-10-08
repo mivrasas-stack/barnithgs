@@ -43,3 +43,8 @@ next-env.d.ts
 # firebase
 firebase-debug.log
 firestore-debug.log
+
+# test fixtures copied during CI/local test runs
+supabase/migrations/00000000000000_test_schema.sql
+supabase/migrations/99999999999999_test_fault_injection.sql
+job.log

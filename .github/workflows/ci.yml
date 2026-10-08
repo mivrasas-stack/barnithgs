@@ -32,9 +32,10 @@ jobs:
         with:
           version: latest
 
-      - name: Prepare Isolated Test Schema for CI
+      - name: Prepare Isolated Test Fixtures for CI
         run: |
           cp supabase/tests/fixtures/test_schema.sql supabase/migrations/00000000000000_test_schema.sql
+          cp supabase/tests/fixtures/test_fault_injection.sql supabase/migrations/99999999999999_test_fault_injection.sql
 
       - name: Start Local Supabase
         run: |
