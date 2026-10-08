@@ -202,11 +202,61 @@ BEGIN
 
   -- Verify cart status after acquiring exclusive row lock
   IF v_cart_rec.status = 'checked_out' THEN
+    -- Check if it was checked out by this same idempotency_key (concurrent race or replay)
+    SELECT id, order_number, cart_id, user_id, customer_phone, subtotal_in_cents, delivery_fee_in_cents, tip_in_cents, total_in_cents, status, payment_status
+    INTO v_existing_order
+    FROM public.orders
+    WHERE idempotency_key = p_idempotency_key;
+
+    IF FOUND THEN
+      -- Strict identity and cart comparison: NEVER reveal orders of another user or cart
+      IF (v_existing_order.cart_id IS DISTINCT FROM p_cart_id)
+         OR (v_existing_order.user_id IS DISTINCT FROM p_user_id)
+         OR (v_existing_order.customer_phone != '' AND v_existing_order.customer_phone != trim(p_customer_phone)) THEN
+        RAISE EXCEPTION 'IDEMPOTENCY_CONFLICT: Idempotency key % already used for another cart or identity', p_idempotency_key;
+      END IF;
+
+      RETURN jsonb_build_object(
+        'status', 'idempotent_hit',
+        'order_id', v_existing_order.id,
+        'order_number', v_existing_order.order_number,
+        'subtotal_in_cents', v_existing_order.subtotal_in_cents,
+        'delivery_fee_in_cents', v_existing_order.delivery_fee_in_cents,
+        'tip_in_cents', v_existing_order.tip_in_cents,
+        'total_in_cents', v_existing_order.total_in_cents,
+        'payment_status', v_existing_order.payment_status
+      );
+    END IF;
+
     RAISE EXCEPTION 'CART_ALREADY_PROCESSED: Cart % has already been checked out', p_cart_id;
   END IF;
 
   -- Also check if an order has already been created for this cart
   IF EXISTS (SELECT 1 FROM public.orders WHERE cart_id = p_cart_id) THEN
+    SELECT id, order_number, cart_id, user_id, customer_phone, subtotal_in_cents, delivery_fee_in_cents, tip_in_cents, total_in_cents, status, payment_status
+    INTO v_existing_order
+    FROM public.orders
+    WHERE idempotency_key = p_idempotency_key;
+
+    IF FOUND THEN
+      IF (v_existing_order.cart_id IS DISTINCT FROM p_cart_id)
+         OR (v_existing_order.user_id IS DISTINCT FROM p_user_id)
+         OR (v_existing_order.customer_phone != '' AND v_existing_order.customer_phone != trim(p_customer_phone)) THEN
+        RAISE EXCEPTION 'IDEMPOTENCY_CONFLICT: Idempotency key % already used for another cart or identity', p_idempotency_key;
+      END IF;
+
+      RETURN jsonb_build_object(
+        'status', 'idempotent_hit',
+        'order_id', v_existing_order.id,
+        'order_number', v_existing_order.order_number,
+        'subtotal_in_cents', v_existing_order.subtotal_in_cents,
+        'delivery_fee_in_cents', v_existing_order.delivery_fee_in_cents,
+        'tip_in_cents', v_existing_order.tip_in_cents,
+        'total_in_cents', v_existing_order.total_in_cents,
+        'payment_status', v_existing_order.payment_status
+      );
+    END IF;
+
     RAISE EXCEPTION 'CART_ALREADY_PROCESSED: An order already exists for cart %', p_cart_id;
   END IF;
 
