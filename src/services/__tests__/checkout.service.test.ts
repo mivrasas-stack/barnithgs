@@ -104,6 +104,31 @@ describe('CheckoutService (Unit Tests)', () => {
         expect(result.error.code).toBe('FORBIDDEN_CART_ACCESS');
       }
     });
+
+    it('falla con FORBIDDEN_CART_ACCESS si el checkout de invitado no proporciona sessionToken', async () => {
+      const guestNoTokenDTO: ProcessCheckoutDTO = {
+        ...validDTO,
+        userId: null,
+        sessionToken: null,
+      };
+
+      const mockQuery = {
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        single: jest.fn().mockResolvedValue({
+          data: { id: guestNoTokenDTO.cartId, status: 'active', user_id: null, session_token: 'token-guest-real' },
+          error: null,
+        }),
+      };
+      mockSupabase.from.mockReturnValue(mockQuery);
+
+      const result = await service.processCheckout(guestNoTokenDTO);
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error.code).toBe('FORBIDDEN_CART_ACCESS');
+        expect(result.error.message).toContain('Guest checkout requires a mandatory sessionToken');
+      }
+    });
   });
 
   describe('Ejecución de RPC Transaccional', () => {

@@ -1,10 +1,11 @@
 -- ==============================================================================
 -- P1 STAGE 3: TRANSACTIONAL CHECKOUT ENGINE & ORDERS EVOLUTION
--- 1. Carts table with guest & authenticated session tracking
+-- 1. Carts table with guest & authenticated session tracking and RLS
 -- 2. Commercial orders & order_items schema evolution (integer cents & snapshots)
 -- 3. Deterministic backend delivery fee calculation
--- 4. process_checkout_atomic: ACID order creation, lock hierarchy, idempotency
--- 5. Strict service_role execution privilege revocation
+-- 4. process_checkout_atomic: ACID order creation, lock hierarchy, idempotency,
+--    strict warehouse & reservation integrity, and count mismatch validation
+-- 5. Strict service_role execution privilege revocation & RLS user isolation
 -- ==============================================================================
 
 -- 1. Carts Table (Persistent server-side cart sessions)
@@ -19,6 +20,27 @@ CREATE TABLE IF NOT EXISTS public.carts (
 
 CREATE INDEX IF NOT EXISTS idx_carts_user_id ON public.carts(user_id);
 CREATE INDEX IF NOT EXISTS idx_carts_session_token ON public.carts(session_token);
+
+ALTER TABLE public.carts ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON public.carts FROM public, anon;
+GRANT SELECT, INSERT, UPDATE ON public.carts TO authenticated;
+GRANT ALL ON public.carts TO service_role;
+
+DROP POLICY IF EXISTS carts_user_isolation_select ON public.carts;
+CREATE POLICY carts_user_isolation_select ON public.carts
+  FOR SELECT TO authenticated
+  USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS carts_user_isolation_insert ON public.carts;
+CREATE POLICY carts_user_isolation_insert ON public.carts
+  FOR INSERT TO authenticated
+  WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS carts_user_isolation_update ON public.carts;
+CREATE POLICY carts_user_isolation_update ON public.carts
+  FOR UPDATE TO authenticated
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
 
 -- 2. Orders Table Evolution (Backward-compatible additive columns)
 ALTER TABLE public.orders
@@ -37,7 +59,7 @@ ALTER TABLE public.orders
   ADD COLUMN IF NOT EXISTS delivery_fee_in_cents BIGINT NOT NULL DEFAULT 0 CHECK (delivery_fee_in_cents >= 0),
   ADD COLUMN IF NOT EXISTS tip_in_cents BIGINT NOT NULL DEFAULT 0 CHECK (tip_in_cents >= 0),
   ADD COLUMN IF NOT EXISTS total_in_cents BIGINT NOT NULL DEFAULT 0 CHECK (total_in_cents >= 0),
-  ADD COLUMN IF NOT EXISTS payment_status TEXT NOT NULL DEFAULT 'unpaid'
+  ADD COLUMN IF NOT EXISTS payment_status TEXT NOT NULL DEFAULT 'unpaid' 
     CHECK (payment_status IN ('unpaid', 'authorized', 'captured', 'declined', 'voided', 'refunded')),
   ADD COLUMN IF NOT EXISTS idempotency_key TEXT UNIQUE,
   ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT now();
@@ -46,6 +68,16 @@ CREATE INDEX IF NOT EXISTS idx_orders_user_id ON public.orders(user_id);
 CREATE INDEX IF NOT EXISTS idx_orders_cart_id ON public.orders(cart_id);
 CREATE INDEX IF NOT EXISTS idx_orders_idempotency ON public.orders(idempotency_key);
 CREATE INDEX IF NOT EXISTS idx_orders_payment_status ON public.orders(payment_status);
+
+ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON public.orders FROM public, anon;
+GRANT SELECT ON public.orders TO authenticated;
+GRANT ALL ON public.orders TO service_role;
+
+DROP POLICY IF EXISTS orders_user_isolation_select ON public.orders;
+CREATE POLICY orders_user_isolation_select ON public.orders
+  FOR SELECT TO authenticated
+  USING (auth.uid() = user_id);
 
 -- 3. Order Items Table Evolution (Immutable Historic Snapshots)
 ALTER TABLE public.order_items
@@ -59,6 +91,21 @@ ALTER TABLE public.order_items
 
 CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON public.order_items(order_id);
 CREATE INDEX IF NOT EXISTS idx_order_items_variant_id ON public.order_items(variant_id);
+
+ALTER TABLE public.order_items ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON public.order_items FROM public, anon;
+GRANT SELECT ON public.order_items TO authenticated;
+GRANT ALL ON public.order_items TO service_role;
+
+DROP POLICY IF EXISTS order_items_user_isolation_select ON public.order_items;
+CREATE POLICY order_items_user_isolation_select ON public.order_items
+  FOR SELECT TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.orders o
+      WHERE o.id = order_items.order_id AND o.user_id = auth.uid()
+    )
+  );
 
 -- 4. Stock Reservations: Link to Orders
 ALTER TABLE public.stock_reservations
@@ -114,6 +161,7 @@ DECLARE
   v_total BIGINT := 0;
   v_line_total BIGINT;
   v_res_count INTEGER := 0;
+  v_updated_rows INTEGER := 0;
 BEGIN
   -- 1. Input parameter validation
   IF p_cart_id IS NULL THEN
@@ -155,23 +203,42 @@ BEGIN
     );
   END IF;
 
-  -- 3. Strict Reservation Integrity Check
-  -- If cart has ANY reservation that is expired, released, consumed, or already linked to an order, reject
+  -- 3. Strict Cart Status and Ownership Check
+  IF EXISTS (SELECT 1 FROM public.carts WHERE id = p_cart_id) THEN
+    IF EXISTS (
+      SELECT 1 FROM public.carts WHERE id = p_cart_id AND status = 'checked_out'
+    ) THEN
+      RAISE EXCEPTION 'CART_ALREADY_PROCESSED: Cart % has already been checked out', p_cart_id;
+    END IF;
+
+    IF EXISTS (
+      SELECT 1 FROM public.carts 
+      WHERE id = p_cart_id 
+        AND user_id IS NOT NULL 
+        AND (p_user_id IS NULL OR user_id != p_user_id)
+    ) THEN
+      RAISE EXCEPTION 'FORBIDDEN_CART_ACCESS: Cart % does not belong to user %', p_cart_id, p_user_id;
+    END IF;
+  END IF;
+
+  -- 4. Strict Reservation Integrity Check:
+  -- If cart has ANY reservation belonging to another warehouse, not active, with an order_id, or expired:
   IF EXISTS (
     SELECT 1 FROM public.stock_reservations
     WHERE cart_id = p_cart_id 
-      AND (status != 'active' OR order_id IS NOT NULL OR expires_at <= now())
+      AND (warehouse_id != p_warehouse_id OR status != 'active' OR order_id IS NOT NULL OR expires_at <= now())
   ) THEN
-    RAISE EXCEPTION 'RESERVATION_INVALID: Cart % contains expired, consumed, or already-ordered reservations', p_cart_id;
+    RAISE EXCEPTION 'RESERVATION_INVALID: Cart % contains invalid, expired, foreign-warehouse, or already-ordered reservations', p_cart_id;
   END IF;
 
-  -- 4. Level 1 Lock: Lock inventory rows ordered by variant_id ASC
+  -- 5. Level 1 Lock: Lock inventory rows ordered by variant_id ASC (matching cart & warehouse)
   PERFORM i.variant_id
   FROM public.inventory i
   WHERE (i.variant_id, i.warehouse_id) IN (
     SELECT DISTINCT sr.variant_id, sr.warehouse_id
     FROM public.stock_reservations sr
     WHERE sr.cart_id = p_cart_id 
+      AND sr.warehouse_id = p_warehouse_id
       AND sr.status = 'active'
       AND sr.order_id IS NULL
       AND sr.expires_at > now()
@@ -179,11 +246,19 @@ BEGIN
   ORDER BY i.variant_id ASC
   FOR UPDATE;
 
-  -- 5. Level 2 Lock: Lock and validate active reservations for cart_id
+  -- Re-check cart status after acquiring inventory locks
+  IF EXISTS (
+    SELECT 1 FROM public.carts WHERE id = p_cart_id AND status = 'checked_out'
+  ) THEN
+    RAISE EXCEPTION 'CART_ALREADY_PROCESSED: Cart % has already been checked out', p_cart_id;
+  END IF;
+
+  -- 6. Level 2 Lock: Lock and validate active reservations for cart_id and warehouse_id
   FOR v_res IN
     SELECT id, variant_id, warehouse_id, quantity, expires_at
     FROM public.stock_reservations
     WHERE cart_id = p_cart_id 
+      AND warehouse_id = p_warehouse_id
       AND status = 'active'
       AND order_id IS NULL
       AND expires_at > now()
@@ -223,18 +298,18 @@ BEGIN
   END LOOP;
 
   IF v_res_count = 0 THEN
-    RAISE EXCEPTION 'CHECKOUT_FAILED: No active, unlinked reservations found for cart %', p_cart_id;
+    RAISE EXCEPTION 'CHECKOUT_FAILED: No active, unlinked reservations found for cart % in warehouse %', p_cart_id, p_warehouse_id;
   END IF;
 
-  -- 6. Backend Fee & Total Calculations
+  -- 7. Backend Fee & Total Calculations
   v_delivery_fee := public.calculate_delivery_fee(v_subtotal, p_delivery_city);
   v_total := v_subtotal + v_delivery_fee + p_tip_in_cents;
 
-  -- 7. Generate Identifiers
+  -- 8. Generate Identifiers
   v_order_number := 'ORD-' || to_char(now(), 'YYYYMMDD') || '-' || upper(substr(gen_random_uuid()::text, 1, 6));
   v_order_id := gen_random_uuid();
 
-  -- 8. Level 3: Insert Order with Concurrency Collision Protection
+  -- 9. Level 3: Insert Order with Concurrency Collision Protection
   BEGIN
     INSERT INTO public.orders (
       id,
@@ -315,13 +390,15 @@ BEGIN
     END IF;
   END;
 
-  -- 9. Level 4: Insert Frozen Snapshots into order_items
+  -- 10. Level 4: Insert Frozen Snapshots into order_items
   FOR v_res IN
     SELECT sr.id, sr.variant_id, sr.quantity
     FROM public.stock_reservations sr
     WHERE sr.cart_id = p_cart_id 
+      AND sr.warehouse_id = p_warehouse_id
       AND sr.status = 'active'
       AND sr.order_id IS NULL
+      AND sr.expires_at > now()
     ORDER BY sr.id ASC
   LOOP
     SELECT 
@@ -364,19 +441,26 @@ BEGIN
     );
   END LOOP;
 
-  -- 10. Level 5: Bind Reservations to Order
+  -- 11. Level 5: Bind Reservations to Order with strict row count verification
   UPDATE public.stock_reservations
   SET order_id = v_order_id
   WHERE cart_id = p_cart_id 
+    AND warehouse_id = p_warehouse_id
     AND status = 'active' 
-    AND order_id IS NULL;
+    AND order_id IS NULL
+    AND expires_at > now();
 
-  -- 11. Mark Cart as Checked Out if carts row exists
+  GET DIAGNOSTICS v_updated_rows = ROW_COUNT;
+  IF v_updated_rows != v_res_count THEN
+    RAISE EXCEPTION 'RESERVATION_COUNT_MISMATCH: Expected to bind % reservations for cart %, but % were affected', v_res_count, p_cart_id, v_updated_rows;
+  END IF;
+
+  -- 12. Mark Cart as Checked Out if carts row exists
   UPDATE public.carts
   SET status = 'checked_out', updated_at = now()
-  WHERE id = p_cart_id;
+  WHERE id = p_cart_id AND status = 'active';
 
-  -- 12. Return Structured Response
+  -- 13. Return Structured Response
   RETURN jsonb_build_object(
     'status', 'created',
     'order_id', v_order_id,
