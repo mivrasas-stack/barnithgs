@@ -22,9 +22,12 @@ export interface ProductVariant {
   readonly presentationLabel: string;
   readonly attributes: Record<string, unknown>;
   readonly priceInCents: number;
-  readonly costInCents: number;
   readonly compareAtPriceInCents: number | null;
   readonly isActive: boolean;
+}
+
+export interface AdminProductVariant extends ProductVariant {
+  readonly costInCents: number;
 }
 
 export interface Product {

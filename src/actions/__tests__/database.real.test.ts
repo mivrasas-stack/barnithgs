@@ -164,4 +164,89 @@ describe('Real Database Integration & RLS (No Mocks)', () => {
       expect(isAdminAdmin).toBe(true);
     });
   });
+
+  describe('P1 Etapa 1: Catálogo, Protección de Costos y RLS Jerárquico', () => {
+    it('un usuario anónimo o cliente no puede consultar cost_in_cents (violación de permisos a nivel de columna)', async () => {
+      const { data, error } = await (anonClient.from('product_variants') as any)
+        .select('cost_in_cents');
+      expect(error).toBeDefined();
+      expect(error?.code).toBe('42501');
+    });
+
+    it('el administrador / service_role sí puede consultar cost_in_cents', async () => {
+      const { error } = await (adminClient.from('product_variants') as any)
+        .select('id, cost_in_cents');
+      expect(error).toBeNull();
+    });
+
+    it('RLS jerárquico: las variantes de categorías o productos inactivos están ocultas al público', async () => {
+      const testCatId = '30000000-0000-0000-0000-000000000001';
+      const testProdId = '40000000-0000-0000-0000-000000000001';
+      const testVarId = '50000000-0000-0000-0000-000000000001';
+
+      try {
+        // 1. Crear categoría inactiva
+        await (adminClient.from('categories') as any).upsert({
+          id: testCatId,
+          slug: 'test-cat-inactive',
+          name: 'Categoría Inactiva Test',
+          is_active: false,
+        });
+
+        // 2. Crear producto activo en esa categoría inactiva
+        await (adminClient.from('products') as any).upsert({
+          id: testProdId,
+          category_id: testCatId,
+          slug: 'test-prod-in-inactive-cat',
+          name: 'Producto en Categoría Inactiva',
+          is_active: true,
+        });
+
+        // 3. Crear variante activa
+        await (adminClient.from('product_variants') as any).upsert({
+          id: testVarId,
+          product_id: testProdId,
+          sku: 'SKU-INACTIVE-CAT-TEST',
+          presentation_label: '750ml Test',
+          price_in_cents: 5000000,
+          cost_in_cents: 3000000,
+          is_active: true,
+        });
+
+        // Verificar que anonClient NO puede ver la variante porque la categoría es inactiva
+        const { data: anonVariants } = await (anonClient.from('product_variants') as any)
+          .select('id')
+          .eq('id', testVarId);
+        expect(anonVariants).toHaveLength(0);
+
+        // Verificar que adminClient SÍ puede verla
+        const { data: adminVariants } = await (adminClient.from('product_variants') as any)
+          .select('id')
+          .eq('id', testVarId);
+        expect(adminVariants).toHaveLength(1);
+
+        // Ahora activar la categoría pero inactivar el producto
+        await (adminClient.from('categories') as any).update({ is_active: true }).eq('id', testCatId);
+        await (adminClient.from('products') as any).update({ is_active: false }).eq('id', testProdId);
+
+        const { data: anonVariantsAfterProdInactive } = await (anonClient.from('product_variants') as any)
+          .select('id')
+          .eq('id', testVarId);
+        expect(anonVariantsAfterProdInactive).toHaveLength(0);
+
+        // Activar producto también -> Ahora la variante debe ser visible para anonClient
+        await (adminClient.from('products') as any).update({ is_active: true }).eq('id', testProdId);
+
+        const { data: anonVariantsActive } = await (anonClient.from('product_variants') as any)
+          .select('id')
+          .eq('id', testVarId);
+        expect(anonVariantsActive).toHaveLength(1);
+      } finally {
+        await (adminClient.from('product_variants') as any).delete().eq('id', testVarId);
+        await (adminClient.from('products') as any).delete().eq('id', testProdId);
+        await (adminClient.from('categories') as any).delete().eq('id', testCatId);
+      }
+    });
+  });
 });
+

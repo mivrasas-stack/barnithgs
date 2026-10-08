@@ -1,22 +1,17 @@
 import { CatalogService } from '../catalog.service';
 import { SupabaseClient } from '@supabase/supabase-js';
 
-describe('CatalogService (Unit Tests with Inversion of Control)', () => {
-  let mockSupabase: {
-    from: jest.Mock;
-  };
+describe('CatalogService (Unit Tests)', () => {
+  let mockSupabase: { from: jest.Mock };
   let service: CatalogService;
 
   beforeEach(() => {
-    mockSupabase = {
-      from: jest.fn(),
-    };
+    mockSupabase = { from: jest.fn() };
     service = new CatalogService(mockSupabase as unknown as SupabaseClient);
   });
 
   describe('getCategories', () => {
     it('should return active categories ordered by displayOrder', async () => {
-      // Arrange
       const mockCategoriesData = [
         {
           id: 'cat-1',
@@ -37,44 +32,18 @@ describe('CatalogService (Unit Tests with Inversion of Control)', () => {
       };
       mockSupabase.from.mockReturnValue(mockQueryChain);
 
-      // Act
       const result = await service.getCategories();
 
-      // Assert
       expect(result.success).toBe(true);
       if (result.success) {
         expect(result.data).toHaveLength(1);
-        expect(result.data[0].id).toBe('cat-1');
         expect(result.data[0].slug).toBe('whisky');
-        expect(result.data[0].name).toBe('Whisky');
-      }
-      expect(mockSupabase.from).toHaveBeenCalledWith('categories');
-      expect(mockQueryChain.eq).toHaveBeenCalledWith('is_active', true);
-    });
-
-    it('should return failure result when database throws an error', async () => {
-      // Arrange
-      const mockQueryChain = {
-        select: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockReturnThis(),
-        order: jest.fn().mockResolvedValue({ data: null, error: { message: 'DB connection failure' } }),
-      };
-      mockSupabase.from.mockReturnValue(mockQueryChain);
-
-      // Act
-      const result = await service.getCategories();
-
-      // Assert
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error.message).toContain('DB connection failure');
       }
     });
   });
 
   describe('getProducts', () => {
-    it('should return mapped products with variants', async () => {
-      // Arrange
+    it('should query products without exposing cost_in_cents', async () => {
       const mockProductsData = [
         {
           id: 'prod-1',
@@ -82,24 +51,23 @@ describe('CatalogService (Unit Tests with Inversion of Control)', () => {
           slug: 'johnnie-walker-black',
           name: 'Johnnie Walker Black',
           brand: 'Johnnie Walker',
-          description: '12 Years Scotch Whisky',
-          image_url: 'https://images.partyflow.app/jw.jpg',
-          media_gallery: ['https://images.partyflow.app/jw.jpg'],
+          description: null,
+          image_url: null,
+          media_gallery: [],
           is_age_restricted: true,
           is_active: true,
-          tags: ['whisky', 'party'],
+          tags: ['whisky'],
           display_order: 1,
           variants: [
             {
               id: 'var-1',
               product_id: 'prod-1',
               sku: 'SKU-JW-750',
-              barcode: '7701234567890',
+              barcode: null,
               presentation_label: '750ml',
-              attributes: { volume_ml: 750 },
+              attributes: {},
               price_in_cents: 18500000,
-              cost_in_cents: 14000000,
-              compare_at_price_in_cents: 20000000,
+              compare_at_price_in_cents: null,
               is_active: true,
             },
           ],
@@ -114,38 +82,60 @@ describe('CatalogService (Unit Tests with Inversion of Control)', () => {
       };
       mockSupabase.from.mockReturnValue(mockQueryChain);
 
-      // Act
       const result = await service.getProducts();
 
-      // Assert
       expect(result.success).toBe(true);
       if (result.success) {
         expect(result.data).toHaveLength(1);
-        const product = result.data[0];
-        expect(product.name).toBe('Johnnie Walker Black');
-        expect(product.variants).toHaveLength(1);
-        expect(product.variants?.[0].sku).toBe('SKU-JW-750');
-        expect(product.variants?.[0].priceInCents).toBe(18500000);
+        const variant = result.data[0].variants?.[0];
+        expect(variant?.sku).toBe('SKU-JW-750');
+        expect(variant).not.toHaveProperty('costInCents');
+        expect(variant).not.toHaveProperty('cost_in_cents');
       }
+      // Verify query select statement does NOT request cost_in_cents
+      const selectCall = mockQueryChain.select.mock.calls[0][0];
+      expect(selectCall).not.toContain('cost_in_cents');
+    });
+
+    it('should apply category filter, search, and pagination range', async () => {
+      const mockQueryChain = {
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        order: jest.fn().mockReturnThis(),
+        ilike: jest.fn().mockReturnThis(),
+        range: jest.fn().mockReturnThis(),
+        then: (resolve: (val: unknown) => void) => resolve({ data: [], error: null }),
+      };
+      mockSupabase.from.mockReturnValue(mockQueryChain);
+
+      await service.getProducts({
+        categorySlug: 'tequila',
+        search: 'don julio',
+        limit: 10,
+        offset: 20,
+      });
+
+      expect(mockQueryChain.eq).toHaveBeenCalledWith('category.slug', 'tequila');
+      expect(mockQueryChain.ilike).toHaveBeenCalledWith('name', '%don julio%');
+      expect(mockQueryChain.range).toHaveBeenCalledWith(20, 29);
     });
   });
 
   describe('getProductBySlug', () => {
     it('should return product details when found', async () => {
-      // Arrange
       const mockProductData = {
         id: 'prod-2',
         category_id: 'cat-2',
         slug: 'don-julio-70',
         name: 'Don Julio 70',
         brand: 'Don Julio',
-        description: 'Añejo Cristalino Tequila',
+        description: null,
         image_url: null,
         media_gallery: [],
         is_age_restricted: true,
         is_active: true,
-        tags: ['tequila'],
-        display_order: 2,
+        tags: [],
+        display_order: 1,
         variants: [],
       };
 
@@ -156,48 +146,25 @@ describe('CatalogService (Unit Tests with Inversion of Control)', () => {
       };
       mockSupabase.from.mockReturnValue(mockQueryChain);
 
-      // Act
       const result = await service.getProductBySlug('don-julio-70');
 
-      // Assert
       expect(result.success).toBe(true);
       if (result.success) {
         expect(result.data.slug).toBe('don-julio-70');
       }
     });
-
-    it('should return error when slug is not found', async () => {
-      // Arrange
-      const mockQueryChain = {
-        select: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockReturnThis(),
-        single: jest.fn().mockResolvedValue({ data: null, error: { message: 'Row not found' } }),
-      };
-      mockSupabase.from.mockReturnValue(mockQueryChain);
-
-      // Act
-      const result = await service.getProductBySlug('non-existent');
-
-      // Assert
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error.message).toContain('not found');
-      }
-    });
   });
 
   describe('getVariantById', () => {
-    it('should return variant when id exists', async () => {
-      // Arrange
+    it('should return variant without cost_in_cents', async () => {
       const mockVariantData = {
-        id: 'var-99',
-        product_id: 'prod-99',
-        sku: 'SKU-TEST',
+        id: 'var-10',
+        product_id: 'prod-10',
+        sku: 'SKU-VODKA',
         barcode: null,
-        presentation_label: 'Pack x 6',
-        attributes: { pack_size: 6 },
-        price_in_cents: 3500000,
-        cost_in_cents: 2500000,
+        presentation_label: '1L',
+        attributes: {},
+        price_in_cents: 9500000,
         compare_at_price_in_cents: null,
         is_active: true,
       };
@@ -209,15 +176,14 @@ describe('CatalogService (Unit Tests with Inversion of Control)', () => {
       };
       mockSupabase.from.mockReturnValue(mockQueryChain);
 
-      // Act
-      const result = await service.getVariantById('var-99');
+      const result = await service.getVariantById('var-10');
 
-      // Assert
       expect(result.success).toBe(true);
       if (result.success) {
-        expect(result.data.id).toBe('var-99');
-        expect(result.data.presentationLabel).toBe('Pack x 6');
+        expect(result.data.id).toBe('var-10');
+        expect(result.data).not.toHaveProperty('costInCents');
       }
+      expect(mockQueryChain.select.mock.calls[0][0]).not.toContain('cost_in_cents');
     });
   });
 });

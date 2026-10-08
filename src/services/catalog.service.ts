@@ -48,8 +48,8 @@ export class CatalogService implements ICatalogService {
       .select(`
         id, category_id, slug, name, brand, description, image_url,
         media_gallery, is_age_restricted, is_active, tags, display_order,
-        category:categories(id, slug, name, description, parent_id, display_order, is_active, created_at),
-        variants:product_variants(id, product_id, sku, barcode, presentation_label, attributes, price_in_cents, cost_in_cents, compare_at_price_in_cents, is_active)
+        category:categories!inner(id, slug, name, description, parent_id, display_order, is_active, created_at),
+        variants:product_variants(id, product_id, sku, barcode, presentation_label, attributes, price_in_cents, compare_at_price_in_cents, is_active)
       `)
       .eq('is_active', true)
       .order('display_order', { ascending: true });
@@ -61,7 +61,8 @@ export class CatalogService implements ICatalogService {
       query = query.ilike('name', `%${filters.search}%`);
     }
     if (filters?.limit) {
-      query = query.limit(filters.limit);
+      const from = filters.offset ?? 0;
+      query = query.range(from, from + filters.limit - 1);
     }
 
     const { data, error } = await query;
@@ -79,8 +80,8 @@ export class CatalogService implements ICatalogService {
       .select(`
         id, category_id, slug, name, brand, description, image_url,
         media_gallery, is_age_restricted, is_active, tags, display_order,
-        category:categories(id, slug, name, description, parent_id, display_order, is_active, created_at),
-        variants:product_variants(id, product_id, sku, barcode, presentation_label, attributes, price_in_cents, cost_in_cents, compare_at_price_in_cents, is_active)
+        category:categories!inner(id, slug, name, description, parent_id, display_order, is_active, created_at),
+        variants:product_variants(id, product_id, sku, barcode, presentation_label, attributes, price_in_cents, compare_at_price_in_cents, is_active)
       `)
       .eq('slug', slug)
       .eq('is_active', true)
@@ -96,7 +97,7 @@ export class CatalogService implements ICatalogService {
   async getVariantById(variantId: string): Promise<Result<ProductVariant>> {
     const { data, error } = await this.client
       .from('product_variants')
-      .select('id, product_id, sku, barcode, presentation_label, attributes, price_in_cents, cost_in_cents, compare_at_price_in_cents, is_active')
+      .select('id, product_id, sku, barcode, presentation_label, attributes, price_in_cents, compare_at_price_in_cents, is_active')
       .eq('id', variantId)
       .eq('is_active', true)
       .single();
@@ -140,7 +141,6 @@ export class CatalogService implements ICatalogService {
       presentationLabel: String(row.presentation_label),
       attributes: (row.attributes as Record<string, unknown>) ?? {},
       priceInCents: Number(row.price_in_cents),
-      costInCents: Number(row.cost_in_cents ?? 0),
       compareAtPriceInCents: row.compare_at_price_in_cents ? Number(row.compare_at_price_in_cents) : null,
       isActive: Boolean(row.is_active),
     };

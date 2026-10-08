@@ -2,9 +2,9 @@ name: CI - PartyFlow Security P0
 
 on:
   push:
-    branches: [ "main", "security-p0" ]
+    branches: [ "main", "security-p0", "feature/p1-catalog-stage1" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "main", "feature/p1-catalog-stage1" ]
 
 jobs:
   build_and_test:

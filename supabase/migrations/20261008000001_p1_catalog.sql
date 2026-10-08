@@ -1,7 +1,7 @@
 -- Migration: 20261008000001_p1_catalog.sql
--- Description: Phase 1 (Stage 1) - Commercial Catalog, Categories, Warehouses, and Product Variants
+-- Description: Phase 1 (Stage 1) - Commercial Catalog, Categories, Warehouses, and Product Variants with Cost Protection & Hierarchical RLS
 
--- 1. Warehouses (Default location setup with multi-warehouse readiness)
+-- 1. Warehouses
 CREATE TABLE IF NOT EXISTS public.warehouses (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   code TEXT NOT NULL UNIQUE,
@@ -12,9 +12,8 @@ CREATE TABLE IF NOT EXISTS public.warehouses (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- Seed default central warehouse
 INSERT INTO public.warehouses (id, code, name, address)
-VALUES ('00000000-0000-0000-0000-000000000001', 'BOD-CENTRAL', 'Bodega Principal', 'Bogota D.C., Colombia')
+VALUES ('00000000-0000-0000-0000-000000000001', 'BOD-CENTRAL', 'Bodega Principal', 'Bogotá D.C., Colombia')
 ON CONFLICT (id) DO NOTHING;
 
 -- 2. Categories
@@ -33,15 +32,31 @@ CREATE TABLE IF NOT EXISTS public.categories (
 CREATE INDEX IF NOT EXISTS idx_categories_slug ON public.categories(slug);
 CREATE INDEX IF NOT EXISTS idx_categories_parent ON public.categories(parent_id);
 
--- Backfill categories from existing products table
-INSERT INTO public.categories (slug, name)
-SELECT DISTINCT 
-  lower(regexp_replace(COALESCE(category, 'General'), '[^a-zA-Z0-9]+', '-', 'g')),
-  COALESCE(category, 'General')
-FROM public.products
+-- Seed default baseline category
+INSERT INTO public.categories (id, slug, name, description)
+VALUES ('00000000-0000-0000-0000-000000000001', 'general', 'General', 'Categoría general por defecto')
 ON CONFLICT (slug) DO NOTHING;
 
--- 3. Evolve Products (Non-destructive extension of baseline products table)
+-- Defensive backfill from products.category ONLY if products.category exists
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_schema = 'public' AND table_name = 'products' AND column_name = 'category'
+  ) THEN
+    EXECUTE '
+      INSERT INTO public.categories (slug, name)
+      SELECT DISTINCT 
+        lower(regexp_replace(COALESCE(category, ''general''), ''[^a-zA-Z0-9]+'', ''-'', ''g'')),
+        COALESCE(category, ''General'')
+      FROM public.products
+      WHERE category IS NOT NULL AND trim(category) != ''''
+      ON CONFLICT (slug) DO NOTHING;
+    ';
+  END IF;
+END $$;
+
+-- 3. Evolve Products (Non-destructive & Backward-Compatible)
 ALTER TABLE public.products 
   ADD COLUMN IF NOT EXISTS slug TEXT,
   ADD COLUMN IF NOT EXISTS category_id UUID REFERENCES public.categories(id) ON DELETE RESTRICT,
@@ -54,42 +69,72 @@ ALTER TABLE public.products
   ADD COLUMN IF NOT EXISTS display_order INTEGER NOT NULL DEFAULT 0,
   ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT now();
 
--- Backfill category_id and slug for existing products
-UPDATE public.products p
-SET 
-  category_id = c.id,
-  slug = lower(regexp_replace(p.name, '[^a-zA-Z0-9]+', '-', 'g')) || '-' || substr(p.id::text, 1, 6)
-FROM public.categories c
-WHERE lower(regexp_replace(COALESCE(p.category, 'General'), '[^a-zA-Z0-9]+', '-', 'g')) = c.slug
-  AND p.category_id IS NULL;
-
--- Default fallback category if any product remains unmatched
+-- Backfill category_id and collision-free slug
 DO $$
 DECLARE
   v_default_cat UUID;
 BEGIN
-  SELECT id INTO v_default_cat FROM public.categories LIMIT 1;
-  IF v_default_cat IS NOT NULL THEN
-    UPDATE public.products 
-    SET 
-      category_id = v_default_cat,
-      slug = 'prod-' || substr(id::text, 1, 8)
-    WHERE category_id IS NULL;
+  SELECT id INTO v_default_cat FROM public.categories WHERE slug = 'general' LIMIT 1;
+  IF v_default_cat IS NULL THEN
+    SELECT id INTO v_default_cat FROM public.categories LIMIT 1;
   END IF;
+
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_schema = 'public' AND table_name = 'products' AND column_name = 'category'
+  ) THEN
+    EXECUTE '
+      UPDATE public.products p
+      SET 
+        category_id = COALESCE(c.id, $1),
+        slug = lower(regexp_replace(COALESCE(p.name, ''prod''), ''[^a-zA-Z0-9]+'', ''-'', ''g'')) || ''-'' || substr(p.id::text, 1, 8)
+      FROM public.categories c
+      WHERE lower(regexp_replace(COALESCE(p.category, ''general''), ''[^a-zA-Z0-9]+'', ''-'', ''g'')) = c.slug
+        AND p.category_id IS NULL;
+    ' USING v_default_cat;
+  END IF;
+
+  -- Fallback for any product without category_id or slug
+  UPDATE public.products
+  SET 
+    category_id = COALESCE(category_id, v_default_cat),
+    slug = COALESCE(slug, lower(regexp_replace(COALESCE(name, 'prod'), '[^a-zA-Z0-9]+', '-', 'g')) || '-' || substr(id::text, 1, 8))
+  WHERE category_id IS NULL OR slug IS NULL;
 END $$;
 
+-- Set defaults so legacy inserts without category_id or slug remain functional
+ALTER TABLE public.products ALTER COLUMN category_id SET DEFAULT '00000000-0000-0000-0000-000000000001';
+ALTER TABLE public.products ALTER COLUMN category_id SET NOT NULL;
+
+-- Trigger to guarantee collision-free slug on INSERT if omitted
+CREATE OR REPLACE FUNCTION public.handle_product_slug_default()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF NEW.slug IS NULL OR trim(NEW.slug) = '' THEN
+    NEW.slug := lower(regexp_replace(COALESCE(NEW.name, 'prod'), '[^a-zA-Z0-9]+', '-', 'g')) || '-' || substr(COALESCE(NEW.id, gen_random_uuid())::text, 1, 8);
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_product_slug ON public.products;
+CREATE TRIGGER trg_product_slug
+BEFORE INSERT ON public.products
+FOR EACH ROW EXECUTE FUNCTION public.handle_product_slug_default();
+
 ALTER TABLE public.products ALTER COLUMN slug SET NOT NULL;
+
 CREATE UNIQUE INDEX IF NOT EXISTS idx_products_slug ON public.products(slug);
 CREATE INDEX IF NOT EXISTS idx_products_category ON public.products(category_id);
 CREATE INDEX IF NOT EXISTS idx_products_active ON public.products(is_active);
 
--- 4. Product Variants (Sellable SKUs)
+-- 4. Product Variants
 CREATE TABLE IF NOT EXISTS public.product_variants (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   product_id UUID NOT NULL REFERENCES public.products(id) ON DELETE CASCADE,
   sku TEXT NOT NULL UNIQUE,
   barcode TEXT,
-  presentation_label TEXT NOT NULL DEFAULT 'Unidad Estandar',
+  presentation_label TEXT NOT NULL DEFAULT 'Unidad Estándar',
   attributes JSONB NOT NULL DEFAULT '{}'::jsonb,
   price_in_cents BIGINT NOT NULL CHECK (price_in_cents >= 0),
   cost_in_cents BIGINT NOT NULL DEFAULT 0 CHECK (cost_in_cents >= 0),
@@ -103,21 +148,44 @@ CREATE INDEX IF NOT EXISTS idx_variants_product ON public.product_variants(produ
 CREATE INDEX IF NOT EXISTS idx_variants_sku ON public.product_variants(sku);
 CREATE INDEX IF NOT EXISTS idx_variants_active ON public.product_variants(is_active);
 
--- Backfill default 1:1 variant for existing products
+-- Backfill default 1:1 variant for existing products with unique SKU
 INSERT INTO public.product_variants (
   product_id, sku, presentation_label, price_in_cents, cost_in_cents, is_active
 )
 SELECT 
   id, 
-  'SKU-' || upper(substr(id::text, 1, 8)), 
-  'Presentacion Estandar', 
-  (COALESCE(price, 0) * 100)::bigint, 
+  'SKU-' || upper(replace(id::text, '-', '')), 
+  'Presentación Estándar', 
+  GREATEST(0, (COALESCE(price, 0) * 100)::bigint), 
   0, 
   true
 FROM public.products
 ON CONFLICT (sku) DO NOTHING;
 
--- 5. Row Level Security & Explicit Privileges
+-- Trigger to auto-create default variant for newly inserted products if no variant exists yet
+CREATE OR REPLACE FUNCTION public.handle_product_default_variant()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.product_variants (
+    product_id, sku, presentation_label, price_in_cents, cost_in_cents, is_active
+  ) VALUES (
+    NEW.id,
+    'SKU-' || upper(replace(NEW.id::text, '-', '')),
+    'Presentación Estándar',
+    GREATEST(0, (COALESCE(NEW.price, 0) * 100)::bigint),
+    0,
+    true
+  ) ON CONFLICT (sku) DO NOTHING;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_product_default_variant ON public.products;
+CREATE TRIGGER trg_product_default_variant
+AFTER INSERT ON public.products
+FOR EACH ROW EXECUTE FUNCTION public.handle_product_default_variant();
+
+-- 5. Row Level Security & Column-Level Privilege Separation
 ALTER TABLE public.warehouses ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
@@ -128,24 +196,53 @@ REVOKE ALL ON public.categories FROM public, anon, authenticated;
 REVOKE ALL ON public.products FROM public, anon, authenticated;
 REVOKE ALL ON public.product_variants FROM public, anon, authenticated;
 
--- Public read access for active catalog entities
+-- Public read access on warehouses
 GRANT SELECT ON public.warehouses TO anon, authenticated;
+DROP POLICY IF EXISTS "Active warehouses are viewable by all" ON public.warehouses;
 CREATE POLICY "Active warehouses are viewable by all"
   ON public.warehouses FOR SELECT USING (is_active = true);
 
+-- Public read access on categories
 GRANT SELECT ON public.categories TO anon, authenticated;
+DROP POLICY IF EXISTS "Active categories are viewable by all" ON public.categories;
 CREATE POLICY "Active categories are viewable by all"
   ON public.categories FOR SELECT USING (is_active = true);
 
+-- Public read access on products: visible only if product is active AND parent category is active
 GRANT SELECT ON public.products TO anon, authenticated;
-CREATE POLICY "Active products are viewable by all"
-  ON public.products FOR SELECT USING (is_active = true);
+DROP POLICY IF EXISTS "Active products of active categories are viewable" ON public.products;
+CREATE POLICY "Active products of active categories are viewable"
+  ON public.products FOR SELECT 
+  USING (
+    is_active = true 
+    AND EXISTS (
+      SELECT 1 FROM public.categories c 
+      WHERE c.id = products.category_id AND c.is_active = true
+    )
+  );
 
-GRANT SELECT ON public.product_variants TO anon, authenticated;
-CREATE POLICY "Active variants are viewable by all"
-  ON public.product_variants FOR SELECT USING (is_active = true);
+-- STRICT COST PROTECTION: Grant SELECT ONLY on safe columns for product_variants (Excluding cost_in_cents)
+GRANT SELECT (
+  id, product_id, sku, barcode, presentation_label, attributes, 
+  price_in_cents, compare_at_price_in_cents, is_active, created_at, updated_at
+) ON public.product_variants TO anon, authenticated;
 
--- Admin & Service Role full management
+-- Hierarchical variant visibility: visible only if variant is active AND product is active AND category is active
+DROP POLICY IF EXISTS "Active variants of active products are viewable" ON public.product_variants;
+CREATE POLICY "Active variants of active products are viewable"
+  ON public.product_variants FOR SELECT 
+  USING (
+    is_active = true 
+    AND EXISTS (
+      SELECT 1 FROM public.products p 
+      JOIN public.categories c ON c.id = p.category_id
+      WHERE p.id = product_variants.product_id 
+        AND p.is_active = true 
+        AND c.is_active = true
+    )
+  );
+
+-- Service Role & Admin full access (including internal cost_in_cents)
 GRANT ALL ON public.warehouses TO service_role;
 GRANT ALL ON public.categories TO service_role;
 GRANT ALL ON public.products TO service_role;
