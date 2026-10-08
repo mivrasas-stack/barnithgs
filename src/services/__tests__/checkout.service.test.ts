@@ -45,21 +45,79 @@ describe('CheckoutService (Unit Tests)', () => {
       }
     });
 
-    it('falla con CART_ALREADY_PROCESSED si el carrito ya fue procesado', async () => {
-      const mockQuery = {
-        select: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockReturnThis(),
-        single: jest.fn().mockResolvedValue({
-          data: { id: validDTO.cartId, status: 'checked_out', user_id: validDTO.userId },
-          error: null,
-        }),
-      };
-      mockSupabase.from.mockReturnValue(mockQuery);
+    it('falla con CART_ALREADY_PROCESSED si el carrito ya fue procesado con otra clave', async () => {
+      mockSupabase.from.mockImplementation((table: string) => {
+        if (table === 'carts') {
+          return {
+            select: jest.fn().mockReturnThis(),
+            eq: jest.fn().mockReturnThis(),
+            single: jest.fn().mockResolvedValue({
+              data: { id: validDTO.cartId, status: 'checked_out', user_id: validDTO.userId },
+              error: null,
+            }),
+          };
+        }
+        if (table === 'orders') {
+          return {
+            select: jest.fn().mockReturnThis(),
+            eq: jest.fn().mockReturnThis(),
+            maybeSingle: jest.fn().mockResolvedValue({
+              data: { id: 'o1', idempotency_key: 'diff-key' },
+              error: null,
+            }),
+          };
+        }
+        return {};
+      });
 
       const result = await service.processCheckout(validDTO);
       expect(result.success).toBe(false);
       if (!result.success) {
         expect(result.error.code).toBe('CART_ALREADY_PROCESSED');
+      }
+    });
+
+    it('permite reintento idempotente en carrito checked_out si la clave de idempotencia coincide', async () => {
+      mockSupabase.from.mockImplementation((table: string) => {
+        if (table === 'carts') {
+          return {
+            select: jest.fn().mockReturnThis(),
+            eq: jest.fn().mockReturnThis(),
+            single: jest.fn().mockResolvedValue({
+              data: { id: validDTO.cartId, status: 'checked_out', user_id: validDTO.userId },
+              error: null,
+            }),
+          };
+        }
+        if (table === 'orders') {
+          return {
+            select: jest.fn().mockReturnThis(),
+            eq: jest.fn().mockReturnThis(),
+            maybeSingle: jest.fn().mockResolvedValue({
+              data: { id: 'o1', idempotency_key: validDTO.idempotencyKey },
+              error: null,
+            }),
+          };
+        }
+        return {};
+      });
+
+      mockSupabase.rpc.mockResolvedValue({
+        data: {
+          status: 'idempotent_hit',
+          order_id: 'o0000000-0000-0000-0000-000000000001',
+          order_number: 'ORD-20261008-ABC123',
+          total_in_cents: 5550000,
+          payment_status: 'unpaid',
+        },
+        error: null,
+      });
+
+      const result = await service.processCheckout(validDTO);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.status).toBe('idempotent_hit');
+        expect(result.data.orderId).toBe('o0000000-0000-0000-0000-000000000001');
       }
     });
 
@@ -192,6 +250,29 @@ describe('CheckoutService (Unit Tests)', () => {
       expect(result.success).toBe(true);
       if (result.success) {
         expect(result.data.status).toBe('idempotent_hit');
+      }
+    });
+
+    it('extrae el código de error domain de excepciones levantadas por la RPC', async () => {
+      const mockQuery = {
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        single: jest.fn().mockResolvedValue({
+          data: { id: validDTO.cartId, status: 'active', user_id: validDTO.userId },
+          error: null,
+        }),
+      };
+      mockSupabase.from.mockReturnValue(mockQuery);
+
+      mockSupabase.rpc.mockResolvedValue({
+        data: null,
+        error: { message: 'CART_ALREADY_PROCESSED: Cart c0000000-0000-0000-0000-000000000001 has already been checked out' },
+      });
+
+      const result = await service.processCheckout(validDTO);
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error.code).toBe('CART_ALREADY_PROCESSED');
       }
     });
   });

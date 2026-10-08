@@ -14,6 +14,43 @@ export interface ICheckoutService {
 export class CheckoutService implements ICheckoutService {
   constructor(private readonly client: SupabaseClient) {}
 
+  private verifyCartUserOrGuest(
+    cart: { user_id: string | null; session_token: string | null },
+    dto: ProcessCheckoutDTO
+  ): Result<void, CheckoutError> {
+    if (cart.user_id) {
+      if (!dto.userId || cart.user_id !== dto.userId) {
+        return fail({ code: 'FORBIDDEN_CART_ACCESS', message: 'User does not own this cart' });
+      }
+      return ok(undefined);
+    }
+
+    const token = dto.sessionToken?.trim();
+    if (!token) {
+      return fail({ code: 'FORBIDDEN_CART_ACCESS', message: 'Guest session token is required for guest carts' });
+    }
+    if (cart.session_token !== token) {
+      return fail({ code: 'FORBIDDEN_CART_ACCESS', message: 'Invalid guest session token for cart' });
+    }
+    return ok(undefined);
+  }
+
+  private async checkCheckedOutIdempotency(
+    cartId: string,
+    idempotencyKey: string
+  ): Promise<Result<void, CheckoutError>> {
+    const { data: existingOrder } = await this.client
+      .from('orders')
+      .select('id, idempotency_key')
+      .eq('cart_id', cartId)
+      .maybeSingle();
+
+    if (existingOrder?.idempotency_key === idempotencyKey) {
+      return ok(undefined);
+    }
+    return fail({ code: 'CART_ALREADY_PROCESSED', message: 'Cart has already been checked out' });
+  }
+
   private async validateCartOwnership(dto: ProcessCheckoutDTO): Promise<Result<void, CheckoutError>> {
     const { data: cart, error: cartErr } = await this.client
       .from('carts')
@@ -25,23 +62,13 @@ export class CheckoutService implements ICheckoutService {
       return fail({ code: 'CART_NOT_FOUND', message: `Cart ${dto.cartId} not found` });
     }
 
+    const authCheck = this.verifyCartUserOrGuest(cart, dto);
+    if (!authCheck.success) {
+      return authCheck;
+    }
+
     if (cart.status === 'checked_out') {
-      return fail({ code: 'CART_ALREADY_PROCESSED', message: 'Cart has already been checked out' });
-    }
-
-    if (cart.user_id) {
-      if (!dto.userId || cart.user_id !== dto.userId) {
-        return fail({ code: 'FORBIDDEN_CART_ACCESS', message: 'User does not own this cart' });
-      }
-      return ok(undefined);
-    }
-
-    if (!dto.sessionToken || typeof dto.sessionToken !== 'string' || dto.sessionToken.trim() === '') {
-      return fail({ code: 'FORBIDDEN_CART_ACCESS', message: 'Guest session token is required for guest carts' });
-    }
-
-    if (cart.session_token !== dto.sessionToken.trim()) {
-      return fail({ code: 'FORBIDDEN_CART_ACCESS', message: 'Invalid guest session token for cart' });
+      return this.checkCheckedOutIdempotency(dto.cartId, dto.idempotencyKey);
     }
 
     return ok(undefined);
@@ -56,36 +83,58 @@ export class CheckoutService implements ICheckoutService {
       lower.includes('40001');
   }
 
+  private extractRpcErrorCode(message: string): string {
+    const match = message.match(/^([A-Z_]+):/);
+    return match ? match[1] : 'CHECKOUT_RPC_ERROR';
+  }
+
+  private mapCheckoutResponse(raw: Record<string, unknown>): CheckoutResponse {
+    return {
+      status: raw.status as 'created' | 'idempotent_hit',
+      orderId: String(raw.orderId || raw.order_id || ''),
+      orderNumber: String(raw.orderNumber || raw.order_number || ''),
+      subtotalInCents: Number(raw.subtotalInCents ?? raw.subtotal_in_cents ?? 0),
+      deliveryFeeInCents: Number(raw.deliveryFeeInCents ?? raw.delivery_fee_in_cents ?? 0),
+      tipInCents: Number(raw.tipInCents ?? raw.tip_in_cents ?? 0),
+      totalInCents: Number(raw.totalInCents ?? raw.total_in_cents ?? 0),
+      paymentStatus: String(raw.paymentStatus || raw.payment_status || 'unpaid'),
+    };
+  }
+
+  private async callCheckoutRpc(dto: ProcessCheckoutDTO) {
+    return this.client.rpc('process_checkout_atomic', {
+      p_cart_id: dto.cartId,
+      p_warehouse_id: dto.warehouseId,
+      p_idempotency_key: dto.idempotencyKey,
+      p_user_id: dto.userId || null,
+      p_customer_name: dto.customerName,
+      p_customer_phone: dto.customerPhone,
+      p_customer_email: dto.customerEmail,
+      p_delivery_address: dto.deliveryAddress,
+      p_delivery_city: dto.deliveryCity || 'Bogotá D.C.',
+      p_delivery_lat: dto.deliveryLat || null,
+      p_delivery_lng: dto.deliveryLng || null,
+      p_delivery_notes: dto.deliveryNotes || null,
+      p_tip_in_cents: dto.tipInCents || 0,
+    });
+  }
+
   private async invokeRpcWithRetry(dto: ProcessCheckoutDTO): Promise<Result<CheckoutResponse, CheckoutError>> {
     let lastErr = '';
     for (let attempt = 0; attempt < 3; attempt++) {
       if (attempt > 0) {
         await new Promise(r => setTimeout(r, 20 * Math.pow(2, attempt)));
       }
-      const { data, error } = await this.client.rpc('process_checkout_atomic', {
-        p_cart_id: dto.cartId,
-        p_warehouse_id: dto.warehouseId,
-        p_idempotency_key: dto.idempotencyKey,
-        p_user_id: dto.userId || null,
-        p_customer_name: dto.customerName,
-        p_customer_phone: dto.customerPhone,
-        p_customer_email: dto.customerEmail,
-        p_delivery_address: dto.deliveryAddress,
-        p_delivery_city: dto.deliveryCity || 'Bogotá D.C.',
-        p_delivery_lat: dto.deliveryLat || null,
-        p_delivery_lng: dto.deliveryLng || null,
-        p_delivery_notes: dto.deliveryNotes || null,
-        p_tip_in_cents: dto.tipInCents || 0,
-      });
+      const { data, error } = await this.callCheckoutRpc(dto);
 
       if (!error && data) {
-        const resp = data as CheckoutResponse;
-        return ok(resp);
+        return ok(this.mapCheckoutResponse(data as Record<string, unknown>));
       }
       lastErr = error?.message || 'Unknown database error';
       if (!this.isTransientError(lastErr)) break;
     }
-    return fail({ code: 'CHECKOUT_RPC_ERROR', message: lastErr });
+    const code = this.extractRpcErrorCode(lastErr);
+    return fail({ code, message: lastErr });
   }
 
   async processCheckout(dto: ProcessCheckoutDTO): Promise<Result<CheckoutResponse, CheckoutError>> {

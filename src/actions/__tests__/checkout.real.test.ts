@@ -418,4 +418,161 @@ describe('P1 Etapa 3: Checkout Transaccional (process_checkout_atomic & Checkout
       await adminClient.auth.admin.deleteUser(userB.userId);
     }
   });
+
+  it('repetición después de un timeout simulado: devuelve la orden original y status idempotent_hit en carrito checked_out', async () => {
+    const prodTimeout = '71000000-0000-0000-0000-000000000050';
+    const varTimeout = '81000000-0000-0000-0000-000000000050';
+    const cartTimeout = '91000000-0000-0000-0000-000000000050';
+    const timeoutKey = `idemp-timeout-${Date.now()}`;
+    const userTimeout = await createAuthUserClient(adminClient, anonClient);
+    const db = adminClient as unknown as TestDbClient;
+
+    try {
+      await db.from('products').upsert({ id: prodTimeout, name: 'Aguardiente Antioqueño 24', is_active: true });
+      await db.from('product_variants').upsert({
+        id: varTimeout, product_id: prodTimeout, sku: 'SKU-AGU-24', presentation_label: '750ml', price_in_cents: 3500000, is_active: true
+      });
+      await db.from('inventory').update({ physical_quantity: 10, safety_stock: 0 }).eq('variant_id', varTimeout).eq('warehouse_id', WAREHOUSE_ID);
+      await db.from('carts').upsert({ id: cartTimeout, user_id: userTimeout.userId, status: 'active' });
+      await db.rpc('reserve_variant_stock', { p_variant_id: varTimeout, p_warehouse_id: WAREHOUSE_ID, p_cart_id: cartTimeout, p_quantity: 1 });
+
+      const payload = {
+        cartId: cartTimeout,
+        warehouseId: WAREHOUSE_ID,
+        idempotencyKey: timeoutKey,
+        userId: userTimeout.userId,
+        customerName: 'Santiago Botero',
+        customerPhone: '+573001234567',
+        customerEmail: 'santiago@partyflow.app',
+        deliveryAddress: 'Calle 100 # 20-30',
+        deliveryCity: 'Bogotá D.C.',
+        tipInCents: 10000
+      };
+
+      // 1. Primera llamada (simula operación completada en backend antes de timeout de red en cliente)
+      const firstRes = await checkoutService.processCheckout(payload);
+      expect(firstRes.success).toBe(true);
+      if (!firstRes.success) throw new Error('First checkout failed');
+      expect(firstRes.data.status).toBe('created');
+      const originalOrderId = firstRes.data.orderId;
+
+      // Verificar que el carrito quedó en checked_out
+      const { data: cartPost } = await db.from('carts').select('status').eq('id', cartTimeout).single();
+      expect(cartPost.status).toBe('checked_out');
+
+      // 2. Reintento idéntico del cliente tras timeout:
+      const retryRes = await checkoutService.processCheckout(payload);
+      expect(retryRes.success).toBe(true);
+      if (!retryRes.success) throw new Error('Retry checkout failed');
+      expect(retryRes.data.status).toBe('idempotent_hit');
+      expect(retryRes.data.orderId).toBe(originalOrderId);
+      expect(retryRes.data.totalInCents).toBe(firstRes.data.totalInCents);
+
+      // Verificar que en base de datos existe exactamente 1 orden para este carrito
+      const { data: dbOrders } = await db.from('orders').select('id').eq('cart_id', cartTimeout);
+      expect(dbOrders).toHaveLength(1);
+
+      // 3. Intento de reintento sobre el mismo carrito checked_out con clave distinta debe ser RECHAZADO
+      const diffKeyRes = await checkoutService.processCheckout({
+        ...payload,
+        idempotencyKey: `idemp-diff-after-checkout-${Date.now()}`
+      });
+      expect(diffKeyRes.success).toBe(false);
+      if (!diffKeyRes.success) {
+        expect(diffKeyRes.error.code).toBe('CART_ALREADY_PROCESSED');
+      }
+    } finally {
+      await db.from('order_items').delete().eq('variant_id', varTimeout);
+      await db.from('stock_reservations').delete().eq('cart_id', cartTimeout);
+      await db.from('orders').delete().eq('idempotency_key', timeoutKey);
+      await db.from('carts').delete().eq('id', cartTimeout);
+      await db.from('inventory').delete().eq('variant_id', varTimeout);
+      await db.from('product_variants').delete().eq('id', varTimeout);
+      await db.from('products').delete().eq('id', prodTimeout);
+      await adminClient.auth.admin.deleteUser(userTimeout.userId);
+    }
+  });
+
+  it('aislamiento estricto de identidad: reintento con misma clave pero distinta identidad (o invitado) es rechazado', async () => {
+    const userA = await createAuthUserClient(adminClient, anonClient);
+    const userB = await createAuthUserClient(adminClient, anonClient);
+    const cartA = '91000000-0000-0000-0000-000000000060';
+    const prodIso = '71000000-0000-0000-0000-000000000060';
+    const varIso = '81000000-0000-0000-0000-000000000060';
+    const sharedKey = `idemp-iso-${Date.now()}`;
+    const db = adminClient as unknown as TestDbClient;
+
+    try {
+      await db.from('products').upsert({ id: prodIso, name: 'Vodka Absolut 1L', is_active: true });
+      await db.from('product_variants').upsert({
+        id: varIso, product_id: prodIso, sku: 'SKU-VOD-ABS', presentation_label: '1L', price_in_cents: 6500000, is_active: true
+      });
+      await db.from('inventory').update({ physical_quantity: 10, safety_stock: 0 }).eq('variant_id', varIso).eq('warehouse_id', WAREHOUSE_ID);
+      await db.from('carts').upsert({ id: cartA, user_id: userA.userId, status: 'active' });
+      await db.rpc('reserve_variant_stock', { p_variant_id: varIso, p_warehouse_id: WAREHOUSE_ID, p_cart_id: cartA, p_quantity: 1 });
+
+      // User A genera orden legítimamente
+      const resA = await checkoutService.processCheckout({
+        cartId: cartA,
+        warehouseId: WAREHOUSE_ID,
+        idempotencyKey: sharedKey,
+        userId: userA.userId,
+        customerName: 'User A',
+        customerPhone: '+573001112233',
+        customerEmail: 'a@partyflow.app',
+        deliveryAddress: 'Calle A'
+      });
+      expect(resA.success).toBe(true);
+
+      // Intento 1: User B intenta enviar la misma clave sobre el carrito de A
+      const resB = await checkoutService.processCheckout({
+        cartId: cartA,
+        warehouseId: WAREHOUSE_ID,
+        idempotencyKey: sharedKey,
+        userId: userB.userId,
+        customerName: 'User B',
+        customerPhone: '+573001112233',
+        customerEmail: 'b@partyflow.app',
+        deliveryAddress: 'Calle B'
+      });
+      expect(resB.success).toBe(false);
+      if (!resB.success) {
+        expect(resB.error.code).toBe('FORBIDDEN_CART_ACCESS');
+      }
+
+      // Intento 2: Atacante anónimo llama a la RPC con p_user_id = NULL intentando recuperar la orden de User A
+      const resGuestExploit = await db.rpc('process_checkout_atomic', {
+        p_cart_id: cartA,
+        p_warehouse_id: WAREHOUSE_ID,
+        p_idempotency_key: sharedKey,
+        p_user_id: null,
+        p_customer_name: 'Guest Hacker',
+        p_customer_phone: '+573001112233'
+      });
+      expect(resGuestExploit.error).toBeDefined();
+      expect(resGuestExploit.error?.message).toContain('IDEMPOTENCY_CONFLICT');
+
+      // Intento 3: User B llama a la RPC directamente con su propio user_id y la clave de A
+      const resUserBDirect = await db.rpc('process_checkout_atomic', {
+        p_cart_id: cartA,
+        p_warehouse_id: WAREHOUSE_ID,
+        p_idempotency_key: sharedKey,
+        p_user_id: userB.userId,
+        p_customer_name: 'User B Hacker',
+        p_customer_phone: '+573001112233'
+      });
+      expect(resUserBDirect.error).toBeDefined();
+      expect(resUserBDirect.error?.message).toContain('IDEMPOTENCY_CONFLICT');
+    } finally {
+      await db.from('order_items').delete().eq('variant_id', varIso);
+      await db.from('stock_reservations').delete().eq('cart_id', cartA);
+      await db.from('orders').delete().eq('idempotency_key', sharedKey);
+      await db.from('carts').delete().eq('id', cartA);
+      await db.from('inventory').delete().eq('variant_id', varIso);
+      await db.from('product_variants').delete().eq('id', varIso);
+      await db.from('products').delete().eq('id', prodIso);
+      await adminClient.auth.admin.deleteUser(userA.userId);
+      await adminClient.auth.admin.deleteUser(userB.userId);
+    }
+  });
 });

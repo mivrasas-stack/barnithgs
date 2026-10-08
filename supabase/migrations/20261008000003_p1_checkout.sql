@@ -70,7 +70,7 @@ ALTER TABLE public.orders
   ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT now();
 
 CREATE INDEX IF NOT EXISTS idx_orders_user_id ON public.orders(user_id);
-CREATE INDEX IF NOT EXISTS idx_orders_cart_id ON public.orders(cart_id);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_orders_cart_id ON public.orders(cart_id) WHERE cart_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_orders_idempotency ON public.orders(idempotency_key);
 CREATE INDEX IF NOT EXISTS idx_orders_payment_status ON public.orders(payment_status);
 
@@ -163,41 +163,56 @@ BEGIN
   END IF;
 
   -- 2. Fast-Path Idempotency Check
-  SELECT id, order_number, cart_id, user_id, customer_phone, total_in_cents, status, payment_status
+  SELECT id, order_number, cart_id, user_id, customer_phone, subtotal_in_cents, delivery_fee_in_cents, tip_in_cents, total_in_cents, status, payment_status
   INTO v_existing_order
   FROM public.orders
   WHERE idempotency_key = p_idempotency_key;
 
   IF FOUND THEN
-    -- Validate that the key is not being replayed with a different cart or identity
-    IF (v_existing_order.cart_id IS NOT NULL AND v_existing_order.cart_id != p_cart_id)
-       OR (p_user_id IS NOT NULL AND v_existing_order.user_id IS NOT NULL AND v_existing_order.user_id != p_user_id)
+    -- Strict identity and cart comparison: NEVER reveal orders of another user or cart
+    -- IS DISTINCT FROM prevents NULL bypasses (e.g. guest trying to claim authenticated order, or vice versa)
+    IF (v_existing_order.cart_id IS DISTINCT FROM p_cart_id)
+       OR (v_existing_order.user_id IS DISTINCT FROM p_user_id)
        OR (v_existing_order.customer_phone != '' AND v_existing_order.customer_phone != trim(p_customer_phone)) THEN
-      RAISE EXCEPTION 'IDEMPOTENCY_CONFLICT: Idempotency key % already used for another cart or customer', p_idempotency_key;
+      RAISE EXCEPTION 'IDEMPOTENCY_CONFLICT: Idempotency key % already used for another cart or identity', p_idempotency_key;
     END IF;
 
     RETURN jsonb_build_object(
       'status', 'idempotent_hit',
       'order_id', v_existing_order.id,
       'order_number', v_existing_order.order_number,
+      'subtotal_in_cents', v_existing_order.subtotal_in_cents,
+      'delivery_fee_in_cents', v_existing_order.delivery_fee_in_cents,
+      'tip_in_cents', v_existing_order.tip_in_cents,
       'total_in_cents', v_existing_order.total_in_cents,
       'payment_status', v_existing_order.payment_status
     );
   END IF;
 
-  -- 3. Strict Cart & Identity Verification
+  -- 3. Lock cart row exclusively to serialize checkouts on the same cart
   SELECT id, user_id, status
   INTO v_cart_rec
   FROM public.carts
-  WHERE id = p_cart_id;
+  WHERE id = p_cart_id
+  FOR UPDATE;
 
-  IF FOUND THEN
-    IF v_cart_rec.status = 'checked_out' THEN
-      RAISE EXCEPTION 'CART_ALREADY_PROCESSED: Cart % has already been checked out', p_cart_id;
-    END IF;
-    IF p_user_id IS NOT NULL AND v_cart_rec.user_id IS NOT NULL AND v_cart_rec.user_id != p_user_id THEN
-      RAISE EXCEPTION 'FORBIDDEN_CART_ACCESS: User % does not own cart %', p_user_id, p_cart_id;
-    END IF;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'CART_NOT_FOUND: Cart % does not exist', p_cart_id;
+  END IF;
+
+  -- Verify cart status after acquiring exclusive row lock
+  IF v_cart_rec.status = 'checked_out' THEN
+    RAISE EXCEPTION 'CART_ALREADY_PROCESSED: Cart % has already been checked out', p_cart_id;
+  END IF;
+
+  -- Also check if an order has already been created for this cart
+  IF EXISTS (SELECT 1 FROM public.orders WHERE cart_id = p_cart_id) THEN
+    RAISE EXCEPTION 'CART_ALREADY_PROCESSED: An order already exists for cart %', p_cart_id;
+  END IF;
+
+  -- Strict cart ownership check:
+  IF v_cart_rec.user_id IS DISTINCT FROM p_user_id THEN
+    RAISE EXCEPTION 'FORBIDDEN_CART_ACCESS: User % does not own cart %', p_user_id, p_cart_id;
   END IF;
 
   -- 4. Strict Reservation Integrity Check:
@@ -343,27 +358,32 @@ BEGIN
     );
   EXCEPTION WHEN unique_violation THEN
     -- Concurrent duplicate request raced past Step 2; fetch committed record
-    SELECT id, order_number, cart_id, user_id, customer_phone, total_in_cents, status, payment_status
+    SELECT id, order_number, cart_id, user_id, customer_phone, subtotal_in_cents, delivery_fee_in_cents, tip_in_cents, total_in_cents, status, payment_status
     INTO v_existing_order
     FROM public.orders
     WHERE idempotency_key = p_idempotency_key;
 
     IF FOUND THEN
-      IF (v_existing_order.cart_id IS NOT NULL AND v_existing_order.cart_id != p_cart_id)
-         OR (p_user_id IS NOT NULL AND v_existing_order.user_id IS NOT NULL AND v_existing_order.user_id != p_user_id)
+      -- Strict identity and cart comparison: NEVER reveal orders of another user or cart
+      IF (v_existing_order.cart_id IS DISTINCT FROM p_cart_id)
+         OR (v_existing_order.user_id IS DISTINCT FROM p_user_id)
          OR (v_existing_order.customer_phone != '' AND v_existing_order.customer_phone != trim(p_customer_phone)) THEN
-        RAISE EXCEPTION 'IDEMPOTENCY_CONFLICT: Idempotency key % already used for another cart or customer', p_idempotency_key;
+        RAISE EXCEPTION 'IDEMPOTENCY_CONFLICT: Idempotency key % already used for another cart or identity', p_idempotency_key;
       END IF;
 
       RETURN jsonb_build_object(
         'status', 'idempotent_hit',
         'order_id', v_existing_order.id,
         'order_number', v_existing_order.order_number,
+        'subtotal_in_cents', v_existing_order.subtotal_in_cents,
+        'delivery_fee_in_cents', v_existing_order.delivery_fee_in_cents,
+        'tip_in_cents', v_existing_order.tip_in_cents,
         'total_in_cents', v_existing_order.total_in_cents,
         'payment_status', v_existing_order.payment_status
       );
     ELSE
-      RAISE;
+      -- Unique violation caused by uq_orders_cart_id: an order was already created for this cart under another key
+      RAISE EXCEPTION 'CART_ALREADY_PROCESSED: An order already exists for cart %', p_cart_id;
     END IF;
   END;
 
