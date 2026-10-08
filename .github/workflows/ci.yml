@@ -45,7 +45,19 @@ jobs:
           node -e "const fs = require('fs'); const data = JSON.parse(fs.readFileSync('supabase.json', 'utf8')); const env = ['NEXT_PUBLIC_SUPABASE_URL=' + data.API_URL.trim(), 'NEXT_PUBLIC_SUPABASE_ANON_KEY=' + data.ANON_KEY.trim(), 'SUPABASE_SERVICE_ROLE_KEY=' + data.SERVICE_ROLE_KEY.trim()].join('\n') + '\n'; fs.appendFileSync(process.env.GITHUB_ENV, env);"
 
       - name: Run Jest Security & Integration Tests
-        run: npx jest --verbose --runInBand
+        run: |
+          set -o pipefail
+          npx jest --verbose --runInBand 2>&1 | tee jest-output.log
+
+      - name: Publish Test Summary
+        if: always()
+        run: |
+          if [ -f jest-output.log ]; then
+            echo "### Jest Run Summary" >> $GITHUB_STEP_SUMMARY
+            echo '```text' >> $GITHUB_STEP_SUMMARY
+            tail -n 100 jest-output.log >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          fi
 
       - name: Build Next.js
         run: npm run build

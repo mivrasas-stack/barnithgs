@@ -255,7 +255,7 @@ describe('Real Database Integration & RLS (No Mocks)', () => {
       const service = new CatalogService(anonClient);
       try {
         await (adminClient.from('products') as any).upsert({
-          id: prodId, name: 'Whisky Test Anon', image_url: 'https://example.com/w.jpg', is_active: true
+          id: prodId, name: 'Whisky Test Anon', image_url: 'https://example.com/w.jpg', price: 185000, is_active: true
         });
         await (adminClient.from('product_variants') as any).upsert({
           id: varId, product_id: prodId, sku: 'SKU-W-ANON', presentation_label: '750ml',
@@ -266,11 +266,12 @@ describe('Real Database Integration & RLS (No Mocks)', () => {
         if (res.success) {
           const prod = res.data.find(p => p.id === prodId);
           expect(prod?.imageUrl).toBe('https://example.com/w.jpg');
-          expect(prod?.variants?.[0]?.priceInCents).toBe(18500000);
-          expect(prod?.variants?.[0]).not.toHaveProperty('cost_in_cents');
+          const variant = prod?.variants?.find(v => v.sku === 'SKU-W-ANON') ?? prod?.variants?.[0];
+          expect(variant?.priceInCents).toBe(18500000);
+          expect(variant).not.toHaveProperty('cost_in_cents');
         }
       } finally {
-        await (adminClient.from('product_variants') as any).delete().eq('id', varId);
+        await (adminClient.from('product_variants') as any).delete().eq('product_id', prodId);
         await (adminClient.from('products') as any).delete().eq('id', prodId);
       }
     });
