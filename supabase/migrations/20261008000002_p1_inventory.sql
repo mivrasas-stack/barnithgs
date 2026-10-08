@@ -74,7 +74,7 @@ ALTER TABLE public.stock_reservations
   ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'consumed', 'released', 'expired')),
   ADD COLUMN IF NOT EXISTS renewal_count INTEGER NOT NULL DEFAULT 0 CHECK (renewal_count >= 0 AND renewal_count <= 1);
 
--- Backfill variant_id in stock_reservations
+-- Backfill variant_id in stock_reservations and make product_id nullable
 DO $$
 BEGIN
   IF EXISTS (
@@ -98,12 +98,98 @@ END $$;
 CREATE INDEX IF NOT EXISTS idx_stock_res_variant ON public.stock_reservations(variant_id, warehouse_id, status);
 CREATE INDEX IF NOT EXISTS idx_stock_res_expiry ON public.stock_reservations(expires_at) WHERE status = 'active';
 
--- 4. Trigger to auto-create inventory entry when a new variant is inserted
+-- 4. Bidirectional backward-compatibility triggers for inventory and stock_reservations
+
+-- 4.1 Inventory defaults trigger (syncs product_id <-> variant_id)
+CREATE OR REPLACE FUNCTION public.handle_inventory_defaults()
+RETURNS TRIGGER AS $$
+DECLARE
+  v_var_id UUID;
+  v_default_wh UUID := '00000000-0000-0000-0000-000000000001';
+BEGIN
+  IF NEW.warehouse_id IS NULL THEN
+    NEW.warehouse_id := v_default_wh;
+  END IF;
+
+  IF NEW.variant_id IS NOT NULL AND NEW.product_id IS NULL THEN
+    SELECT product_id INTO NEW.product_id 
+    FROM public.product_variants 
+    WHERE id = NEW.variant_id;
+  END IF;
+
+  IF NEW.product_id IS NOT NULL AND NEW.variant_id IS NULL THEN
+    SELECT id INTO v_var_id 
+    FROM public.product_variants 
+    WHERE product_id = NEW.product_id 
+    ORDER BY created_at ASC 
+    LIMIT 1;
+
+    IF v_var_id IS NULL THEN
+      INSERT INTO public.product_variants (
+        product_id, sku, presentation_label, price_in_cents, is_active
+      ) VALUES (
+        NEW.product_id,
+        'SKU-INV-' || upper(replace(NEW.product_id::text, '-', '')),
+        'Presentación Estándar',
+        0,
+        true
+      ) RETURNING id INTO v_var_id;
+    END IF;
+
+    NEW.variant_id := v_var_id;
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_inventory_defaults ON public.inventory;
+CREATE TRIGGER trg_inventory_defaults
+BEFORE INSERT OR UPDATE ON public.inventory
+FOR EACH ROW EXECUTE FUNCTION public.handle_inventory_defaults();
+
+-- 4.2 Stock reservations defaults trigger (syncs product_id <-> variant_id)
+CREATE OR REPLACE FUNCTION public.handle_stock_reservation_defaults()
+RETURNS TRIGGER AS $$
+DECLARE
+  v_var_id UUID;
+  v_default_wh UUID := '00000000-0000-0000-0000-000000000001';
+BEGIN
+  IF NEW.warehouse_id IS NULL THEN
+    NEW.warehouse_id := v_default_wh;
+  END IF;
+
+  IF NEW.variant_id IS NOT NULL AND NEW.product_id IS NULL THEN
+    SELECT product_id INTO NEW.product_id 
+    FROM public.product_variants 
+    WHERE id = NEW.variant_id;
+  END IF;
+
+  IF NEW.product_id IS NOT NULL AND NEW.variant_id IS NULL THEN
+    SELECT id INTO v_var_id 
+    FROM public.product_variants 
+    WHERE product_id = NEW.product_id 
+    ORDER BY created_at ASC 
+    LIMIT 1;
+
+    NEW.variant_id := v_var_id;
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_stock_reservation_defaults ON public.stock_reservations;
+CREATE TRIGGER trg_stock_reservation_defaults
+BEFORE INSERT OR UPDATE ON public.stock_reservations
+FOR EACH ROW EXECUTE FUNCTION public.handle_stock_reservation_defaults();
+
+-- 4.3 Trigger to auto-create inventory entry when a new variant is inserted
 CREATE OR REPLACE FUNCTION public.handle_variant_default_inventory()
 RETURNS TRIGGER AS $$
 BEGIN
-  INSERT INTO public.inventory (variant_id, warehouse_id, physical_quantity, safety_stock)
-  VALUES (NEW.id, '00000000-0000-0000-0000-000000000001', 0, 0)
+  INSERT INTO public.inventory (variant_id, warehouse_id, product_id, physical_quantity, safety_stock)
+  VALUES (NEW.id, '00000000-0000-0000-0000-000000000001', NEW.product_id, 0, 0)
   ON CONFLICT (variant_id, warehouse_id) DO NOTHING;
   RETURN NEW;
 END;
@@ -128,20 +214,25 @@ DECLARE
   v_physical_stock INTEGER;
   v_safety_stock INTEGER;
   v_reserved_stock INTEGER;
+  v_product_id UUID;
 BEGIN
   IF p_quantity <= 0 THEN
     RETURN FALSE;
   END IF;
 
   -- Lock the specific variant & warehouse inventory row
-  SELECT physical_quantity, safety_stock 
-  INTO v_physical_stock, v_safety_stock
+  SELECT physical_quantity, safety_stock, product_id
+  INTO v_physical_stock, v_safety_stock, v_product_id
   FROM public.inventory
   WHERE variant_id = p_variant_id AND warehouse_id = p_warehouse_id
   FOR UPDATE;
 
   IF v_physical_stock IS NULL THEN
     RETURN FALSE;
+  END IF;
+
+  IF v_product_id IS NULL THEN
+    SELECT product_id INTO v_product_id FROM public.product_variants WHERE id = p_variant_id;
   END IF;
 
   -- Sum active, non-expired reservations for this variant & warehouse
@@ -155,9 +246,9 @@ BEGIN
   -- Check available stock respecting safety_stock
   IF (v_physical_stock - v_safety_stock - v_reserved_stock) >= p_quantity THEN
     INSERT INTO public.stock_reservations (
-      variant_id, warehouse_id, cart_id, quantity, status, renewal_count, expires_at
+      variant_id, warehouse_id, product_id, cart_id, quantity, status, renewal_count, expires_at
     ) VALUES (
-      p_variant_id, p_warehouse_id, p_cart_id, p_quantity, 'active', 0, now() + (p_ttl_minutes || ' minutes')::interval
+      p_variant_id, p_warehouse_id, v_product_id, p_cart_id, p_quantity, 'active', 0, now() + (p_ttl_minutes || ' minutes')::interval
     );
     RETURN TRUE;
   ELSE
@@ -257,7 +348,22 @@ BEGIN
   LIMIT 1;
 
   IF v_variant_id IS NULL THEN
-    RETURN FALSE;
+    SELECT id INTO v_variant_id 
+    FROM public.product_variants 
+    WHERE product_id = p_product_id
+    LIMIT 1;
+  END IF;
+
+  IF v_variant_id IS NULL THEN
+    INSERT INTO public.product_variants (
+      product_id, sku, presentation_label, price_in_cents, is_active
+    ) VALUES (
+      p_product_id,
+      'SKU-' || upper(replace(p_product_id::text, '-', '')),
+      'Presentación Estándar',
+      0,
+      true
+    ) RETURNING id INTO v_variant_id;
   END IF;
 
   RETURN public.reserve_variant_stock(

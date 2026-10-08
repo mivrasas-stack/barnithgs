@@ -39,9 +39,9 @@ describe('P1 Etapa 2: Inventario por Variante, Bodega, Concurrencia y RLS', () =
         id: varId, product_id: prodId, sku: 'SKU-TEQ-ATOM', presentation_label: '750ml',
         price_in_cents: 25000000, is_active: true
       });
-      await (adminClient.from('inventory') as any).upsert({
-        variant_id: varId, warehouse_id: WAREHOUSE_ID, physical_quantity: 1, safety_stock: 0
-      });
+      await (adminClient.from('inventory') as any).update({
+        physical_quantity: 1, safety_stock: 0
+      }).eq('variant_id', varId).eq('warehouse_id', WAREHOUSE_ID);
 
       const attempts = await Promise.all([
         (adminClient as any).rpc('reserve_variant_stock', { p_variant_id: varId, p_warehouse_id: WAREHOUSE_ID, p_cart_id: cart1, p_quantity: 1 }),
@@ -72,9 +72,9 @@ describe('P1 Etapa 2: Inventario por Variante, Bodega, Concurrencia y RLS', () =
         id: varId, product_id: prodId, sku: 'SKU-GIN-SAFE', presentation_label: '1L',
         price_in_cents: 15000000, is_active: true
       });
-      await (adminClient.from('inventory') as any).upsert({
-        variant_id: varId, warehouse_id: WAREHOUSE_ID, physical_quantity: 5, safety_stock: 2
-      });
+      await (adminClient.from('inventory') as any).update({
+        physical_quantity: 5, safety_stock: 2
+      }).eq('variant_id', varId).eq('warehouse_id', WAREHOUSE_ID);
 
       const res4 = await (adminClient as any).rpc('reserve_variant_stock', {
         p_variant_id: varId, p_warehouse_id: WAREHOUSE_ID, p_cart_id: cartId, p_quantity: 4
@@ -110,9 +110,9 @@ describe('P1 Etapa 2: Inventario por Variante, Bodega, Concurrencia y RLS', () =
         id: varId, product_id: prodId, sku: 'SKU-VOD-EXP', presentation_label: '750ml',
         price_in_cents: 9000000, is_active: true
       });
-      await (adminClient.from('inventory') as any).upsert({
-        variant_id: varId, warehouse_id: WAREHOUSE_ID, physical_quantity: 1, safety_stock: 0
-      });
+      await (adminClient.from('inventory') as any).update({
+        physical_quantity: 1, safety_stock: 0
+      }).eq('variant_id', varId).eq('warehouse_id', WAREHOUSE_ID);
 
       const expiredDate = new Date(Date.now() - 5 * 60 * 1000).toISOString();
       await (adminClient.from('stock_reservations') as any).insert({
@@ -143,9 +143,9 @@ describe('P1 Etapa 2: Inventario por Variante, Bodega, Concurrencia y RLS', () =
         id: varId, product_id: prodId, sku: 'SKU-RON-REN', presentation_label: '750ml',
         price_in_cents: 8000000, is_active: true
       });
-      await (adminClient.from('inventory') as any).upsert({
-        variant_id: varId, warehouse_id: WAREHOUSE_ID, physical_quantity: 2, safety_stock: 0
-      });
+      await (adminClient.from('inventory') as any).update({
+        physical_quantity: 2, safety_stock: 0
+      }).eq('variant_id', varId).eq('warehouse_id', WAREHOUSE_ID);
 
       await (adminClient as any).rpc('reserve_variant_stock', {
         p_variant_id: varId, p_warehouse_id: WAREHOUSE_ID, p_cart_id: cartId, p_quantity: 1
@@ -179,9 +179,9 @@ describe('P1 Etapa 2: Inventario por Variante, Bodega, Concurrencia y RLS', () =
         id: varId, product_id: prodId, sku: 'SKU-WH-CONS', presentation_label: '750ml',
         price_in_cents: 30000000, is_active: true
       });
-      await (adminClient.from('inventory') as any).upsert({
-        variant_id: varId, warehouse_id: WAREHOUSE_ID, physical_quantity: 10, safety_stock: 0
-      });
+      await (adminClient.from('inventory') as any).update({
+        physical_quantity: 10, safety_stock: 0
+      }).eq('variant_id', varId).eq('warehouse_id', WAREHOUSE_ID);
 
       await (adminClient as any).rpc('reserve_variant_stock', {
         p_variant_id: varId, p_warehouse_id: WAREHOUSE_ID, p_cart_id: cartId, p_quantity: 4
