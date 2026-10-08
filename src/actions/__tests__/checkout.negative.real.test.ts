@@ -205,13 +205,20 @@ describe('P1 Etapa 3: Pruebas Físicas Negativas de Seguridad y Reservas', () =>
       await db.from('product_variants').upsert({
         id: varG, product_id: prodG, sku: 'SKU-WH-12', presentation_label: '750ml', price_in_cents: 9000000, is_active: true
       });
-      await db.from('inventory').update({ physical_quantity: 10, safety_stock: 0 }).eq('variant_id', varG).eq('warehouse_id', WAREHOUSE_2);
+      await db.from('inventory').upsert({
+        variant_id: varG,
+        warehouse_id: WAREHOUSE_2,
+        product_id: prodG,
+        physical_quantity: 10,
+        safety_stock: 0
+      });
       await db.from('carts').upsert({ id: cartG, status: 'active' });
 
       // Reserva en BODEGA 2
-      await db.rpc('reserve_variant_stock', {
+      const reserveRes = await db.rpc('reserve_variant_stock', {
         p_variant_id: varG, p_warehouse_id: WAREHOUSE_2, p_cart_id: cartG, p_quantity: 1
       });
+      expect(reserveRes.data).toBe(true);
 
       // Intento de procesar checkout solicitando BODEGA 1
       const res = await db.rpc('process_checkout_atomic', {
@@ -238,6 +245,7 @@ describe('P1 Etapa 3: Pruebas Físicas Negativas de Seguridad y Reservas', () =>
     const varH = '82000000-0000-0000-0000-000000000002';
     const cartH = '92000000-0000-0000-0000-000000000005';
     const fakeOrderId = '01000000-0000-0000-0000-000000000001';
+    const fakeOrderKey = `fake-order-${Date.now()}`;
     const db = adminClient as unknown as TestDbClient;
 
     try {
@@ -245,8 +253,22 @@ describe('P1 Etapa 3: Pruebas Físicas Negativas de Seguridad y Reservas', () =>
       await db.from('product_variants').upsert({
         id: varH, product_id: prodH, sku: 'SKU-GIN-ESP', presentation_label: '750ml', price_in_cents: 7000000, is_active: true
       });
-      await db.from('inventory').update({ physical_quantity: 10, safety_stock: 0 }).eq('variant_id', varH).eq('warehouse_id', WAREHOUSE_1);
+      await db.from('inventory').upsert({
+        variant_id: varH,
+        warehouse_id: WAREHOUSE_1,
+        product_id: prodH,
+        physical_quantity: 10,
+        safety_stock: 0
+      });
       await db.from('carts').upsert({ id: cartH, status: 'active' });
+
+      // Insert real order record to satisfy foreign key constraint stock_reservations.order_id -> orders.id
+      await db.from('orders').upsert({
+        id: fakeOrderId,
+        status: 'pending',
+        total_in_cents: 7000000,
+        idempotency_key: fakeOrderKey
+      });
 
       // 5.A: Reserva con order_id asignado previamente
       await db.from('stock_reservations').insert({
@@ -271,8 +293,10 @@ describe('P1 Etapa 3: Pruebas Físicas Negativas de Seguridad y Reservas', () =>
       expect(resRelink.error).toBeDefined();
       expect(resRelink.error?.message).toContain('RESERVATION_INVALID');
 
-      // Limpiar y probar 5.B: Reserva expirada
+      // Limpiar reserva vinculada
       await db.from('stock_reservations').delete().eq('cart_id', cartH);
+
+      // Probar 5.B: Reserva expirada
       await db.from('stock_reservations').insert({
         variant_id: varH,
         product_id: prodH,
@@ -295,6 +319,7 @@ describe('P1 Etapa 3: Pruebas Físicas Negativas de Seguridad y Reservas', () =>
       expect(resExpired.error?.message).toContain('RESERVATION_INVALID');
     } finally {
       await db.from('stock_reservations').delete().eq('cart_id', cartH);
+      await db.from('orders').delete().eq('id', fakeOrderId);
       await db.from('carts').delete().eq('id', cartH);
       await db.from('inventory').delete().eq('variant_id', varH);
       await db.from('product_variants').delete().eq('id', varH);
@@ -311,8 +336,12 @@ describe('P1 Etapa 3: Pruebas Físicas Negativas de Seguridad y Reservas', () =>
       await db.from('carts').upsert({ id: guestCartId, session_token: 'secret-token-invisible', status: 'active' });
 
       // A. Cliente anónimo intentando leer carts: RLS niega acceso a tokens de sesión
-      const { data: anonCarts } = await (anonClient as unknown as TestDbClient).from('carts').select('*').eq('id', guestCartId);
-      expect(anonCarts).toHaveLength(0);
+      const { data: anonCarts, error: anonErr } = await (anonClient as unknown as TestDbClient).from('carts').select('*').eq('id', guestCartId);
+      if (anonErr) {
+        expect(['42501', 'PGRST301', 'PGRST202']).toContain(anonErr.code);
+      } else {
+        expect(anonCarts).toHaveLength(0);
+      }
 
       // B. Cliente anónimo intentando ejecutar RPC privilegiada
       const anonRpc = await (anonClient as unknown as TestDbClient).rpc('process_checkout_atomic', {
@@ -337,7 +366,7 @@ describe('P1 Etapa 3: Pruebas Físicas Negativas de Seguridad y Reservas', () =>
       expect(['42501', 'PGRST202']).toContain(authRpc.error?.code);
     } finally {
       await db.from('carts').delete().eq('id', guestCartId);
-      await adminClient.auth.admin.deleteUser(userClientObj.userId);
+      try { await adminClient.auth.admin.deleteUser(userClientObj.userId); } catch (_) {}
     }
   });
 

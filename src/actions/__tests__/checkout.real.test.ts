@@ -339,7 +339,13 @@ describe('P1 Etapa 3: Checkout Transaccional (process_checkout_atomic & Checkout
       await db.from('product_variants').upsert({
         id: varF, product_id: prodF, sku: 'SKU-TEQ-DJ', presentation_label: '700ml', price_in_cents: 22000000, is_active: true
       });
-      await db.from('inventory').update({ physical_quantity: 10, safety_stock: 0 }).eq('variant_id', varF).eq('warehouse_id', WAREHOUSE_ID);
+      await db.from('inventory').upsert({
+        variant_id: varF,
+        warehouse_id: WAREHOUSE_ID,
+        product_id: prodF,
+        physical_quantity: 10,
+        safety_stock: 0
+      });
       await db.from('carts').upsert({ id: cartF, status: 'active' });
 
       // Insertar reserva directamente como expirada
