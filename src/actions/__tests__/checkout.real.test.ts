@@ -357,7 +357,9 @@ describe('P1 Etapa 3: Checkout Transaccional (process_checkout_atomic & Checkout
       const res = await db.rpc('process_checkout_atomic', {
         p_cart_id: cartF,
         p_warehouse_id: WAREHOUSE_ID,
-        p_idempotency_key: idempF
+        p_idempotency_key: idempF,
+        p_customer_name: 'Test Customer',
+        p_customer_phone: '+573001112233'
       });
       expect(res.error).toBeDefined();
       expect(res.error?.message).toContain('RESERVATION_INVALID');
