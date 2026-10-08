@@ -37,7 +37,9 @@ jobs:
           cp supabase/tests/fixtures/test_schema.sql supabase/migrations/00000000000000_test_schema.sql
 
       - name: Start Local Supabase
-        run: supabase start
+        run: |
+          set -o pipefail
+          supabase start 2>&1 | tee supabase-start.log
         
       - name: Export Local Credentials
         run: |
@@ -52,6 +54,12 @@ jobs:
       - name: Publish Test Summary
         if: always()
         run: |
+          if [ -f supabase-start.log ]; then
+            echo "### Supabase Start Output" >> $GITHUB_STEP_SUMMARY
+            echo '```text' >> $GITHUB_STEP_SUMMARY
+            tail -n 50 supabase-start.log >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          fi
           if [ -f jest-output.log ]; then
             echo "### Jest Run Summary" >> $GITHUB_STEP_SUMMARY
             echo '```text' >> $GITHUB_STEP_SUMMARY

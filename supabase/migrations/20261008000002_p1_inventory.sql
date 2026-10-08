@@ -44,8 +44,17 @@ DELETE FROM public.inventory WHERE variant_id IS NULL;
 
 -- Redefine Primary Key on inventory (variant_id, warehouse_id)
 DO $$
+DECLARE
+  v_pk_name TEXT;
 BEGIN
-  ALTER TABLE public.inventory DROP CONSTRAINT IF EXISTS inventory_pkey;
+  SELECT constraint_name INTO v_pk_name
+  FROM information_schema.table_constraints
+  WHERE table_schema = 'public' AND table_name = 'inventory' AND constraint_type = 'PRIMARY KEY';
+
+  IF v_pk_name IS NOT NULL THEN
+    EXECUTE 'ALTER TABLE public.inventory DROP CONSTRAINT ' || quote_ident(v_pk_name);
+  END IF;
+
   ALTER TABLE public.inventory ALTER COLUMN variant_id SET NOT NULL;
   
   IF EXISTS (
@@ -278,7 +287,7 @@ BEGIN
 
   RETURN COALESCE(v_avail, 0) > 0;
 END;
-$$ LANGUAGE sql SECURITY DEFINER STABLE SET search_path = public;
+$$ LANGUAGE plpgsql SECURITY DEFINER STABLE SET search_path = public;
 
 -- 7. Row Level Security & Column Privileges
 ALTER TABLE public.inventory ENABLE ROW LEVEL SECURITY;
@@ -288,11 +297,11 @@ REVOKE ALL ON public.inventory FROM public, anon, authenticated;
 REVOKE ALL ON public.stock_reservations FROM public, anon, authenticated;
 
 -- Function Execution Privileges
-GRANT EXECUTE ON FUNCTION public.is_variant_in_stock(UUID, UUID) TO anon, authenticated;
-GRANT EXECUTE ON FUNCTION public.reserve_variant_stock(UUID, UUID, UUID, INTEGER, INTEGER) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.reserve_stock(UUID, UUID, INTEGER, INTEGER) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.renew_reservation(UUID, INTEGER) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.release_reservation(UUID) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.is_variant_in_stock TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.reserve_variant_stock TO authenticated;
+GRANT EXECUTE ON FUNCTION public.reserve_stock TO authenticated;
+GRANT EXECUTE ON FUNCTION public.renew_reservation TO authenticated;
+GRANT EXECUTE ON FUNCTION public.release_reservation TO authenticated;
 
 -- Service Role full access
 GRANT ALL ON public.inventory TO service_role;
