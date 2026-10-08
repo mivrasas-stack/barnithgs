@@ -403,6 +403,7 @@ BEGIN
   LOOP
     SELECT 
       pv.id AS variant_id,
+      pv.product_id,
       pv.sku,
       pv.presentation_label,
       pv.price_in_cents,
