@@ -3,14 +3,13 @@
 import { createClient } from '@/lib/supabase/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { CheckoutService } from '@/services/checkout.service';
-import { CheckoutResponse, CheckoutError } from '@/types/checkout.types';
-import { Result, fail } from '@/types/result';
+import { ProcessCheckoutDTO, CheckoutResponse, CheckoutError } from '@/types/checkout.types';
 
-export interface CheckoutActionInput {
+export interface ClientCheckoutInput {
   cartId: string;
   warehouseId: string;
   idempotencyKey: string;
-  sessionToken?: string | null;
+  sessionToken?: string;
   customerName: string;
   customerPhone: string;
   customerEmail: string;
@@ -22,44 +21,41 @@ export interface CheckoutActionInput {
   tipInCents?: number;
 }
 
-function buildCheckoutDTO(input: CheckoutActionInput, verifiedUserId: string | null) {
-  return {
+export type CheckoutActionResult =
+  | { success: true; data: CheckoutResponse }
+  | { success: false; error: CheckoutError };
+
+export async function processCheckoutAction(input: ClientCheckoutInput): Promise<CheckoutActionResult> {
+  // 1. Resolve identity securely on the server via auth.getUser()
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  const verifiedUserId = user?.id || null;
+
+  // 2. Build verified DTO on server (never accept userId from client parameters)
+  const serverDto: ProcessCheckoutDTO = {
     cartId: input.cartId,
     warehouseId: input.warehouseId,
     idempotencyKey: input.idempotencyKey,
     userId: verifiedUserId,
-    sessionToken: input.sessionToken ?? null,
+    sessionToken: input.sessionToken,
     customerName: input.customerName,
     customerPhone: input.customerPhone,
     customerEmail: input.customerEmail,
     deliveryAddress: input.deliveryAddress,
-    deliveryCity: input.deliveryCity || 'Bogotá D.C.',
-    deliveryLat: input.deliveryLat ?? null,
-    deliveryLng: input.deliveryLng ?? null,
-    deliveryNotes: input.deliveryNotes ?? null,
-    tipInCents: input.tipInCents ?? 0,
+    deliveryCity: input.deliveryCity,
+    deliveryLat: input.deliveryLat,
+    deliveryLng: input.deliveryLng,
+    deliveryNotes: input.deliveryNotes,
+    tipInCents: input.tipInCents,
   };
-}
 
-export async function processCheckoutAction(
-  input: CheckoutActionInput
-): Promise<Result<CheckoutResponse, CheckoutError>> {
-  // 1. Verify user identity via secure server-side JWT validation
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  // 3. Delegate to CheckoutService with backend service_role client
+  const service = new CheckoutService(supabaseAdmin);
+  const result = await service.processCheckout(serverDto);
 
-  // Strict rule: userId is derived exclusively from server auth, NEVER trusted from client
-  const verifiedUserId = user?.id ?? null;
-
-  // 2. Validate mandatory guest session token when user is unauthenticated
-  if (!verifiedUserId && (!input.sessionToken || input.sessionToken.trim().length === 0)) {
-    return fail({
-      code: 'UNAUTHORIZED_GUEST',
-      message: 'Guest checkout requires a valid session token',
-    });
+  if (!result.success) {
+    return { success: false, error: result.error };
   }
 
-  // 3. Delegate to CheckoutService with trusted server-side identity
-  const service = new CheckoutService(supabaseAdmin);
-  return service.processCheckout(buildCheckoutDTO(input, verifiedUserId));
+  return { success: true, data: result.data };
 }

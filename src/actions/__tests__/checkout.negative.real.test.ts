@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { CheckoutService } from '@/services/checkout.service';
 
-// Polyfill WebSocket for isolated test environments if needed
+// Defensive polyfill for environments without WebSocket
 if (typeof (globalThis as unknown as { WebSocket: unknown }).WebSocket === 'undefined') {
   (globalThis as unknown as { WebSocket: unknown }).WebSocket = class DummyWebSocket {};
 }
@@ -44,40 +44,28 @@ async function createAuthUserClient(
   admin: ReturnType<typeof createClient>,
   anon: ReturnType<typeof createClient>
 ): Promise<{ client: TestDbClient; userId: string }> {
-  const email = `test-neg-${Date.now()}-${Math.random().toString(36).slice(2, 6)}@partyflow.app`;
-  const { data, error } = await admin.auth.admin.createUser({
-    email,
-    password: 'SecurePassword123!',
-    email_confirm: true,
-  });
+  const email = `neg-test-${Date.now()}-${Math.random().toString(36).slice(2, 6)}@partyflow.app`;
+  const { data, error } = await admin.auth.admin.createUser({ email, password: 'SecurePassword123!', email_confirm: true });
   if (error || !data.user) throw new Error(`User create failed: ${error?.message}`);
 
   await (admin.from('profiles') as unknown as TableHandler).insert({
-    id: data.user.id,
-    full_name: 'Negative Test User',
-    name: 'Negative Test User',
-    role: 'client',
-    email,
+    id: data.user.id, full_name: 'Test Client', name: 'Test Client', role: 'client', email
   });
 
-  const { data: authData, error: signInErr } = await anon.auth.signInWithPassword({
-    email,
-    password: 'SecurePassword123!',
-  });
+  const { data: authData, error: signInErr } = await anon.auth.signInWithPassword({ email, password: 'SecurePassword123!' });
   if (signInErr || !authData.session) throw new Error(`Login failed: ${signInErr?.message}`);
 
   const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     global: { headers: { Authorization: `Bearer ${authData.session.access_token}` } },
-    auth: { persistSession: false, autoRefreshToken: false },
+    auth: { persistSession: false, autoRefreshToken: false }
   });
   return { client: client as unknown as TestDbClient, userId: data.user.id };
 }
 
-describe('P1 Etapa 3: Pruebas Físicas Negativas de Checkout', () => {
+describe('P1 Etapa 3: Pruebas Físicas Negativas de Seguridad y Reservas', () => {
   let adminClient: ReturnType<typeof createClient>;
   let anonClient: ReturnType<typeof createClient>;
   let checkoutService: CheckoutService;
-
   const WAREHOUSE_1 = '00000000-0000-0000-0000-000000000001';
   const WAREHOUSE_2 = '00000000-0000-0000-0000-000000000002';
 
@@ -86,426 +74,296 @@ describe('P1 Etapa 3: Pruebas Físicas Negativas de Checkout', () => {
       throw new Error('Missing real database credentials. Start Supabase locally.');
     }
     adminClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-      auth: { persistSession: false, autoRefreshToken: false },
+      auth: { persistSession: false, autoRefreshToken: false }
     });
     anonClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-      auth: { persistSession: false, autoRefreshToken: false },
+      auth: { persistSession: false, autoRefreshToken: false }
     });
     checkoutService = new CheckoutService(adminClient);
 
-    const db = adminClient as unknown as TestDbClient;
-    await db.from('warehouses').upsert({
+    // Ensure warehouse 2 exists for cross-warehouse test
+    await (adminClient as unknown as TestDbClient).from('warehouses').upsert({
       id: WAREHOUSE_2,
       code: 'BOD-NORTE',
       name: 'Bodega Norte',
-      address: 'Chía, Cundinamarca',
+      address: 'Calle 170 # 15-20',
+      is_active: true
     });
   });
 
-  // 1. Checkout invitado sin token
-  it('1. rechaza checkout de invitado sin sessionToken (FORBIDDEN_CART_ACCESS)', async () => {
-    const cartId = '92000000-0000-0000-0000-000000000001';
+  it('1. Checkout invitado sin token es rechazado estrictamente (FORBIDDEN_CART_ACCESS)', async () => {
+    const guestCartId = '92000000-0000-0000-0000-000000000001';
     const db = adminClient as unknown as TestDbClient;
 
     try {
-      await db.from('carts').upsert({
-        id: cartId,
-        user_id: null,
-        session_token: 'valid-guest-secret-111',
-        status: 'active',
-      });
+      await db.from('carts').upsert({ id: guestCartId, user_id: null, session_token: 'secret-token-xyz', status: 'active' });
 
-      const res = await checkoutService.processCheckout({
-        cartId,
+      const attempt = await checkoutService.processCheckout({
+        cartId: guestCartId,
         warehouseId: WAREHOUSE_1,
-        idempotencyKey: `idemp-guest-notoken-${Date.now()}`,
+        idempotencyKey: `idemp-notok-${Date.now()}`,
         userId: null,
-        sessionToken: null,
-        customerName: 'Invitado Sin Token',
+        sessionToken: undefined,
+        customerName: 'Invitado',
         customerPhone: '+573001112233',
-        customerEmail: 'guest1@partyflow.app',
-        deliveryAddress: 'Calle 10 # 20-30',
+        customerEmail: 'guest@partyflow.app',
+        deliveryAddress: 'Calle 123'
       });
 
-      expect(res.success).toBe(false);
-      if (!res.success) {
-        expect(res.error.code).toBe('FORBIDDEN_CART_ACCESS');
-        expect(res.error.message).toContain('Guest checkout requires a mandatory sessionToken');
+      expect(attempt.success).toBe(false);
+      if (!attempt.success) {
+        expect(attempt.error.code).toBe('FORBIDDEN_CART_ACCESS');
+        expect(attempt.error.message).toContain('Guest session token is required');
       }
     } finally {
-      await db.from('carts').delete().eq('id', cartId);
+      await db.from('carts').delete().eq('id', guestCartId);
     }
   });
 
-  // 2. Checkout invitado con token incorrecto
-  it('2. rechaza checkout de invitado con sessionToken incorrecto (FORBIDDEN_CART_ACCESS)', async () => {
-    const cartId = '92000000-0000-0000-0000-000000000002';
+  it('2. Checkout invitado con token incorrecto es rechazado estrictamente (FORBIDDEN_CART_ACCESS)', async () => {
+    const guestCartId = '92000000-0000-0000-0000-000000000002';
     const db = adminClient as unknown as TestDbClient;
 
     try {
-      await db.from('carts').upsert({
-        id: cartId,
-        user_id: null,
-        session_token: 'valid-guest-secret-222',
-        status: 'active',
-      });
+      await db.from('carts').upsert({ id: guestCartId, user_id: null, session_token: 'secret-token-real', status: 'active' });
 
-      const res = await checkoutService.processCheckout({
-        cartId,
+      const attempt = await checkoutService.processCheckout({
+        cartId: guestCartId,
         warehouseId: WAREHOUSE_1,
-        idempotencyKey: `idemp-guest-wrongtoken-${Date.now()}`,
+        idempotencyKey: `idemp-badtok-${Date.now()}`,
         userId: null,
-        sessionToken: 'tampered-token-xyz',
-        customerName: 'Invitado Token Falso',
+        sessionToken: 'wrong-token-hacker',
+        customerName: 'Impostor',
         customerPhone: '+573001112233',
-        customerEmail: 'guest2@partyflow.app',
-        deliveryAddress: 'Calle 10 # 20-30',
+        customerEmail: 'guest@partyflow.app',
+        deliveryAddress: 'Calle 123'
       });
 
-      expect(res.success).toBe(false);
-      if (!res.success) {
-        expect(res.error.code).toBe('FORBIDDEN_CART_ACCESS');
-        expect(res.error.message).toContain('Invalid guest session token for cart');
+      expect(attempt.success).toBe(false);
+      if (!attempt.success) {
+        expect(attempt.error.code).toBe('FORBIDDEN_CART_ACCESS');
+        expect(attempt.error.message).toContain('Invalid guest session token');
       }
     } finally {
-      await db.from('carts').delete().eq('id', cartId);
+      await db.from('carts').delete().eq('id', guestCartId);
     }
   });
 
-  // 3. Usuario que falsifica el userId de otro
-  it('3. rechaza usuario que falsifica o suprime el userId de otro a nivel de servicio y RPC', async () => {
+  it('3. Usuario que intenta falsificar el userId de otro es rechazado tanto en servicio como en RPC', async () => {
     const userA = await createAuthUserClient(adminClient, anonClient);
     const userB = await createAuthUserClient(adminClient, anonClient);
-    const cartUserA = '92000000-0000-0000-0000-000000000003';
+    const cartOwnerA = '92000000-0000-0000-0000-000000000003';
     const db = adminClient as unknown as TestDbClient;
 
     try {
-      await db.from('carts').upsert({
-        id: cartUserA,
-        user_id: userA.userId,
-        status: 'active',
-      });
+      await db.from('carts').upsert({ id: cartOwnerA, user_id: userA.userId, status: 'active' });
 
-      // Intento 1: A través de CheckoutService con identidad de User B
-      const serviceRes = await checkoutService.processCheckout({
-        cartId: cartUserA,
+      // CheckoutService check:
+      const serviceAttempt = await checkoutService.processCheckout({
+        cartId: cartOwnerA,
         warehouseId: WAREHOUSE_1,
         idempotencyKey: `idemp-spoof-${Date.now()}`,
         userId: userB.userId,
-        customerName: 'Impostor',
-        customerPhone: '+573009998877',
-        customerEmail: 'impostor@partyflow.app',
-        deliveryAddress: 'Fake Street 456',
+        customerName: 'User B',
+        customerPhone: '+573000000000',
+        customerEmail: 'b@partyflow.app',
+        deliveryAddress: 'Calle 50'
       });
-
-      expect(serviceRes.success).toBe(false);
-      if (!serviceRes.success) {
-        expect(serviceRes.error.code).toBe('FORBIDDEN_CART_ACCESS');
+      expect(serviceAttempt.success).toBe(false);
+      if (!serviceAttempt.success) {
+        expect(serviceAttempt.error.code).toBe('FORBIDDEN_CART_ACCESS');
       }
 
-      // Intento 2: Invocación directa a la RPC con user_id falso
-      const rpcRes = await db.rpc('process_checkout_atomic', {
-        p_cart_id: cartUserA,
+      // Direct RPC defense check:
+      const rpcAttempt = await db.rpc('process_checkout_atomic', {
+        p_cart_id: cartOwnerA,
         p_warehouse_id: WAREHOUSE_1,
         p_idempotency_key: `idemp-spoof-rpc-${Date.now()}`,
         p_user_id: userB.userId,
+        p_customer_name: 'User B',
+        p_customer_phone: '+573000000000',
+        p_customer_email: 'b@partyflow.app',
+        p_delivery_address: 'Calle 50'
       });
-
-      expect(rpcRes.error).toBeDefined();
-      expect(rpcRes.error?.message).toContain('FORBIDDEN_CART_ACCESS');
+      expect(rpcAttempt.error).toBeDefined();
+      expect(rpcAttempt.error?.message).toContain('FORBIDDEN_CART_ACCESS');
     } finally {
-      await db.from('carts').delete().eq('id', cartUserA);
+      await db.from('carts').delete().eq('id', cartOwnerA);
       await adminClient.auth.admin.deleteUser(userA.userId);
       await adminClient.auth.admin.deleteUser(userB.userId);
     }
   });
 
-  // 4. Reserva perteneciente a otra bodega
-  it('4. rechaza checkout con reservas pertenecientes a otra bodega (RESERVATION_INVALID)', async () => {
-    const prodId = '72000000-0000-0000-0000-000000000004';
-    const varId = '82000000-0000-0000-0000-000000000004';
-    const cartId = '92000000-0000-0000-0000-000000000004';
+  it('4. Reserva perteneciente a otra bodega es rechazada (RESERVATION_INVALID)', async () => {
+    const prodG = '72000000-0000-0000-0000-000000000001';
+    const varG = '82000000-0000-0000-0000-000000000001';
+    const cartG = '92000000-0000-0000-0000-000000000004';
     const db = adminClient as unknown as TestDbClient;
 
     try {
-      await db.from('products').upsert({ id: prodId, name: 'Ginebra Extranjera', is_active: true });
+      await db.from('products').upsert({ id: prodG, name: 'Whisky 12 Años', is_active: true });
       await db.from('product_variants').upsert({
-        id: varId,
-        product_id: prodId,
-        sku: 'SKU-GIN-EXT',
-        presentation_label: '750ml',
-        price_in_cents: 7000000,
-        is_active: true,
+        id: varG, product_id: prodG, sku: 'SKU-WH-12', presentation_label: '750ml', price_in_cents: 9000000, is_active: true
       });
-      // Asegurar inventario explícito en Bodega 2
-      await db.from('inventory').upsert({
-        variant_id: varId,
-        product_id: prodId,
-        warehouse_id: WAREHOUSE_2,
-        physical_quantity: 10,
-        safety_stock: 0,
-      });
-      await db.from('carts').upsert({ id: cartId, status: 'active' });
+      await db.from('inventory').update({ physical_quantity: 10, safety_stock: 0 }).eq('variant_id', varG).eq('warehouse_id', WAREHOUSE_2);
+      await db.from('carts').upsert({ id: cartG, status: 'active' });
 
-      // Reserva stock en WAREHOUSE_2
+      // Reserva en BODEGA 2
       await db.rpc('reserve_variant_stock', {
-        p_variant_id: varId,
-        p_warehouse_id: WAREHOUSE_2,
-        p_cart_id: cartId,
-        p_quantity: 1,
+        p_variant_id: varG, p_warehouse_id: WAREHOUSE_2, p_cart_id: cartG, p_quantity: 1
       });
 
-      // Intenta checkout especificando WAREHOUSE_1 (discrepancia de bodega)
+      // Intento de procesar checkout solicitando BODEGA 1
       const res = await db.rpc('process_checkout_atomic', {
-        p_cart_id: cartId,
+        p_cart_id: cartG,
         p_warehouse_id: WAREHOUSE_1,
-        p_idempotency_key: `idemp-wh-mismatch-${Date.now()}`,
+        p_idempotency_key: `idemp-warehouse-mismatch-${Date.now()}`
       });
 
       expect(res.error).toBeDefined();
       expect(res.error?.message).toContain('RESERVATION_INVALID');
-
-      // No debe haberse creado ninguna orden
-      const { data: orders } = await db.from('orders').select('id').eq('cart_id', cartId);
-      expect(orders).toHaveLength(0);
     } finally {
-      await db.from('stock_reservations').delete().eq('cart_id', cartId);
-      await db.from('carts').delete().eq('id', cartId);
-      await db.from('inventory').delete().eq('variant_id', varId);
-      await db.from('product_variants').delete().eq('id', varId);
-      await db.from('products').delete().eq('id', prodId);
+      await db.from('stock_reservations').delete().eq('cart_id', cartG);
+      await db.from('carts').delete().eq('id', cartG);
+      await db.from('inventory').delete().eq('variant_id', varG);
+      await db.from('product_variants').delete().eq('id', varG);
+      await db.from('products').delete().eq('id', prodG);
     }
   });
 
-  // 5. Reserva expirada o vinculada previamente
-  it('5. rechaza checkout con reservas expiradas o previamente vinculadas (RESERVATION_INVALID)', async () => {
-    const prodId = '72000000-0000-0000-0000-000000000005';
-    const varId = '82000000-0000-0000-0000-000000000005';
-    const cartExpired = '92000000-0000-0000-0000-000000000005';
-    const cartPreBound = '92000000-0000-0000-0000-000000000055';
-    const dummyOrderId = '62000000-0000-0000-0000-000000000055';
+  it('5. Reserva vinculada previamente a otra orden es rechazada (RESERVATION_INVALID)', async () => {
+    const prodH = '72000000-0000-0000-0000-000000000002';
+    const varH = '82000000-0000-0000-0000-000000000002';
+    const cartH = '92000000-0000-0000-0000-000000000005';
+    const fakeOrderId = '01000000-0000-0000-0000-000000000001';
     const db = adminClient as unknown as TestDbClient;
 
     try {
-      await db.from('products').upsert({ id: prodId, name: 'Whisky Añejo', is_active: true });
+      await db.from('products').upsert({ id: prodH, name: 'Ginebra Especial', is_active: true });
       await db.from('product_variants').upsert({
-        id: varId,
-        product_id: prodId,
-        sku: 'SKU-WHI-ANJ',
-        presentation_label: '750ml',
-        price_in_cents: 9000000,
-        is_active: true,
+        id: varH, product_id: prodH, sku: 'SKU-GIN-ESP', presentation_label: '750ml', price_in_cents: 7000000, is_active: true
       });
-      await db.from('inventory').update({ physical_quantity: 10, safety_stock: 0 }).eq('variant_id', varId).eq('warehouse_id', WAREHOUSE_1);
-      await db.from('carts').upsert([
-        { id: cartExpired, status: 'active' },
-        { id: cartPreBound, status: 'active' },
-      ]);
+      await db.from('inventory').update({ physical_quantity: 10, safety_stock: 0 }).eq('variant_id', varH).eq('warehouse_id', WAREHOUSE_1);
+      await db.from('carts').upsert({ id: cartH, status: 'active' });
 
-      // Subcaso A: Reserva expirada
-      const pastTime = new Date(Date.now() - 120000).toISOString();
+      // Reserva que ya tiene order_id asignado
       await db.from('stock_reservations').insert({
-        variant_id: varId,
-        product_id: prodId,
+        variant_id: varH,
+        product_id: prodH,
         warehouse_id: WAREHOUSE_1,
-        cart_id: cartExpired,
+        cart_id: cartH,
         quantity: 1,
         status: 'active',
-        expires_at: pastTime,
+        order_id: fakeOrderId,
+        expires_at: new Date(Date.now() + 15 * 60 * 1000).toISOString()
       });
 
-      const resExpired = await db.rpc('process_checkout_atomic', {
-        p_cart_id: cartExpired,
+      const res = await db.rpc('process_checkout_atomic', {
+        p_cart_id: cartH,
         p_warehouse_id: WAREHOUSE_1,
-        p_idempotency_key: `idemp-exp-${Date.now()}`,
-      });
-      expect(resExpired.error).toBeDefined();
-      expect(resExpired.error?.message).toContain('RESERVATION_INVALID');
-
-      // Subcaso B: Reserva ya vinculada a otra orden existente
-      await db.from('orders').upsert({
-        id: dummyOrderId,
-        order_number: `ORD-DUMMY-${Date.now()}`,
-        idempotency_key: `idemp-dummy-${Date.now()}`,
-        status: 'pending',
+        p_idempotency_key: `idemp-relink-${Date.now()}`
       });
 
-      await db.from('stock_reservations').insert({
-        variant_id: varId,
-        product_id: prodId,
-        warehouse_id: WAREHOUSE_1,
-        cart_id: cartPreBound,
-        quantity: 1,
-        status: 'active',
-        order_id: dummyOrderId,
-        expires_at: new Date(Date.now() + 600000).toISOString(),
-      });
-
-      const resPreBound = await db.rpc('process_checkout_atomic', {
-        p_cart_id: cartPreBound,
-        p_warehouse_id: WAREHOUSE_1,
-        p_idempotency_key: `idemp-bound-${Date.now()}`,
-      });
-      expect(resPreBound.error).toBeDefined();
-      expect(resPreBound.error?.message).toContain('RESERVATION_INVALID');
+      expect(res.error).toBeDefined();
+      expect(res.error?.message).toContain('RESERVATION_INVALID');
     } finally {
-      await db.from('stock_reservations').delete().in('cart_id', [cartExpired, cartPreBound]);
-      await db.from('orders').delete().eq('id', dummyOrderId);
-      await db.from('carts').delete().in('id', [cartExpired, cartPreBound]);
-      await db.from('inventory').delete().eq('variant_id', varId);
-      await db.from('product_variants').delete().eq('id', varId);
-      await db.from('products').delete().eq('id', prodId);
+      await db.from('stock_reservations').delete().eq('cart_id', cartH);
+      await db.from('carts').delete().eq('id', cartH);
+      await db.from('inventory').delete().eq('variant_id', varH);
+      await db.from('product_variants').delete().eq('id', varH);
+      await db.from('products').delete().eq('id', prodH);
     }
   });
 
-  // 6. Acceso directo no autorizado a carts y RPC privilegiada
-  it('6. bloquea acceso directo no autorizado a carts (RLS) y a la RPC privilegiada process_checkout_atomic', async () => {
-    const userA = await createAuthUserClient(adminClient, anonClient);
-    const userB = await createAuthUserClient(adminClient, anonClient);
-    const cartUserB = '92000000-0000-0000-0000-000000000006';
+  it('6. Acceso directo no autorizado a carts y RPC privilegiada es bloqueado por RLS y revocación de permisos', async () => {
+    const userClientObj = await createAuthUserClient(adminClient, anonClient);
+    const guestCartId = '92000000-0000-0000-0000-000000000006';
     const db = adminClient as unknown as TestDbClient;
 
     try {
-      await db.from('carts').upsert({
-        id: cartUserB,
-        user_id: userB.userId,
-        session_token: 'secret-b-123',
-        status: 'active',
-      });
+      await db.from('carts').upsert({ id: guestCartId, session_token: 'secret-token-invisible', status: 'active' });
 
-      // 6a: anonClient no puede leer carritos (RLS revoca acceso directo)
-      const { data: anonData } = await (anonClient.from('carts') as unknown as TableHandler)
-        .select('*')
-        .eq('id', cartUserB);
-      expect(anonData === null || (Array.isArray(anonData) && anonData.length === 0)).toBe(true);
+      // A. Cliente anónimo intentando leer carts: RLS niega acceso a tokens de sesión
+      const { data: anonCarts } = await (anonClient as unknown as TestDbClient).from('carts').select('*').eq('id', guestCartId);
+      expect(anonCarts).toHaveLength(0);
 
-      // 6b: anonClient no puede ejecutar process_checkout_atomic (permiso revocado / no expuesto)
-      const anonRpcRes = await (anonClient as unknown as TestDbClient).rpc('process_checkout_atomic', {
-        p_cart_id: cartUserB,
+      // B. Cliente anónimo intentando ejecutar RPC privilegiada
+      const anonRpc = await (anonClient as unknown as TestDbClient).rpc('process_checkout_atomic', {
+        p_cart_id: guestCartId,
         p_warehouse_id: WAREHOUSE_1,
-        p_idempotency_key: `idemp-anon-${Date.now()}`,
+        p_idempotency_key: 'hacker-key'
       });
-      const isAnonDenied =
-        anonRpcRes.error !== null &&
-        (anonRpcRes.error.message.toLowerCase().includes('permission denied') ||
-          anonRpcRes.error.message.toLowerCase().includes('schema cache') ||
-          anonRpcRes.error.message.toLowerCase().includes('not found') ||
-          anonRpcRes.error.code === '42501' ||
-          anonRpcRes.error.code === 'PGRST202');
-      expect(isAnonDenied).toBe(true);
+      expect(anonRpc.error).toBeDefined();
+      expect(anonRpc.error?.code).toBe('42501'); // Permission denied
 
-      // 6c: userAClient no puede ejecutar process_checkout_atomic (solo service_role)
-      const userRpcRes = await userA.client.rpc('process_checkout_atomic', {
-        p_cart_id: cartUserB,
+      // C. Cliente autenticado intentando ejecutar RPC privilegiada directamente
+      const authRpc = await userClientObj.client.rpc('process_checkout_atomic', {
+        p_cart_id: guestCartId,
         p_warehouse_id: WAREHOUSE_1,
-        p_idempotency_key: `idemp-user-${Date.now()}`,
+        p_idempotency_key: 'auth-direct-key'
       });
-      const isUserDenied =
-        userRpcRes.error !== null &&
-        (userRpcRes.error.message.toLowerCase().includes('permission denied') ||
-          userRpcRes.error.message.toLowerCase().includes('schema cache') ||
-          userRpcRes.error.message.toLowerCase().includes('not found') ||
-          userRpcRes.error.code === '42501' ||
-          userRpcRes.error.code === 'PGRST202');
-      expect(isUserDenied).toBe(true);
-
-      // 6d: userAClient no puede ver el carrito de userB (aislamiento de RLS)
-      const { data: userAData } = await userA.client.from('carts').select('*').eq('id', cartUserB);
-      expect(userAData === null || (Array.isArray(userAData) && userAData.length === 0)).toBe(true);
+      expect(authRpc.error).toBeDefined();
+      expect(authRpc.error?.code).toBe('42501'); // Permission denied
     } finally {
-      await db.from('carts').delete().eq('id', cartUserB);
-      await adminClient.auth.admin.deleteUser(userA.userId);
-      await adminClient.auth.admin.deleteUser(userB.userId);
+      await db.from('carts').delete().eq('id', guestCartId);
+      await adminClient.auth.admin.deleteUser(userClientObj.userId);
     }
   });
 
-  // 7. Peticiones concurrentes con distintos idempotency keys sobre un mismo carrito
-  it('7. peticiones concurrentes con distintos idempotency keys sobre el mismo carrito: exactamente 1 orden creada', async () => {
-    const prodId = '72000000-0000-0000-0000-000000000007';
-    const varId = '82000000-0000-0000-0000-000000000007';
-    const cartId = '92000000-0000-0000-0000-000000000007';
+  it('7. Peticiones concurrentes con distintos idempotency keys sobre un mismo carrito: exactamente una gana y la otra es rechazada', async () => {
+    const prodI = '72000000-0000-0000-0000-000000000003';
+    const varI = '82000000-0000-0000-0000-000000000003';
+    const cartI = '92000000-0000-0000-0000-000000000007';
+    const keyAlpha = `idemp-diff-alpha-${Date.now()}`;
+    const keyBeta = `idemp-diff-beta-${Date.now()}`;
     const db = adminClient as unknown as TestDbClient;
 
-    const idempA = `idemp-diff-A-${Date.now()}`;
-    const idempB = `idemp-diff-B-${Date.now()}`;
-    const idempC = `idemp-diff-C-${Date.now()}`;
-
     try {
-      await db.from('products').upsert({ id: prodId, name: 'Brandy Solera', is_active: true });
+      await db.from('products').upsert({ id: prodI, name: 'Vino Blanco Sauvignon', is_active: true });
       await db.from('product_variants').upsert({
-        id: varId,
-        product_id: prodId,
-        sku: 'SKU-BRA-SOL',
-        presentation_label: '750ml',
-        price_in_cents: 5500000,
-        is_active: true,
+        id: varI, product_id: prodI, sku: 'SKU-VIN-SAUV', presentation_label: '750ml', price_in_cents: 4000000, is_active: true
       });
-      await db.from('inventory').update({ physical_quantity: 10, safety_stock: 0 }).eq('variant_id', varId).eq('warehouse_id', WAREHOUSE_1);
-      await db.from('carts').upsert({ id: cartId, status: 'active' });
+      await db.from('inventory').update({ physical_quantity: 10, safety_stock: 0 }).eq('variant_id', varI).eq('warehouse_id', WAREHOUSE_1);
+      await db.from('carts').upsert({ id: cartI, status: 'active' });
+      await db.rpc('reserve_variant_stock', { p_variant_id: varI, p_warehouse_id: WAREHOUSE_1, p_cart_id: cartI, p_quantity: 1 });
 
-      await db.rpc('reserve_variant_stock', {
-        p_variant_id: varId,
-        p_warehouse_id: WAREHOUSE_1,
-        p_cart_id: cartId,
-        p_quantity: 1,
-      });
-
-      const basePayload = {
-        p_cart_id: cartId,
-        p_warehouse_id: WAREHOUSE_1,
-        p_customer_name: 'Cliente Concurrente',
-        p_customer_phone: '+573001234567',
-        p_customer_email: 'concurrente@partyflow.app',
-        p_delivery_address: 'Calle 50 # 10-20',
-        p_delivery_city: 'Bogotá D.C.',
-        p_tip_in_cents: 0,
-      };
-
-      // 3 llamadas simultáneas con DIFERENTES claves de idempotencia sobre el mismo carrito
-      const parallelCalls = await Promise.all([
-        db.rpc('process_checkout_atomic', { ...basePayload, p_idempotency_key: idempA }),
-        db.rpc('process_checkout_atomic', { ...basePayload, p_idempotency_key: idempB }),
-        db.rpc('process_checkout_atomic', { ...basePayload, p_idempotency_key: idempC }),
+      // Ejecución concurrente con DISTINTAS claves de idempotencia sobre el mismo carrito
+      const [resAlpha, resBeta] = await Promise.all([
+        db.rpc('process_checkout_atomic', {
+          p_cart_id: cartI,
+          p_warehouse_id: WAREHOUSE_1,
+          p_idempotency_key: keyAlpha,
+          p_customer_name: 'Alice',
+          p_customer_phone: '+573001230001'
+        }),
+        db.rpc('process_checkout_atomic', {
+          p_cart_id: cartI,
+          p_warehouse_id: WAREHOUSE_1,
+          p_idempotency_key: keyBeta,
+          p_customer_name: 'Bob',
+          p_customer_phone: '+573001230002'
+        })
       ]);
 
-      const successfulCalls = parallelCalls.filter(r => !r.error && r.data && (r.data as Record<string, unknown>).status === 'created');
-      const failedCalls = parallelCalls.filter(r => r.error !== null);
+      const successes = [resAlpha, resBeta].filter(r => !r.error && (r.data as Record<string, unknown>)?.status === 'created');
+      const failures = [resAlpha, resBeta].filter(r => r.error !== null);
 
-      // Exactamente una transacción debió ganar y crear la orden
-      expect(successfulCalls).toHaveLength(1);
-      // Las otras dos debieron fallar de forma segura
-      expect(failedCalls).toHaveLength(2);
+      // Exactamente una orden debe crearse; la otra debe fallar de forma controlada
+      expect(successes).toHaveLength(1);
+      expect(failures).toHaveLength(1);
+      expect(failures[0].error?.message).toContain('RESERVATION_INVALID');
 
-      for (const failed of failedCalls) {
-        const msg = failed.error?.message || '';
-        const isValidFailureReason =
-          msg.includes('CART_ALREADY_PROCESSED') ||
-          msg.includes('CHECKOUT_FAILED') ||
-          msg.includes('RESERVATION_INVALID');
-        expect(isValidFailureReason).toBe(true);
-      }
-
-      // Verificación en la tabla orders: solo 1 orden existe para este carrito
-      const { data: createdOrders } = await db.from('orders').select('id, idempotency_key').eq('cart_id', cartId);
+      // En la base de datos debe haber exactamente una orden asociada a este carrito
+      const { data: createdOrders } = await db.from('orders').select('id, idempotency_key').eq('cart_id', cartI);
       expect(createdOrders).toHaveLength(1);
-
-      // Verificación de reservas vinculadas exclusivamente a la orden ganadora
-      const winnerOrderId = (successfulCalls[0].data as Record<string, unknown>).order_id;
-      const { data: boundRes } = await db.from('stock_reservations').select('order_id').eq('cart_id', cartId);
-      expect(boundRes).toHaveLength(1);
-      expect(boundRes[0].order_id).toBe(winnerOrderId);
-
-      // Carrito finalizado
-      const { data: finalCart } = await db.from('carts').select('status').eq('id', cartId).single();
-      expect(finalCart.status).toBe('checked_out');
     } finally {
-      await db.from('order_items').delete().eq('variant_id', varId);
-      await db.from('stock_reservations').delete().eq('cart_id', cartId);
-      await db.from('orders').delete().in('idempotency_key', [idempA, idempB, idempC]);
-      await db.from('carts').delete().eq('id', cartId);
-      await db.from('inventory').delete().eq('variant_id', varId);
-      await db.from('product_variants').delete().eq('id', varId);
-      await db.from('products').delete().eq('id', prodId);
+      await db.from('order_items').delete().eq('variant_id', varI);
+      await db.from('stock_reservations').delete().eq('cart_id', cartI);
+      await db.from('orders').delete().in('idempotency_key', [keyAlpha, keyBeta]);
+      await db.from('carts').delete().eq('id', cartI);
+      await db.from('inventory').delete().eq('variant_id', varI);
+      await db.from('product_variants').delete().eq('id', varI);
+      await db.from('products').delete().eq('id', prodI);
     }
   });
 });

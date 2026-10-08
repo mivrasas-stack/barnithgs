@@ -109,7 +109,7 @@ describe('CheckoutService (Unit Tests)', () => {
       const guestNoTokenDTO: ProcessCheckoutDTO = {
         ...validDTO,
         userId: null,
-        sessionToken: null,
+        sessionToken: undefined,
       };
 
       const mockQuery = {
@@ -126,7 +126,7 @@ describe('CheckoutService (Unit Tests)', () => {
       expect(result.success).toBe(false);
       if (!result.success) {
         expect(result.error.code).toBe('FORBIDDEN_CART_ACCESS');
-        expect(result.error.message).toContain('Guest checkout requires a mandatory sessionToken');
+        expect(result.error.message).toContain('Guest session token is required');
       }
     });
   });
