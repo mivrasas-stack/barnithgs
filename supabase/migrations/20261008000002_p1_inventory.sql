@@ -232,6 +232,10 @@ FOR EACH ROW EXECUTE FUNCTION public.handle_stock_reservation_defaults();
 CREATE OR REPLACE FUNCTION public.handle_variant_default_inventory()
 RETURNS TRIGGER AS $$
 BEGIN
+  IF pg_trigger_depth() > 1 THEN
+    RETURN NEW;
+  END IF;
+
   INSERT INTO public.inventory (variant_id, warehouse_id, product_id, physical_quantity, safety_stock)
   VALUES (NEW.id, '00000000-0000-0000-0000-000000000001', NEW.product_id, 0, 0)
   ON CONFLICT (variant_id, warehouse_id) DO NOTHING;
