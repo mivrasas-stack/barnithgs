@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { CatalogService } from '@/services/catalog.service';
 
 // Polyfill defensivo para entornos de ejecución donde globalThis.WebSocket no esté disponible
 if (typeof (globalThis as unknown as { WebSocket: unknown }).WebSocket === 'undefined') {
@@ -246,6 +247,61 @@ describe('Real Database Integration & RLS (No Mocks)', () => {
         await (adminClient.from('products') as any).delete().eq('id', testProdId);
         await (adminClient.from('categories') as any).delete().eq('id', testCatId);
       }
+    });
+
+    it('CatalogService con anonClient consulta catálogo real y verifica image_url', async () => {
+      const prodId = '41000000-0000-0000-0000-000000000001';
+      const varId = '51000000-0000-0000-0000-000000000001';
+      const service = new CatalogService(anonClient);
+      try {
+        await (adminClient.from('products') as any).upsert({
+          id: prodId, name: 'Whisky Test Anon', image_url: 'https://example.com/w.jpg', is_active: true
+        });
+        await (adminClient.from('product_variants') as any).upsert({
+          id: varId, product_id: prodId, sku: 'SKU-W-ANON', presentation_label: '750ml',
+          price_in_cents: 18500000, cost_in_cents: 12000000, is_active: true
+        });
+        const res = await service.getProducts({ search: 'Whisky Test Anon' });
+        expect(res.success).toBe(true);
+        if (res.success) {
+          const prod = res.data.find(p => p.id === prodId);
+          expect(prod?.imageUrl).toBe('https://example.com/w.jpg');
+          expect(prod?.variants?.[0]?.priceInCents).toBe(18500000);
+          expect(prod?.variants?.[0]).not.toHaveProperty('cost_in_cents');
+        }
+      } finally {
+        await (adminClient.from('product_variants') as any).delete().eq('id', varId);
+        await (adminClient.from('products') as any).delete().eq('id', prodId);
+      }
+    });
+
+    it('inserción de producto sin category_id resuelve dinámicamente la categoría general', async () => {
+      const prodId = '42000000-0000-0000-0000-000000000001';
+      const { data: generalCat } = await (adminClient.from('categories') as any)
+        .select('id, slug').eq('slug', 'general').single();
+      expect(generalCat?.slug).toBe('general');
+
+      try {
+        const { data: inserted, error } = await (adminClient.from('products') as any)
+          .insert({ id: prodId, name: 'Prod Sin Categoria', price: 50000, is_active: true })
+          .select('id, category_id, slug').single();
+
+        expect(error).toBeNull();
+        expect(inserted.category_id).toBe(generalCat.id);
+        expect(inserted.slug).toBeDefined();
+      } finally {
+        await (adminClient.from('product_variants') as any).delete().eq('product_id', prodId);
+        await (adminClient.from('products') as any).delete().eq('id', prodId);
+      }
+    });
+
+    it('respeta categoría preexistente al asociar productos y rechaza categorías inexistentes', async () => {
+      const prodId = '43000000-0000-0000-0000-000000000001';
+      const invalidCatId = '99000000-0000-0000-0000-000000000099';
+      const { error: invalidErr } = await (adminClient.from('products') as any)
+        .insert({ id: prodId, name: 'Prod Invalido', category_id: invalidCatId, price: 10000 });
+      expect(invalidErr).toBeDefined();
+      expect(invalidErr?.code).toBe('23503');
     });
   });
 });

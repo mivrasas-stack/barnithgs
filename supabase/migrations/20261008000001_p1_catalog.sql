@@ -32,10 +32,18 @@ CREATE TABLE IF NOT EXISTS public.categories (
 CREATE INDEX IF NOT EXISTS idx_categories_slug ON public.categories(slug);
 CREATE INDEX IF NOT EXISTS idx_categories_parent ON public.categories(parent_id);
 
--- Seed default baseline category
-INSERT INTO public.categories (id, slug, name, description)
-VALUES ('00000000-0000-0000-0000-000000000001', 'general', 'General', 'Categoría general por defecto')
-ON CONFLICT (slug) DO NOTHING;
+-- Dynamically handle 'general' category: insert if absent, reuse existing ID if present
+DO $$
+DECLARE
+  v_gen_id UUID;
+BEGIN
+  SELECT id INTO v_gen_id FROM public.categories WHERE slug = 'general' LIMIT 1;
+  IF v_gen_id IS NULL THEN
+    INSERT INTO public.categories (id, slug, name, description)
+    VALUES ('00000000-0000-0000-0000-000000000001', 'general', 'General', 'Categoría general por defecto')
+    ON CONFLICT (slug) DO NOTHING;
+  END IF;
+END $$;
 
 -- Defensive backfill from products.category ONLY if products.category exists
 DO $$
@@ -62,6 +70,7 @@ ALTER TABLE public.products
   ADD COLUMN IF NOT EXISTS category_id UUID REFERENCES public.categories(id) ON DELETE RESTRICT,
   ADD COLUMN IF NOT EXISTS brand TEXT,
   ADD COLUMN IF NOT EXISTS description TEXT,
+  ADD COLUMN IF NOT EXISTS image_url TEXT,
   ADD COLUMN IF NOT EXISTS media_gallery JSONB NOT NULL DEFAULT '[]'::jsonb,
   ADD COLUMN IF NOT EXISTS is_age_restricted BOOLEAN NOT NULL DEFAULT true,
   ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT true,
@@ -69,7 +78,23 @@ ALTER TABLE public.products
   ADD COLUMN IF NOT EXISTS display_order INTEGER NOT NULL DEFAULT 0,
   ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT now();
 
--- Backfill category_id and collision-free slug
+-- Defensive backfill for image_url from legacy image column if present
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_schema = 'public' AND table_name = 'products' AND column_name = 'image'
+  ) THEN
+    EXECUTE '
+      UPDATE public.products
+      SET image_url = image
+      WHERE (image_url IS NULL OR trim(image_url) = '''') 
+        AND image IS NOT NULL AND trim(image) != '''';
+    ';
+  END IF;
+END $$;
+
+-- Backfill category_id and collision-free slug, resolving the real UUID of the 'general' category
 DO $$
 DECLARE
   v_default_cat UUID;
@@ -100,27 +125,68 @@ BEGIN
     category_id = COALESCE(category_id, v_default_cat),
     slug = COALESCE(slug, lower(regexp_replace(COALESCE(name, 'prod'), '[^a-zA-Z0-9]+', '-', 'g')) || '-' || substr(id::text, 1, 8))
   WHERE category_id IS NULL OR slug IS NULL;
+
+  -- Dynamically set category_id DEFAULT using the verified v_default_cat UUID
+  EXECUTE 'ALTER TABLE public.products ALTER COLUMN category_id SET DEFAULT ' || quote_literal(v_default_cat::text) || '::uuid';
 END $$;
 
--- Set defaults so legacy inserts without category_id or slug remain functional
-ALTER TABLE public.products ALTER COLUMN category_id SET DEFAULT '00000000-0000-0000-0000-000000000001';
 ALTER TABLE public.products ALTER COLUMN category_id SET NOT NULL;
 
--- Trigger to guarantee collision-free slug on INSERT if omitted
-CREATE OR REPLACE FUNCTION public.handle_product_slug_default()
+-- Trigger to guarantee collision-free slug and default category on INSERT if omitted
+CREATE OR REPLACE FUNCTION public.handle_product_defaults()
 RETURNS TRIGGER AS $$
+DECLARE
+  v_default_cat UUID;
 BEGIN
   IF NEW.slug IS NULL OR trim(NEW.slug) = '' THEN
     NEW.slug := lower(regexp_replace(COALESCE(NEW.name, 'prod'), '[^a-zA-Z0-9]+', '-', 'g')) || '-' || substr(COALESCE(NEW.id, gen_random_uuid())::text, 1, 8);
   END IF;
+
+  IF NEW.category_id IS NULL THEN
+    SELECT id INTO v_default_cat FROM public.categories WHERE slug = 'general' LIMIT 1;
+    IF v_default_cat IS NULL THEN
+      SELECT id INTO v_default_cat FROM public.categories ORDER BY created_at ASC LIMIT 1;
+    END IF;
+    NEW.category_id := v_default_cat;
+  END IF;
+
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
 DROP TRIGGER IF EXISTS trg_product_slug ON public.products;
-CREATE TRIGGER trg_product_slug
+DROP TRIGGER IF EXISTS trg_product_defaults ON public.products;
+CREATE TRIGGER trg_product_defaults
 BEFORE INSERT ON public.products
-FOR EACH ROW EXECUTE FUNCTION public.handle_product_slug_default();
+FOR EACH ROW EXECUTE FUNCTION public.handle_product_defaults();
+
+-- Bidirectional sync trigger for image <-> image_url if legacy image column exists
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_schema = 'public' AND table_name = 'products' AND column_name = 'image'
+  ) THEN
+    EXECUTE '
+      CREATE OR REPLACE FUNCTION public.handle_product_image_sync()
+      RETURNS TRIGGER AS $f$
+      BEGIN
+        IF (NEW.image_url IS NULL OR trim(NEW.image_url) = '''') AND NEW.image IS NOT NULL THEN
+          NEW.image_url := NEW.image;
+        ELSIF (NEW.image IS NULL OR trim(NEW.image) = '''') AND NEW.image_url IS NOT NULL THEN
+          NEW.image := NEW.image_url;
+        END IF;
+        RETURN NEW;
+      END;
+      $f$ LANGUAGE plpgsql;
+
+      DROP TRIGGER IF EXISTS trg_product_image_sync ON public.products;
+      CREATE TRIGGER trg_product_image_sync
+      BEFORE INSERT OR UPDATE ON public.products
+      FOR EACH ROW EXECUTE FUNCTION public.handle_product_image_sync();
+    ';
+  END IF;
+END $$;
 
 ALTER TABLE public.products ALTER COLUMN slug SET NOT NULL;
 
