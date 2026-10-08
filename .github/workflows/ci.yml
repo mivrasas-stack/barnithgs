@@ -2,9 +2,9 @@ name: CI - PartyFlow Security P0
 
 on:
   push:
-    branches: [ "main", "security-p0", "feature/p1-catalog-stage1", "feature/p1-inventory-stage2" ]
+    branches: [ "main", "security-p0", "feature/p1-catalog-stage1", "feature/p1-inventory-stage2", "feature/p1-checkout-stage3" ]
   pull_request:
-    branches: [ "main", "feature/p1-catalog-stage1", "feature/p1-inventory-stage2" ]
+    branches: [ "main", "feature/p1-catalog-stage1", "feature/p1-inventory-stage2", "feature/p1-checkout-stage3" ]
 
 jobs:
   build_and_test:
@@ -70,3 +70,10 @@ jobs:
 
       - name: Build Next.js
         run: npm run build
+
+      - name: Cleanup Isolated Test Fixtures
+        if: always()
+        run: |
+          rm -f supabase/migrations/00000000000000_test_schema.sql
+          rm -f supabase/migrations/99999999999999_test_fault_injection.sql
+

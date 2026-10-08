@@ -28,3 +28,7 @@ BEGIN
   RETURN TRUE;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Explicitly restrict execution to service_role
+REVOKE EXECUTE ON FUNCTION public.teardown_test_fault_injection() FROM public, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.teardown_test_fault_injection() TO service_role;
