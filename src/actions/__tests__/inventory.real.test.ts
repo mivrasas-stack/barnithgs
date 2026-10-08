@@ -527,7 +527,7 @@ describe('P1 Etapa 2: Inventario por Variante, Bodega, Concurrencia y RLS', () =
       expect(Number(finalResA.quantity)).toBe(3);
 
       const { data: finalResB } = await db.from('stock_reservations').select('id, status, quantity').eq('id', resB.id).single();
-      expect(finalResB.status).toBe('cancelled');
+      expect(finalResB.status).toBe('released');
       expect(Number(finalResB.quantity)).toBe(4);
 
       const { data: resCList } = await db.from('stock_reservations').select('id, status, quantity').eq('cart_id', cartC);
